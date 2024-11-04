@@ -1,0 +1,153 @@
+:root {
+    --border-color: #474747;
+    --dark-bg: #1e1e1e;
+    --darker-bg: #131313;
+    --selected-highlight-color: #f88787;
+    --negative-color: #bf0000;
+    --positive-color: dodgerblue;
+    --lighter-bg: rgb(0, 46, 140);
+    --color: #c9c5cd;
+    --scrollbar-thumb-color: #757575;
+    --active-line-bg: #000000;
+    --type-color: #cd6d0d;
+    --attribute-color: #ad87ff;
+    --string-color: #0d7a0d;
+    --block-color: #fa4e70;
+    --comment-color: #dfb6b6;
+    --number-color: #4f9cf6;
+}
+
+* {
+    border-color: var(--border-color) !important;
+}
+
+body {
+    background-color: var(--dark-bg);
+    color: var(--color);
+}
+
+#editorContainer {
+    background-color: var(--darker-bg);
+}
+
+/* SCROLLBARS */
+::-webkit-scrollbar-track {
+    background: var(--darker-bg);
+}
+
+/* EDITOR */
+.cm-content {
+    color: var(--color);
+}
+
+.cm-gutterElement {
+    color: var(--color);
+}
+
+.cm-gutter {
+    background-color: var(--dark-bg);
+}
+
+.cm-activeLine {
+    background-color: var(--active-line-bg) !important;
+}
+
+.cm-activeLineGutter {
+    background-color: var(--active-line-bg) !important;
+}
+
+.cm-cursor {
+    border-color: white !important;
+}
+
+#tabList .editorTabHeader.selected {
+    color: var(--selected-highlight-color);
+}
+
+#tabList .editorTabHeader:hover {
+    background-color: var(--lighter-bg);
+}
+
+.closeTabButton:hover {
+    color: var(--negative-color) !important;
+}
+
+.iconButton:hover {
+    color: var(--positive-color) !important;
+}
+
+/* SYNTAX HIGHLIGHTING */
+
+.tok-keyword {
+    color: var(--type-color);
+}
+
+.tok-punctuation {
+    color: var(--block-color);
+}
+
+.tok-typeName {
+    color: var(--type-color);
+}
+
+.tok-propertyName {
+    color: var(--attribute-color);
+}
+
+.tok-operator {
+    color: var(--comment-color);
+}
+
+.tok-string {
+    color: var(--string-color);
+}
+
+.tok-number {
+    color: var(--number-color);
+}
+
+.tok-comment {
+    color: var(--comment-color);
+    font-style: italic;
+}
+
+.tok-meta {
+    color: var(--block-color) !important;
+}
+
+.tok-heading {
+    color: var(--attribute-color);
+}
+
+.cm-selectionBackground {
+    background-color: rgba(214, 121, 42, 0.25) !important;
+}
+
+.cm-foldPlaceholder {
+    background-color: var(--lighter-bg) !important;
+}
+
+.cm-nonmatchingBracket {
+    border: 1px solid var(--lighter-bg) !important;
+}
+
+.cm-matchingBracket {
+    border: 1px solid var(--lighter-bg) !important;
+}
+
+.cm-search, .cm-search * {
+    background-color: var(--dark-bg) !important;
+    color: var(--color) !important;
+}
+
+.cm-searchMatch {
+    background: unset !important;
+
+    border: 1px solid var(--color) !important;
+}
+
+.cm-button {
+    background-image: unset !important;
+    background-color: var(--darker-bg) !important;
+    color: var(--color) !important;
+}

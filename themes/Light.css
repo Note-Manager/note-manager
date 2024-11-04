@@ -1,0 +1,7 @@
+:root {
+    --border-color: gray;
+}
+
+* {
+    border-color: var(--border-color) !important;
+}
