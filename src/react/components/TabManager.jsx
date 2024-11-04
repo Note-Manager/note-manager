@@ -39,7 +39,7 @@ export function TabManager() {
     const removeTab = (event, data) => {
         TabsAPI.removeTab(data).then(async () => {
             setTabs(await TabsAPI.getTabs());
-            setSelectedTab(await TabsAPI.getSelectedTab())
+            setSelectedTab(await TabsAPI.getSelectedTab());
         });
 
         event.stopPropagation();
@@ -59,7 +59,7 @@ export function TabManager() {
                 <div id={"tabList"}>
                     {
                         tabs.map(tab => (
-                            <div id={tab.id} className={"editorTabHeader" + (tab.id === selectedTab.id ? " selected" : "")} key={tab.id} onClick={() => selectTab({tab})}>
+                            <div id={tab.id} className={"editorTabHeader" + (tab.id === selectedTab?.id ? " selected" : "")} key={tab.id} onClick={() => selectTab({tab})}>
                                 <div>
                                     <FontAwesomeIcon icon={faFileText}/>
                                     <span className={"tabHeaderName"} style={{marginLeft: "5px"}} title={tab.fileName || tab.name}>{tab.displayName}</span>

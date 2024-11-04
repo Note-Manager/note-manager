@@ -54,7 +54,8 @@ export default class TabHandler {
 
                 this.currentTabs.splice(indexToDelete, 1);
 
-                if(this.selectedTab?.id === t.id) {
+                if(this.currentTabs.length === 0) this.selectedTab = undefined;
+                else if(this.selectedTab?.id === t.id) {
                     this.selectedTab = this.currentTabs[indexToDelete > 0 ? indexToDelete - 1 : 0];
                 }
 
