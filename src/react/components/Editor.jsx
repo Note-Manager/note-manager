@@ -33,6 +33,7 @@ export default function Editor({language, content, onUpdate}) {
 
         onUpdate(
             {
+                content: v.view.state.doc.toString(),
                 length: v.state.doc.length,
                 lineCount: v.state.doc.lines,
                 selection: {

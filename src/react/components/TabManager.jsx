@@ -45,6 +45,12 @@ export function TabManager() {
         event.stopPropagation();
     }
 
+    const handleChange = (data) => {
+        setMetadata(data);
+
+        selectedTab.content = data.content;
+    }
+
     document.getElementById(selectedTab?.id)?.scrollIntoView();
 
     return (
@@ -72,7 +78,7 @@ export function TabManager() {
 
             <div id={"tabContent"}>
                 {selectedTab &&
-                    <Editor language={SupportedLanguages.findByFileName(selectedTab.fileName)} content={selectedTab.content} onUpdate={(updateData) => setMetadata(updateData)}/>
+                    <Editor language={SupportedLanguages.findByFileName(selectedTab.fileName)} content={selectedTab.content} onUpdate={(updateData) => handleChange(updateData)}/>
                 }
             </div>
 
