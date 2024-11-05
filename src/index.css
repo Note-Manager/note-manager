@@ -36,7 +36,7 @@ body, html {
     overflow: hidden;
 }
 
-#editorContainer {
+#tabContent .cm-theme-none {
     flex: 1;
 
     max-width: 100%;
@@ -45,10 +45,9 @@ body, html {
     overflow: auto;
 }
 
-#editorContainer .cm-editor {
+#tabContent .cm-editor {
     height: 100%;
 }
-
 
 #footer {
     font-size: 0.8rem;

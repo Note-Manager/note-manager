@@ -49,17 +49,15 @@
     "@codemirror/lang-yaml": "^6.1.1",
     "@codemirror/language": "^6.10.3",
     "@codemirror/search": "^6.5.6",
-    "@codemirror/state": "^6.4.1",
-    "@codemirror/view": "^6.34.1",
     "@fortawesome/fontawesome-svg-core": "^6.6.0",
     "@fortawesome/free-regular-svg-icons": "^6.6.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@lezer/highlight": "^1.2.1",
+    "@uiw/react-codemirror": "^4.23.6",
     "codemirror": "^6.0.1",
     "electron-squirrel-startup": "^1.0.1",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "temp-dir": "^3.0.0"
+    "react-dom": "^18.3.1"
   }
 }
