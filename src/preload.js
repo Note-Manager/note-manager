@@ -8,15 +8,18 @@ contextBridge.exposeInMainWorld('log', {
     error: (message) => ipcRenderer.invoke('log-error', message),
 });
 
-contextBridge.exposeInMainWorld('files', {
+contextBridge.exposeInMainWorld('FileAPI', {
     readFile: (path) => ipcRenderer.invoke('read-file', path),
     tempPath: () => ipcRenderer.invoke("get-system-path", {name: "tempDir"})
 });
 
 contextBridge.exposeInMainWorld("TabsAPI", {
-    getTabs: () => ipcRenderer.invoke("get-tabs"),
-    getSelectedTab: () => ipcRenderer.invoke("get-selected-tab"),
-    addTab: ({isTemp, name, filePath}) => ipcRenderer.invoke("add-tab", {isTemp, name, filePath}),
-    selectTab: ({tab}) => ipcRenderer.invoke("select-tab", {tab}),
-    removeTab: ({tab}) => ipcRenderer.invoke("remove-tab", {tab})
+    getTabs: () => ipcRenderer.invoke("getTabs"),
+    addTab: ({isTemp, name, filePath}) => ipcRenderer.invoke("tabAdded", {isTemp, name, filePath}),
+    selectTab: ({tab}) => ipcRenderer.invoke("tabSelected", {tab}),
+    removeTab: ({tab}) => ipcRenderer.invoke("tabRemoved", {tab}),
+    onTabSelected: (callback) => ipcRenderer.on("tabSelected", (_event, value) => callback(value)),
+    onTabRemoved: (callback) => ipcRenderer.on("tabRemoved", (_event, value) => callback(value)),
+    onTabAdded: (callback) => ipcRenderer.on("tabAdded", (_event, value) => callback(value)),
+    onTabsChanged: (callback) => ipcRenderer.on("tabsChanged", (_event, value) => callback(value)),
 });

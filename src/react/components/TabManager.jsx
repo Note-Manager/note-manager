@@ -8,8 +8,12 @@ import {faRectangleTimes} from "@fortawesome/free-regular-svg-icons/faRectangleT
 import {faFileText} from "@fortawesome/free-regular-svg-icons";
 import Editor from "./Editor.jsx";
 
+const DEFAULT_TAB_NAME = "New Document.txt";
+
+let currentTabs = [];
+
 export function TabManager() {
-    const [tabs, setTabs] = useState([]);
+    const [tabs, setTabs] = useState(currentTabs);
     const [selectedTab, setSelectedTab] = useState(tabs[0]);
     const [editorData, setEditorData] = useState({
         length: 0,
@@ -19,42 +23,87 @@ export function TabManager() {
         }
     });
 
-    useEffect(() => {
-        TabsAPI.getTabs().then((tabList) => {
-            setTabs(tabList);
-            setSelectedTab(tabList[0]);
-        });
-    }, []);
+    /**
+     *     useEffect(() => {
+     *         TabsAPI.getTabs().then((tabList) => {
+     *             setTabs(tabList);
+     *             setSelectedTab(tabList[0]);
+     *         });
+     *     }, []);
+     *
+     *     TabsAPI.onTabsChanged((data) => {
+     *         log.info("TABS CHANGED");
+     *
+     *         setTabs(data.tabs);
+     *         setSelectedTab(data.selectedTab);
+     *     })
+     *
+     *     TabsAPI.onTabSelected((event, tab) => {
+     *         log.info("TAB SELECTED");
+     *
+     *         setSelectedTab(tab);
+     *     })
+     */
 
     const selectTab = (data) => {
         if(data.tab?.id === selectedTab?.id) return;
-        TabsAPI.selectTab(data).then(async () => {
-            setSelectedTab(await TabsAPI.getSelectedTab());
-        });
+
+        setSelectedTab(data.tab)
     };
 
-    const addTab = () => {
-        TabsAPI.addTab({isTemp: true}).then(async (tab) => {
-            setTabs(await TabsAPI.getTabs());
-            selectTab({tab: tab});
+    const addTab = ({isTemp, name, file, content}) => {
+        const tabId = crypto.randomUUID();
 
-            return tab;
-        });
-    };
+        const tab = {
+            id: tabId,
+            name: generateUniqueName(name || DEFAULT_TAB_NAME),
+            file: null,
+            content: content,
+            isTemp: isTemp
+        };
+
+        tab.displayName = tab.name.length > 20 ? tab.name.substring(0, 20) + "..." : tab.name;
+
+        if(!tab.isTemp) {
+            if(!file) throw new Error("File is required");
+
+            const existingTab = tabs.find(t => t.file === file);
+
+            if(existingTab) {
+                setSelectedTab(existingTab);
+                return;
+            }
+
+            tab.content = FileAPI.readFile(file);
+        }
+
+        setTabs([...tabs, tab]);
+        setSelectedTab(tab);
+    }
+
+    useEffect(() => {
+        log.info("AAA");
+        currentTabs = tabs;
+    }, [tabs]);
+
+    useEffect(() => {
+        addTab({isTemp: true});
+    }, []);
 
     const removeTab = (event, data) => {
-        TabsAPI.removeTab(data).then(async () => {
-            setTabs(await TabsAPI.getTabs());
-            setSelectedTab(await TabsAPI.getSelectedTab());
-        });
+        if(data.tab === selectedTab) {
+            if(tabs.length === 1) setSelectedTab(null);
+            else setSelectedTab(tabs[tabs.indexOf(data.tab)-1]);
+        }
+
+        setTabs(tabs.filter(t => t !== data.tab));
 
         event.stopPropagation();
     }
 
     const handleChange = (content, viewUpdate) => {
         console.log("change happened");
-        const newTab = {...selectedTab, content: content};
-        setSelectedTab(newTab);
+        selectedTab.content = content;
     }
 
     const handleStatistics = (data) => {
@@ -66,18 +115,18 @@ export function TabManager() {
             }
         };
 
-        // if(JSON.stringify(newMetadata) !== JSON.stringify(editorData)) setEditorData(newMetadata); this is causing an infinite loop
+        if(JSON.stringify(editorData) !== JSON.stringify(newMetadata)) setEditorData(newMetadata); // sometimes this causing an infinite loop
     }
 
-    document.getElementById(selectedTab?.id)?.scrollIntoView();
+    document.getElementById(selectedTab?.id)?.scrollIntoView(); // if selected tab is not in view area, scroll it!
 
     return (
         <div id={"tabManager"}>
             <div id={"tabListWrapper"}>
                 <div id={"tabList"}>
-                    {
+                    { tabs && tabs.length > 0 &&
                         tabs.map(tab => (
-                            <div id={tab.id} className={"editorTabHeader" + (tab.id === selectedTab?.id ? " selected" : "")} key={tab.id} onClick={() => selectTab({tab})}>
+                            <div id={tab.id} key={tab.id} className={"editorTabHeader" + (tab.id === selectedTab?.id ? " selected" : "")} onClick={() => selectTab({tab})}>
                                 <div>
                                     <FontAwesomeIcon icon={faFileText}/>
                                     <span className={"tabHeaderName"} style={{marginLeft: "5px"}} title={tab.fileName || tab.name}>{tab.displayName}</span>
@@ -90,13 +139,13 @@ export function TabManager() {
                     }
                 </div>
                 <div id={"newTabPanel"}>
-                    <FontAwesomeIcon icon={faPlusSquare} className={"iconButton"} onClick={addTab}/>
+                    <FontAwesomeIcon icon={faPlusSquare} className={"iconButton"} onClick={() => addTab({isTemp: true})}/>
                 </div>
             </div>
 
             <div id={"tabContent"}>
                 {selectedTab &&
-                    <Editor
+                    <Editor key={selectedTab.id}
                         language={SupportedLanguages.findByFileName(selectedTab.fileName)}
                         content={selectedTab.content}
                         changeListener={(val, viewUpdate) => handleChange(val, viewUpdate)}
@@ -125,4 +174,21 @@ export function TabManager() {
             </div>
         </div>
     );
+}
+
+function generateUniqueName(initialName) {
+    let count = 0;
+
+    let generatedName = initialName;
+
+    while(containsWithName(generatedName)) {
+        count ++;
+        generatedName = `${initialName} (${count})`;
+    }
+
+    return generatedName;
+}
+
+function containsWithName(name) {
+    return currentTabs.filter(tab => tab.name === name).length > 0;
 }

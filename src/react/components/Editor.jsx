@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useCallback, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import * as PropTypes from "prop-types";
 import {SupportedLanguages} from "../../contants/Enums";
 import {xml} from "@codemirror/lang-xml";
@@ -10,7 +10,7 @@ import {java} from "@codemirror/lang-java";
 import {javascript} from "@codemirror/lang-javascript";
 import {json} from "@codemirror/lang-json";
 import {markdown} from "@codemirror/lang-markdown";
-import ReactCodeMirror from "@uiw/react-codemirror";
+import {useCodeMirror} from "@uiw/react-codemirror";
 import {keymap} from "@codemirror/view";
 import {indentWithTab} from "@codemirror/commands";
 import {basicSetup} from "codemirror";
@@ -19,7 +19,10 @@ import {indentUnit, syntaxHighlighting} from "@codemirror/language";
 import {classHighlighter} from "@lezer/highlight";
 
 export default function Editor({language, content, changeListener, statisticListener}) {
+    if(!content) content = "";
     if (typeof content !== "string") throw new Error("Document content must be a string");
+
+    const editor = useRef();
 
     const [value, setValue] = useState(content);
 
@@ -30,8 +33,8 @@ export default function Editor({language, content, changeListener, statisticList
     }
 
     const onChange = useCallback((val, viewUpdate) => {
-        changeListener(val, viewUpdate);
         setValue(val);
+        if(changeListener) changeListener(val, viewUpdate);
     }, []);
 
     const onStatistics = useCallback((data) => {
@@ -48,7 +51,21 @@ export default function Editor({language, content, changeListener, statisticList
 
     if (contentLang) extensions.push(contentLang);
 
-    return <ReactCodeMirror value={value} placeholder={"Empty document.."} extensions={extensions} theme={"none"} onChange={onChange} onStatistics={onStatistics}/>;
+    const {setContainer} = useCodeMirror({
+        container: editor.current,
+        extensions,
+        value: content,
+        onChange: changeListener,
+        onStatistics: statisticListener,
+        theme: "none",
+        placeholder: "Empty document.."
+    });
+
+    useEffect(() => {
+        setContainer(editor.current)
+    }, [editor.current]);
+
+    return <div id={"editorContainer"} ref={editor}/>;
 }
 
 const isLanguageSupported = (props, propName, componentName) => {

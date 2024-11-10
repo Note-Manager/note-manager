@@ -1,13 +1,14 @@
-const { app, BrowserWindow, ipcMain} = require('electron');
+import {app, BrowserWindow} from 'electron';
 
 import initFileEventHandlers from "./ipc/FileEventHandlers";
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
-import initTabEventHandlers from "./ipc/TabEventHandlers";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
+
+
 
 const createWindow = () => {
   // Create the browser window.
@@ -52,4 +53,3 @@ app.on('window-all-closed', () => {
 
 initLoggingEventHandlers();
 initFileEventHandlers();
-initTabEventHandlers();

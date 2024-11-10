@@ -8,7 +8,7 @@ if (prefs.theme) {
     const style = document.createElement("style");
     style.id = "theme";
 
-    style.textContent = await files.readFile(`themes/${prefs.theme.name}.css`);
+    style.textContent = await FileAPI.readFile(`themes/${prefs.theme.name}.css`);
     document.head.appendChild(style);
 }
 
