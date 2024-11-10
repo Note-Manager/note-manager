@@ -4,7 +4,8 @@ import initFileEventHandlers from "./ipc/FileEventHandlers";
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
 import {SupportedLanguages} from "./contants/Enums";
 import * as electron from "electron";
-import {faFileCode} from "@fortawesome/free-regular-svg-icons/faFileCode";
+import * as path from "node:path";
+import {readFile} from "./utils/FileUtils";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -16,8 +17,8 @@ if (require('electron-squirrel-startup')) {
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 1440,
+    height: 860,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
@@ -60,7 +61,21 @@ function initMenu(browserWindow) {
           label: 'Open',
           accelerator: 'CmdOrCtrl+O',
           click: () => {
-            browserWindow.webContents.send('openTab');
+            const file = electron.dialog.showOpenDialogSync(browserWindow, {
+              title: "Select file to open",
+              message: "Select file to open",
+              buttonLabel: "Open",
+              filters: [{extensions: ["*"], name: "All Files"}],
+              properties: ['openFile'],
+            });
+
+            if(file?.length === 1) {
+              browserWindow.webContents.send('openTab', {
+                name: path.basename(file[0]),
+                file: file[0],
+                content: readFile(file[0])
+              });
+            }
           }
         },
         {

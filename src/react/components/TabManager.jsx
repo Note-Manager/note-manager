@@ -23,28 +23,6 @@ export function TabManager() {
         }
     });
 
-    /**
-     *     useEffect(() => {
-     *         TabsAPI.getTabs().then((tabList) => {
-     *             setTabs(tabList);
-     *             setSelectedTab(tabList[0]);
-     *         });
-     *     }, []);
-     *
-     *     TabsAPI.onTabsChanged((data) => {
-     *         log.info("TABS CHANGED");
-     *
-     *         setTabs(data.tabs);
-     *         setSelectedTab(data.selectedTab);
-     *     })
-     *
-     *     TabsAPI.onTabSelected((event, tab) => {
-     *         log.info("TAB SELECTED");
-     *
-     *         setSelectedTab(tab);
-     *     })
-     */
-
     const selectTab = (data) => {
         if(data.tab?.id === selectedTab?.id) return;
 
@@ -57,37 +35,16 @@ export function TabManager() {
         const tab = {
             id: tabId,
             name: generateUniqueName(name || DEFAULT_TAB_NAME),
-            file: null,
+            file: file,
             content: content,
             isTemp: isTemp
         };
 
         tab.displayName = tab.name.length > 20 ? tab.name.substring(0, 20) + "..." : tab.name;
 
-        if(!tab.isTemp) {
-            if(!file) throw new Error("File is required");
-
-            const existingTab = tabs.find(t => t.file === file);
-
-            if(existingTab) {
-                setSelectedTab(existingTab);
-                return;
-            }
-
-            tab.content = FileAPI.readFile(file);
-        }
-
         setTabs([...tabs, tab]);
         setSelectedTab(tab);
     }
-
-    useEffect(() => {
-        currentTabs = tabs;
-    }, [tabs]);
-
-    useEffect(() => {
-        addTab({isTemp: true});
-    }, []);
 
     const removeTab = (event, data) => {
         if(data.tab === selectedTab) {
@@ -118,6 +75,18 @@ export function TabManager() {
 
     document.getElementById(selectedTab?.id)?.scrollIntoView(); // if a newly created tab is not in view area, scroll it!
 
+    useEffect(() => {
+        currentTabs = tabs;
+    }, [tabs]);
+
+    useEffect(() => {
+        addTab({isTemp: true});
+    }, []);
+
+    window.ApplicationEvents.onTabOpen((event, data) =>  {
+        addTab(data);
+    });
+
     return (
         <div id={"tabManager"}>
             <div id={"tabListWrapper"}>
@@ -144,7 +113,7 @@ export function TabManager() {
             <div id={"tabContent"}>
                 {selectedTab &&
                     <Editor key={selectedTab.id}
-                        language={SupportedLanguages.findByFileName(selectedTab.fileName)}
+                        language={SupportedLanguages.findByFileName(selectedTab.file)}
                         content={selectedTab.content}
                         changeListener={(val, viewUpdate) => handleChange(val, viewUpdate)}
                         statisticListener={(data) => handleStatistics(data)}
@@ -154,7 +123,7 @@ export function TabManager() {
 
             <div id={"footer"}>
                 <div id={"footerLeft"}>
-                    {selectedTab?.fileName}
+                    {selectedTab?.file}
                 </div>
                 { editorData &&
                     <div id={"footerRight"}>
