@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useState} from 'react';
 
 import {SupportedLanguages} from "../../contants/Enums.js";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
@@ -14,6 +14,7 @@ let currentTabs = [];
 
 export function TabManager() {
     const [tabs, setTabs] = useState(currentTabs);
+    const [selectedTab, setSelectedTab] = useState(tabs[0]);
     const [editorData, setEditorData] = useState({
         length: 0,
         lineCount: 1,
@@ -45,9 +46,9 @@ export function TabManager() {
      */
 
     const selectTab = (data) => {
-        if(data.tab?.id === selectedTabRef.current?.id) return;
+        if(data.tab?.id === selectedTab?.id) return;
 
-        selectedTabRef.current = data.tab;
+        setSelectedTab(data.tab)
     };
 
     const addTab = ({isTemp, name, file, content}) => {
@@ -77,10 +78,11 @@ export function TabManager() {
         }
 
         setTabs([...tabs, tab]);
-        selectTab({tab});
+        setSelectedTab(tab);
     }
 
     useEffect(() => {
+        log.info("AAA");
         currentTabs = tabs;
     }, [tabs]);
 
@@ -89,9 +91,9 @@ export function TabManager() {
     }, []);
 
     const removeTab = (event, data) => {
-        if(data.tab === selectedTabRef.current) {
-            if(tabs.length === 1) selectedTabRef.current = null;
-            else selectTab(tabs[tabs.indexOf(data.tab)-1]);
+        if(data.tab === selectedTab) {
+            if(tabs.length === 1) setSelectedTab(null);
+            else setSelectedTab(tabs[tabs.indexOf(data.tab)-1]);
         }
 
         setTabs(tabs.filter(t => t !== data.tab));
@@ -99,16 +101,14 @@ export function TabManager() {
         event.stopPropagation();
     }
 
-    const selectedTabRef = useRef(tabs[0]);
-
-    const handleChange = (content) => {
+    const handleChange = (content, viewUpdate) => {
         console.log("change happened");
-        selectedTabRef.current.content = content;
+        selectedTab.content = content;
     }
 
     const handleStatistics = (data) => {
         const newMetadata = {
-            length: selectedTabRef.current?.content?.length,
+            length: selectedTab?.content?.length,
             lineCount: data.lineCount,
             selection: {
                 selectionLength: data.selectedText ? data.selections.map(sel => sel.length).reduce((previous, current) => previous + current, 0) : 0
@@ -118,7 +118,7 @@ export function TabManager() {
         if(JSON.stringify(editorData) !== JSON.stringify(newMetadata)) setEditorData(newMetadata); // sometimes this causing an infinite loop
     }
 
-    document.getElementById(selectedTabRef.current?.id)?.scrollIntoView(); // if selected tab is not in view area, scroll it!
+    document.getElementById(selectedTab?.id)?.scrollIntoView(); // if selected tab is not in view area, scroll it!
 
     return (
         <div id={"tabManager"}>
@@ -126,7 +126,7 @@ export function TabManager() {
                 <div id={"tabList"}>
                     { tabs && tabs.length > 0 &&
                         tabs.map(tab => (
-                            <div id={tab.id} key={tab.id} className={"editorTabHeader" + (tab.id === selectedTabRef.current?.id ? " selected" : "")} onClick={() => selectTab({tab})}>
+                            <div id={tab.id} key={tab.id} className={"editorTabHeader" + (tab.id === selectedTab?.id ? " selected" : "")} onClick={() => selectTab({tab})}>
                                 <div>
                                     <FontAwesomeIcon icon={faFileText}/>
                                     <span className={"tabHeaderName"} style={{marginLeft: "5px"}} title={tab.fileName || tab.name}>{tab.displayName}</span>
@@ -144,10 +144,10 @@ export function TabManager() {
             </div>
 
             <div id={"tabContent"}>
-                { selectedTabRef?.current &&
-                    <Editor key={selectedTabRef?.current?.id}
-                        language={SupportedLanguages.findByFileName(selectedTabRef.current.fileName)}
-                        content={selectedTabRef.current.content}
+                {selectedTab &&
+                    <Editor key={selectedTab.id}
+                        language={SupportedLanguages.findByFileName(selectedTab.fileName)}
+                        content={selectedTab.content}
                         changeListener={(val, viewUpdate) => handleChange(val, viewUpdate)}
                         statisticListener={(data) => handleStatistics(data)}
                     />
@@ -156,7 +156,7 @@ export function TabManager() {
 
             <div id={"footer"}>
                 <div id={"footerLeft"}>
-                    {selectedTabRef.current?.fileName}
+                    {selectedTab?.fileName}
                 </div>
                 { editorData &&
                     <div id={"footerRight"}>
