@@ -101,7 +101,6 @@ export function TabManager() {
     }
 
     const handleChange = (content) => {
-        console.log("change happened");
         selectedTab.content = content;
     }
 
@@ -117,7 +116,7 @@ export function TabManager() {
         if(JSON.stringify(editorData) !== JSON.stringify(newMetadata)) setEditorData(newMetadata); // sometimes this causing an infinite loop
     }
 
-    document.getElementById(selectedTab?.id)?.scrollIntoView(); // if selected tab is not in view area, scroll it!
+    document.getElementById(selectedTab?.id)?.scrollIntoView(); // if a newly created tab is not in view area, scroll it!
 
     return (
         <div id={"tabManager"}>
