@@ -82,7 +82,6 @@ export function TabManager() {
     }
 
     useEffect(() => {
-        log.info("AAA");
         currentTabs = tabs;
     }, [tabs]);
 
@@ -101,7 +100,7 @@ export function TabManager() {
         event.stopPropagation();
     }
 
-    const handleChange = (content, viewUpdate) => {
+    const handleChange = (content) => {
         console.log("change happened");
         selectedTab.content = content;
     }
