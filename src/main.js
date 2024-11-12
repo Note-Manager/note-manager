@@ -1,11 +1,12 @@
+import * as electron from 'electron';
 import {app, BrowserWindow} from 'electron';
 
 import initFileEventHandlers from "./ipc/FileEventHandlers";
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
 import {SupportedLanguages} from "./contants/Enums";
-import * as electron from "electron";
 import * as path from "node:path";
 import {readFile} from "./utils/FileUtils";
+import initTabEventHandlers from "./ipc/TabEventHandlers";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -106,7 +107,7 @@ function initMenu(browserWindow) {
         },
         {
           label: 'Format',
-          accelerator: 'CmdOrCtrl+F',
+          accelerator: 'CmdOrCtrl+Shift+F',
           click: () => {
             browserWindow.webContents.send('formatTab');
           }
@@ -166,3 +167,4 @@ app.on('window-all-closed', () => {
 
 initLoggingEventHandlers();
 initFileEventHandlers();
+initTabEventHandlers();

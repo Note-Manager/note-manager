@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useEffect, useRef} from 'react';
 import * as PropTypes from "prop-types";
 import {SupportedLanguages} from "../../contants/Enums";
 import {xml} from "@codemirror/lang-xml";
@@ -24,22 +24,11 @@ export default function Editor({language, content, changeListener, statisticList
 
     const editor = useRef();
 
-    const [value, setValue] = useState(content);
-
     let contentLang;
 
     if (language) {
         contentLang = getLanguagePack(language);
     }
-
-    const onChange = useCallback((val, viewUpdate) => {
-        setValue(val);
-        if(changeListener) changeListener(val, viewUpdate);
-    }, []);
-
-    const onStatistics = useCallback((data) => {
-        if(statisticListener) statisticListener(data);
-    }, [])
 
     const extensions = [
         keymap.of([indentWithTab]),
@@ -84,7 +73,7 @@ const isLanguageSupported = (props, propName, componentName) => {
 
         alert(error);
 
-        return error;
+        throw error;
     }
 };
 

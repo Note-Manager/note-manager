@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 import {SupportedLanguages} from "../../contants/Enums.js";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
@@ -14,7 +14,19 @@ let currentTabs = [];
 
 export function TabManager() {
     const [tabs, setTabs] = useState(currentTabs);
-    const [selectedTab, setSelectedTab] = useState(tabs[0]);
+
+    const selectedTabRef = useRef(tabs[0]);
+    const tabsRef = useRef(currentTabs);
+
+    useEffect(() => {
+        currentTabs = tabs;
+        tabsRef.current = tabs;
+    }, [tabs]);
+
+    useEffect(() => {
+        addTab({isTemp: true});
+    }, []);
+
     const [editorData, setEditorData] = useState({
         length: 0,
         lineCount: 1,
@@ -23,13 +35,54 @@ export function TabManager() {
         }
     });
 
-    const selectTab = (data) => {
-        if(data.tab?.id === selectedTab?.id) return;
+    useEffect(() => {
+        const handleTabFormat = () => {
+            const selectedTab = selectedTabRef.current;
 
-        setSelectedTab(data.tab)
+            if (!selectedTab) return;
+
+            window.StringUtils.format({
+                content: selectedTab.content,
+                file: selectedTab.file,
+                options: undefined
+            }).then(result => {
+                log.info("formatting..");
+
+                selectedTab.content = result;
+
+                setTabs([...tabsRef.current]);
+            });
+        };
+
+        const handleTabOpen = (event, data) => {
+            addTab(data);
+        };
+
+        window.ApplicationEvents.onTabFormat(handleTabFormat);
+        window.ApplicationEvents.onTabOpen(handleTabOpen);
+
+        return () => {
+            window.ApplicationEvents.removeListeners("formatTab", handleTabFormat);
+            window.ApplicationEvents.removeListeners("openTab", handleTabOpen);
+        };
+    }, []);
+
+    const selectTab = (tab) => {
+        if (tab?.id === selectedTabRef.current?.id) return;
+
+        if (tabsRef.current.indexOf(tab) >= 0) {
+            selectedTabRef.current = tabsRef.current[tabs.indexOf(tab)];
+        }
+
+        setTabs([...tabsRef.current]);
     };
 
     const addTab = ({isTemp, name, file, content}) => {
+        if (file && tabsRef.current.some(t => t.file === file)) {
+            selectTab(tabsRef.current.find(t => t.file === file));
+            return;
+        }
+
         const tabId = crypto.randomUUID();
 
         const tab = {
@@ -42,58 +95,46 @@ export function TabManager() {
 
         tab.displayName = tab.name.length > 20 ? tab.name.substring(0, 20) + "..." : tab.name;
 
-        setTabs([...tabs, tab]);
-        setSelectedTab(tab);
+        const newTabs = [...tabsRef.current, tab];
+
+        setTabs(newTabs);
+
+        selectedTabRef.current = tab;
     }
 
     const removeTab = (event, data) => {
-        if(data.tab === selectedTab) {
-            if(tabs.length === 1) setSelectedTab(null);
-            else setSelectedTab(tabs[tabs.indexOf(data.tab)-1]);
-        }
-
         setTabs(tabs.filter(t => t !== data.tab));
+
+        selectTab(tabs[tabs.length - 1]);
 
         event.stopPropagation();
     }
 
     const handleChange = (content) => {
-        selectedTab.content = content;
+        selectedTabRef.current.content = content;
     }
 
     const handleStatistics = (data) => {
         const newMetadata = {
-            length: selectedTab?.content?.length,
+            length: selectedTabRef.current?.content?.length,
             lineCount: data.lineCount,
             selection: {
                 selectionLength: data.selectedText ? data.selections.map(sel => sel.length).reduce((previous, current) => previous + current, 0) : 0
             }
         };
 
-        if(JSON.stringify(editorData) !== JSON.stringify(newMetadata)) setEditorData(newMetadata); // sometimes this causing an infinite loop
+        if (JSON.stringify(editorData) !== JSON.stringify(newMetadata)) setEditorData(newMetadata); // sometimes this causing an infinite loop
     }
 
-    document.getElementById(selectedTab?.id)?.scrollIntoView(); // if a newly created tab is not in view area, scroll it!
-
-    useEffect(() => {
-        currentTabs = tabs;
-    }, [tabs]);
-
-    useEffect(() => {
-        addTab({isTemp: true});
-    }, []);
-
-    window.ApplicationEvents.onTabOpen((event, data) =>  {
-        addTab(data);
-    });
+    document.getElementById(selectedTabRef.current?.id)?.scrollIntoView(); // if a newly created tab is not in view area, scroll it!
 
     return (
         <div id={"tabManager"}>
             <div id={"tabListWrapper"}>
                 <div id={"tabList"}>
-                    { tabs && tabs.length > 0 &&
+                    {tabs && tabs.length > 0 &&
                         tabs.map(tab => (
-                            <div id={tab.id} key={tab.id} className={"editorTabHeader" + (tab.id === selectedTab?.id ? " selected" : "")} onClick={() => selectTab({tab})}>
+                            <div id={tab.id} key={tab.id} className={"editorTabHeader" + (tab.id === selectedTabRef?.current?.id ? " selected" : "")} onClick={() => selectTab(tab)}>
                                 <div>
                                     <FontAwesomeIcon icon={faFileText}/>
                                     <span className={"tabHeaderName"} style={{marginLeft: "5px"}} title={tab.fileName || tab.name}>{tab.displayName}</span>
@@ -111,21 +152,21 @@ export function TabManager() {
             </div>
 
             <div id={"tabContent"}>
-                {selectedTab &&
-                    <Editor key={selectedTab.id}
-                        language={SupportedLanguages.findByFileName(selectedTab.file)}
-                        content={selectedTab.content}
-                        changeListener={(val, viewUpdate) => handleChange(val, viewUpdate)}
-                        statisticListener={(data) => handleStatistics(data)}
+                {selectedTabRef.current &&
+                    <Editor key={selectedTabRef.current.id}
+                            language={SupportedLanguages.findByFileName(selectedTabRef.current.file)}
+                            content={selectedTabRef.current.content}
+                            changeListener={(val, viewUpdate) => handleChange(val, viewUpdate)}
+                            statisticListener={(data) => handleStatistics(data)}
                     />
                 }
             </div>
 
             <div id={"footer"}>
                 <div id={"footerLeft"}>
-                    {selectedTab?.file}
+                    {selectedTabRef.current?.file}
                 </div>
-                { editorData &&
+                {editorData &&
                     <div id={"footerRight"}>
                         <label className={"editorDataLabel"}>
                             length: <span className={"editorDataContent"}>{editorData.length}</span>
@@ -148,8 +189,8 @@ function generateUniqueName(initialName) {
 
     let generatedName = initialName;
 
-    while(containsWithName(generatedName)) {
-        count ++;
+    while (containsWithName(generatedName)) {
+        count++;
         generatedName = `${initialName} (${count})`;
     }
 

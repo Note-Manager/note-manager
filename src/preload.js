@@ -15,4 +15,11 @@ contextBridge.exposeInMainWorld('FileAPI', {
 
 contextBridge.exposeInMainWorld("ApplicationEvents", {
     onTabOpen: (callback) => ipcRenderer.on("openTab", callback),
+    onTabFormat: (callback) => ipcRenderer.on("formatTab", callback),
+    removeListeners: (channel, listener) => ipcRenderer.removeListener(channel, listener),
 });
+
+contextBridge.exposeInMainWorld("StringUtils", {
+    format: (data) => ipcRenderer.invoke("formatText", data),
+});
+
