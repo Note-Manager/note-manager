@@ -15,7 +15,11 @@ contextBridge.exposeInMainWorld('FileAPI', {
 
 contextBridge.exposeInMainWorld("ApplicationEvents", {
     onTabOpen: (callback) => ipcRenderer.on("openTab", callback),
+    onNewTab: (callback) => ipcRenderer.on("newTab", callback),
     onTabFormat: (callback) => ipcRenderer.on("formatTab", callback),
+    onRemoveTab: (callback) => ipcRenderer.on("removeTab", callback),
+    onSaveTab: (callback) => ipcRenderer.on("saveTab", callback),
+    onSetTabLanguage: (callback) => ipcRenderer.on("setTabLanguage", callback),
     removeListeners: (channel, listener) => ipcRenderer.removeListener(channel, listener),
 });
 

@@ -53,14 +53,14 @@ function initMenu(browserWindow) {
       submenu: [
         {
           label: 'New',
-          accelerator: 'CmdOrCtrl+T',
+          accelerator: 'CmdOrCtrl+N',
           click: () => {
             browserWindow.webContents.send('newTab');
           }
         },
         {
           label: 'Open',
-          accelerator: 'CmdOrCtrl+O',
+          accelerator: 'CmdOrCtrl+T',
           click: () => {
             const file = electron.dialog.showOpenDialogSync(browserWindow, {
               title: "Select file to open",
@@ -84,6 +84,13 @@ function initMenu(browserWindow) {
           accelerator: 'CmdOrCtrl+S',
           click: () => {
             browserWindow.webContents.send('saveTab');
+          }
+        },
+        {
+          label: 'Remove',
+          accelerator: 'CmdOrCtrl+W',
+          click: () => {
+            browserWindow.webContents.send('removeTab');
           }
         }
       ],
@@ -120,7 +127,7 @@ function initMenu(browserWindow) {
         return {
           label: SupportedLanguages[key].label,
           click: () => {
-            browserWindow.webContents.send('setLanguage', SupportedLanguages[key]);
+            browserWindow.webContents.send('setTabLanguage', SupportedLanguages[key]);
           }
         };
       })

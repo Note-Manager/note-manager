@@ -62,9 +62,9 @@ const isLanguageSupported = (props, propName, componentName) => {
 
     if (!language) return;
 
-    const validLanguages = Object.values(SupportedLanguages);
+    const validLanguages = Object.keys(SupportedLanguages);
 
-    if (!validLanguages.includes(language)) {
+    if (!validLanguages.includes(language.name)) {
         const error = new Error(
             `Invalid prop \`${propName}\` supplied to \`${componentName}\`. It must be one of the supported languages.`
         );
@@ -85,8 +85,11 @@ Editor.propTypes = {
 };
 
 function getLanguagePack(supportedLanguage) {
+    supportedLanguage = SupportedLanguages[supportedLanguage.name];
+
     switch (supportedLanguage) {
         case SupportedLanguages.xml:
+
             return xml({});
         case SupportedLanguages.yaml:
             return yaml();

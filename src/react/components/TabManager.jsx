@@ -58,12 +58,31 @@ export function TabManager() {
             addTab(data);
         };
 
+        const onTabRemove = (event) => {
+            removeTab(event, {tab: selectedTabRef.current});
+        };
+
+        const onNewTab = () => {
+          addTab({isTemp: true});
+        };
+
+        const onSetTabLanguage = (event, language) => {
+            selectedTabRef.current.language = language;
+            setTabs([...tabsRef.current]);
+        }
+
         window.ApplicationEvents.onTabFormat(handleTabFormat);
         window.ApplicationEvents.onTabOpen(handleTabOpen);
+        window.ApplicationEvents.onRemoveTab(onTabRemove);
+        window.ApplicationEvents.onNewTab(onNewTab);
+        window.ApplicationEvents.onSetTabLanguage(onSetTabLanguage);
 
         return () => {
             window.ApplicationEvents.removeListeners("formatTab", handleTabFormat);
             window.ApplicationEvents.removeListeners("openTab", handleTabOpen);
+            window.ApplicationEvents.removeListeners("removeTab", onTabRemove);
+            window.ApplicationEvents.removeListeners("newTab", onNewTab);
+            window.ApplicationEvents.removeListeners("setTabLanguage", onSetTabLanguage);
         };
     }, []);
 
@@ -71,7 +90,7 @@ export function TabManager() {
         if (tab?.id === selectedTabRef.current?.id) return;
 
         if (tabsRef.current.indexOf(tab) >= 0) {
-            selectedTabRef.current = tabsRef.current[tabs.indexOf(tab)];
+            selectedTabRef.current = tab;
         }
 
         setTabs([...tabsRef.current]);
@@ -79,8 +98,7 @@ export function TabManager() {
 
     const addTab = ({isTemp, name, file, content}) => {
         if (file && tabsRef.current.some(t => t.file === file)) {
-            selectTab(tabsRef.current.find(t => t.file === file));
-            return;
+            return selectTab(tabsRef.current.find(t => t.file === file));
         }
 
         const tabId = crypto.randomUUID();
@@ -103,11 +121,14 @@ export function TabManager() {
     }
 
     const removeTab = (event, data) => {
-        setTabs(tabs.filter(t => t !== data.tab));
+        const newTabs = currentTabs.filter(t => t !== data.tab);
+        
+        if(newTabs.length > 0) selectedTabRef.current = newTabs[newTabs.length-1]; // select the last tab after remove
+        else selectedTabRef.current = null;
+            
+        setTabs(newTabs);
 
-        selectTab(tabs[tabs.length - 1]);
-
-        event.stopPropagation();
+        if(event && event.stopPropagation) event.stopPropagation();
     }
 
     const handleChange = (content) => {
@@ -154,7 +175,7 @@ export function TabManager() {
             <div id={"tabContent"}>
                 {selectedTabRef.current &&
                     <Editor key={selectedTabRef.current.id}
-                            language={SupportedLanguages.findByFileName(selectedTabRef.current.file)}
+                            language={selectedTabRef.current.language || SupportedLanguages.findByFileName(selectedTabRef.current.file)}
                             content={selectedTabRef.current.content}
                             changeListener={(val, viewUpdate) => handleChange(val, viewUpdate)}
                             statisticListener={(data) => handleStatistics(data)}
