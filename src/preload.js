@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld("ApplicationEvents", {
     onRemoveTab: (callback) => ipcRenderer.on("removeTab", callback),
     onSaveTab: (callback) => ipcRenderer.on("saveTab", callback),
     onSetTabLanguage: (callback) => ipcRenderer.on("setTabLanguage", callback),
+    onThemeReset: (callback) => ipcRenderer.on("resetTheme", callback),
     removeListeners: (channel, listener) => ipcRenderer.removeListener(channel, listener),
 });
 

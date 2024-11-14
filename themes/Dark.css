@@ -1,16 +1,21 @@
-@import url("./Base.css");
-
 :root {
-    --border-color: #474747;
+    /* content related */
+    --color: #c9c5cd;
     --primary-bg: #1e1e1e;
     --secondary-bg: #131313;
-    --selected-highlight-color: #788cbd;
+    --border-color: #474747;
+
+    /* misc */
     --negative-color: #bf0000;
     --positive-color: dodgerblue;
-    --action-bg: rgb(57, 57, 57);
-    --color: #c9c5cd;
+
+    /* editor related */
+    --selected-highlight-color: #788cbd;
     --scrollbar-thumb-color: #757575;
     --active-line-bg: rgba(0, 0, 0, 0.48);
+    --action-bg: rgb(57, 57, 57);
+
+    /* syntax highlighting */
     --type-color: #e3917c;
     --attribute-color: #ad87ff;
     --string-color: #0d7a0d;
@@ -18,3 +23,4 @@
     --comment-color: #dfb6b6;
     --number-color: #4f9cf6;
 }
+

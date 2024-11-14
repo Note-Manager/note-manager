@@ -1,4 +1,4 @@
-/**
+/**global.preferencesFile
  * This file will automatically be loaded by webpack and run in the "renderer" context.
  * To learn more about the differences between the "main" and the "renderer" context in
  * Electron, visit:
@@ -27,7 +27,6 @@
  */
 
 import './index.css';
-import '../themes/Dark.css'
-import '../themes/Light.css'
+import '../themes/internal/_Base.css'
 
 import './react/App.jsx';

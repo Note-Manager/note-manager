@@ -1,4 +1,3 @@
-
 * {
     border-color: var(--border-color) !important;
 }
@@ -100,6 +99,10 @@ body {
 .tok-comment {
     color: var(--comment-color);
     font-style: italic;
+}
+
+.tok-atom {
+    color: var(--positive-color);
 }
 
 .tok-meta {
