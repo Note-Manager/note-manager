@@ -1,0 +1,25 @@
+:root {
+    /* content related */
+    --color: #000000;
+    --border-color: #736565;
+    --primary-bg: #e7f8f4;
+    --secondary-bg: #f5fffd;
+
+    /* misc */
+    --negative-color: #bf0000;
+    --positive-color: dodgerblue;
+
+    /* editor related */
+    --selected-highlight-color: #1d59c3;
+    --scrollbar-thumb-color: #757575;
+    --active-line-bg: rgba(147, 147, 147, 0.28);
+    --action-bg: rgb(193, 193, 193);
+
+    /* syntax highlighting */
+    --type-color: #833d01;
+    --attribute-color: #8955fb;
+    --string-color: #0d7a0d;
+    --block-color: #2e2e2e;
+    --comment-color: #635f5f;
+    --number-color: #165caf;
+}

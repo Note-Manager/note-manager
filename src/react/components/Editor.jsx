@@ -35,7 +35,7 @@ export default function Editor({language, content, changeListener, statisticList
         basicSetup,
         search({top: true}),
         syntaxHighlighting(classHighlighter),
-        indentUnit.of("\t"),
+        indentUnit.of("    "),
     ];
 
     if (contentLang) extensions.push(contentLang);

@@ -11,6 +11,7 @@ import initTabEventHandlers from "./ipc/TabEventHandlers";
 global.appRoot = process.cwd();
 global.themesFolder = path.join(global.appRoot, "themes");
 global.preferencesFile = "prefs.json";
+global.preferences = JSON.parse(readFile(global.preferencesFile));
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -18,7 +19,6 @@ if (require('electron-squirrel-startup')) {
 }
 
 const createWindow = () => {
-    // Create the browser window.
     const mainWindow = new BrowserWindow({
         width: 1440,
         height: 860,
@@ -27,7 +27,7 @@ const createWindow = () => {
         },
     });
 
-    initMenu(mainWindow);
+    initApplicationMenu();
 
     // and load the index.html of the app.
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
@@ -48,7 +48,23 @@ app.whenReady().then(() => {
     });
 });
 
-function initMenu(browserWindow) {
+function initApplicationMenu() {
+    BrowserWindow.getAllWindows().forEach(browserWindow => {
+        const menu = generateMenu(browserWindow);
+        browserWindow.setMenu(menu);
+    })
+}
+
+// Quit when all windows are closed, except on macOS. There, it's common
+// for applications and their menu bar to stay active until the user quits
+// explicitly with Cmd + Q.
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
+});
+
+function generateMenu(browserWindow) {
     const menu = electron.Menu.buildFromTemplate([
         {
             label: 'File',
@@ -139,20 +155,16 @@ function initMenu(browserWindow) {
             submenu: [
                 {
                     label: 'Theme',
-                    submenu: readDirectory("themes", {extensions: [".css"]}).map(cssFile => {
-                        return {
-                            label: cssFile,
+                    submenu: [
+                        ...(buildMenuItemsForThemes(browserWindow)),
+                        {
+                            label: "Reload Themes",
                             click: () => {
-                                const obj = JSON.parse(readFile(global.preferencesFile));
-
-                                obj.theme.name = cssFile;
-
-                                writeFile(global.preferencesFile, JSON.stringify(obj, null, 2));
-
-                                browserWindow.webContents.send('resetTheme');
-                            }
+                                initApplicationMenu(browserWindow);
+                            },
+                            icon: electron.nativeImage.createFromPath("icons/icon_reload.png").resize({width: 20, height: 20, quality: "best"})
                         }
-                    })
+                    ]
                 }
             ]
         }
@@ -181,17 +193,33 @@ function initMenu(browserWindow) {
 
         menu.append(menuItem);
     }
-    browserWindow.setMenu(menu);
+
+    return menu;
 }
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
-});
+function buildMenuItemsForThemes(browserWindow) {
+    return readDirectory("themes", {extensions: [".css"]}).map(cssFile => {
+        return {
+            label: cssFile,
+            click: () => {
+                const userPrefs = JSON.parse(readFile(global.preferencesFile));
+
+                userPrefs.theme.name = cssFile;
+
+                writeFile(global.preferencesFile, JSON.stringify(userPrefs, null, 2));
+
+                global.preferences = userPrefs;
+
+                initApplicationMenu(); // this is required to update themes menu
+
+                browserWindow.webContents.send('resetTheme');
+            },
+            icon: global.preferences.theme.name === cssFile
+                ? electron.nativeImage.createFromPath("icons/icon_check.png")?.resize({width: 20, height: 20, quality: "best"})
+                : null
+        }
+    });
+}
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.

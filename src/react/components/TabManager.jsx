@@ -27,6 +27,10 @@ export function TabManager() {
         addTab({isTemp: true});
     }, []);
 
+    useEffect(() => {
+        document.getElementById(selectedTabRef.current?.id)?.scrollIntoView(); // if a newly created tab is not in view area, scroll it!
+    }, [selectedTabRef.current]);
+
     const [editorData, setEditorData] = useState({
         length: 0,
         lineCount: 1,
@@ -44,6 +48,7 @@ export function TabManager() {
             window.StringUtils.format({
                 content: selectedTab.content,
                 file: selectedTab.file,
+                language: selectedTab.language,
                 options: undefined
             }).then(result => {
                 log.info("formatting..");
@@ -146,8 +151,6 @@ export function TabManager() {
 
         if (JSON.stringify(editorData) !== JSON.stringify(newMetadata)) setEditorData(newMetadata); // sometimes this causing an infinite loop
     }
-
-    document.getElementById(selectedTabRef.current?.id)?.scrollIntoView(); // if a newly created tab is not in view area, scroll it!
 
     return (
         <div id={"tabManager"}>
