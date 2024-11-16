@@ -81,7 +81,9 @@ function generateMenu() {
                     label: 'Open',
                     accelerator: 'CmdOrCtrl+T',
                     click: () => {
-                        const file = electron.dialog.showOpenDialogSync(browserWindow, {
+                        const focusedWindow = BrowserWindow.getFocusedWindow();
+
+                        const file = electron.dialog.showOpenDialogSync(BrowserWindow.getFocusedWindow(), {
                             title: "Select file to open",
                             message: "Select file to open",
                             buttonLabel: "Open",
@@ -90,11 +92,13 @@ function generateMenu() {
                         });
 
                         if (file?.length === 1) {
-                            BrowserWindow.getFocusedWindow().webContents.send('openTab', {
+                            focusedWindow.webContents.send('openTab', {
                                 name: path.basename(file[0]),
                                 file: file[0],
                                 content: readFile(file[0])
                             });
+
+                            focusedWindow.moveTop();
                         }
                     }
                 },
@@ -202,7 +206,7 @@ function generateMenu() {
     return menu;
 }
 
-function buildMenuItemsForThemes(browserWindow) {
+function buildMenuItemsForThemes() {
     const notifyWindows = (event) => {
         BrowserWindow.getAllWindows().forEach(window => {
             window.webContents.send(event);
