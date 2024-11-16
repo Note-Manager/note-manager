@@ -55,6 +55,7 @@
     "@lezer/highlight": "^1.2.1",
     "@uiw/react-codemirror": "^4.23.6",
     "codemirror": "^6.0.1",
+    "custom-electron-titlebar": "^4.2.8",
     "electron-squirrel-startup": "^1.0.1",
     "js-beautify": "^1.15.1",
     "prettier": "^3.3.3",

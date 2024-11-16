@@ -3,15 +3,12 @@ import {app, BrowserWindow} from 'electron';
 
 import initFileEventHandlers from "./ipc/FileEventHandlers";
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
-import {SupportedLanguages} from "./contants/Enums";
+import {SupportedLanguages, SystemPaths} from "./contants/Enums";
 import * as path from "node:path";
-import {readDirectory, readFile, writeFile} from "./utils/FileUtils";
+import {ensureExists, getSystemPath, readDirectory, readFile, writeFile} from "./utils/FileUtils";
 import initTabEventHandlers from "./ipc/TabEventHandlers";
 
-global.appRoot = process.cwd();
-global.themesFolder = path.join(global.appRoot, "themes");
-global.preferencesFile = "prefs.json";
-global.preferences = JSON.parse(readFile(global.preferencesFile));
+defineGlobals();
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -29,7 +26,7 @@ const createWindow = () => {
 
     initApplicationMenu();
 
-    // and load the index.html of the app.
+    // load index.html.
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 };
 
@@ -52,7 +49,7 @@ function initApplicationMenu() {
     BrowserWindow.getAllWindows().forEach(browserWindow => {
         const menu = generateMenu(browserWindow);
         browserWindow.setMenu(menu);
-    })
+    });
 }
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -158,11 +155,13 @@ function generateMenu(browserWindow) {
                     submenu: [
                         ...(buildMenuItemsForThemes(browserWindow)),
                         {
+                            type: "separator"
+                        },
+                        {
                             label: "Reload Themes",
                             click: () => {
                                 initApplicationMenu(browserWindow);
-                            },
-                            icon: electron.nativeImage.createFromPath("icons/icon_reload.png").resize({width: 20, height: 20, quality: "best"})
+                            }
                         }
                     ]
                 }
@@ -202,27 +201,64 @@ function buildMenuItemsForThemes(browserWindow) {
         return {
             label: cssFile,
             click: () => {
-                const userPrefs = JSON.parse(readFile(global.preferencesFile));
+                preferences.theme.name = cssFile;
 
-                userPrefs.theme.name = cssFile;
-
-                writeFile(global.preferencesFile, JSON.stringify(userPrefs, null, 2));
-
-                global.preferences = userPrefs;
+                updatePreferences();
 
                 initApplicationMenu(); // this is required to update themes menu
 
                 browserWindow.webContents.send('resetTheme');
             },
-            icon: global.preferences.theme.name === cssFile
-                ? electron.nativeImage.createFromPath("icons/icon_check.png")?.resize({width: 20, height: 20, quality: "best"})
-                : null
+            type: "radio",
+            checked: preferences.theme.name === cssFile
         }
     });
 }
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+function defineGlobals() {
+    const dataPath = getSystemPath(SystemPaths.data);
+    const preferencesFileName = "preferences.json";
+
+    ensureExists(dataPath, preferencesFileName);
+
+    global.appRoot = process.cwd();
+    global.themesFolder = path.join(appRoot, "themes");
+    global.iconsFolder = path.join(appRoot, "icons");
+    global.preferencesFile = path.join(dataPath, preferencesFileName);
+
+    global.reloadPreferences = () => {
+        console.log("loading preferences..");
+
+        const defaultPreferences = {
+            theme: {
+                name: "Dark.css"
+            }
+        }
+
+        try {
+            const preferencesContent = readFile(preferencesFile).trim();
+
+            if(!preferencesContent || preferencesContent === "") {
+                writeFile(preferencesFile, JSON.stringify(defaultPreferences, null, 2));
+                global.preferences = defaultPreferences;
+            } else {
+                global.preferences = JSON.parse(preferencesContent);
+            }
+        } catch(error) {
+            console.error(error);
+
+            global.preferences = defaultPreferences;
+        }
+    };
+
+    global.updatePreferences = () => {
+        console.log("updating preferences..");
+        writeFile(preferencesFile, JSON.stringify(preferences, null, 2));
+    };
+
+    reloadPreferences();
+}
+
 
 initLoggingEventHandlers();
 initFileEventHandlers();

@@ -9,8 +9,7 @@ contextBridge.exposeInMainWorld('log', {
 });
 
 contextBridge.exposeInMainWorld('FileAPI', {
-    readFile: (path) => ipcRenderer.invoke('read-file', path),
-    tempPath: () => ipcRenderer.invoke("get-system-path", {name: "tempDir"})
+    getThemeContent: () => ipcRenderer.invoke('getThemeContent'),
 });
 
 contextBridge.exposeInMainWorld("ApplicationEvents", {
