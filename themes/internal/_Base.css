@@ -7,6 +7,59 @@ body {
     color: var(--color);
 }
 
+/* TOP BAR */
+.cet-menubar-menu-button {
+    cursor: pointer !important;
+}
+
+.cet-titlebar {
+    background-color: var(--primary-bg) !important;
+    color: var(--color) !important;
+    font-size: 1.1rem !important;
+
+    transition: 0.5s all ease;
+}
+
+.cet-titlebar.inactive * {
+    color: gray !important;
+}
+
+.cet-titlebar svg path {
+    fill: var(--color);
+}
+
+.cet-submenu-indicator, .cet-submenu-indicator path {
+    fill: none !important;
+    color: var(--color) !important;
+}
+
+.cet-titlebar * {
+    font-size: 0.9rem !important;
+}
+
+.cet-menubar-menu-container {
+    background-color: var(--secondary-bg) !important;
+    color: var(--color) !important;
+}
+
+.cet-action-label, .keybinding {
+    color: var(--color) !important;
+}
+
+.cet-action-item.focused {
+    background-color: var(--action-bg) !important;
+}
+
+.cet-control-icon {
+    color: var(--color) !important;
+    cursor: pointer;
+}
+
+.cet-control-icon:hover {
+    background-color: var(--action-bg) !important;
+}
+/****/
+
 #editorContainer {
     background-color: var(--secondary-bg);
 }

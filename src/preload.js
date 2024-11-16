@@ -2,6 +2,29 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
 import {contextBridge, ipcRenderer} from "electron";
+import {Titlebar} from "custom-electron-titlebar";
+
+let titlebar;
+
+function initCustomTitlebar() {
+    if(titlebar) titlebar.dispose();
+
+    titlebar = new Titlebar({
+        titleHorizontalAlignment: 'center',
+        shadow: true,
+    });
+
+    titlebar.theme = null;
+    titlebar.theming = null;
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    initCustomTitlebar();
+});
+
+ipcRenderer.on("resetTheme", () => {
+    initCustomTitlebar();
+})
 
 contextBridge.exposeInMainWorld('log', {
     info: (message) => ipcRenderer.invoke('log-info', message),
