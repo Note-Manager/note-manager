@@ -7,6 +7,7 @@ import {Titlebar} from "custom-electron-titlebar";
 let titlebar;
 
 function initCustomTitlebar() {
+    console.log("initializing titlebar..");
     if(titlebar) titlebar.dispose();
 
     titlebar = new Titlebar({
@@ -22,9 +23,7 @@ window.addEventListener('DOMContentLoaded', () => {
     initCustomTitlebar();
 });
 
-ipcRenderer.on("resetTheme", () => {
-    initCustomTitlebar();
-})
+ipcRenderer.on("rebuildMenu", initCustomTitlebar);
 
 contextBridge.exposeInMainWorld('log', {
     info: (message) => ipcRenderer.invoke('log-info', message),
@@ -42,7 +41,6 @@ contextBridge.exposeInMainWorld("ApplicationEvents", {
     onRemoveTab: (callback) => ipcRenderer.on("removeTab", callback),
     onSaveTab: (callback) => ipcRenderer.on("saveTab", callback),
     onSetTabLanguage: (callback) => ipcRenderer.on("setTabLanguage", callback),
-    onThemeReset: (callback) => ipcRenderer.on("resetTheme", callback),
     removeListeners: (channel, listener) => ipcRenderer.removeListener(channel, listener),
 });
 

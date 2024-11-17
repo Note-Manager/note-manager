@@ -1,9 +1,9 @@
 :root {
     /* content related */
-    --color: #000000;
-    --border-color: #736565;
-    --primary-bg: #dbf3ed;
-    --secondary-bg: #c3d8d4;
+    --color: #191919;
+    --border-color: #474747;
+    --primary-bg: #ececec;
+    --secondary-bg: #ffffff;
 
     /* misc */
     --negative-color: #bf0000;
@@ -16,10 +16,20 @@
     --action-bg: rgb(193, 193, 193);
 
     /* syntax highlighting */
+    --variable-color: var(--color);
+    --keyword-color: #1250a1;
     --type-color: #833d01;
     --attribute-color: #8955fb;
     --string-color: #0d7a0d;
     --block-color: #2e2e2e;
     --comment-color: #635f5f;
     --number-color: #165caf;
+}
+
+div.cm-content[data-language="xml"], div.cm-content[data-language="html"] {
+    --type-color: #487bda !important;
+}
+
+div.cm-content[data-language="java"] {
+    --type-color: var(--color) !important;
 }

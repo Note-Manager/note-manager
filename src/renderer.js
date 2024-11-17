@@ -27,6 +27,6 @@
  */
 
 import './index.css';
-import '../themes/internal/_Base.css'
+import './BaseTheme.css'
 
 import './react/App.jsx';

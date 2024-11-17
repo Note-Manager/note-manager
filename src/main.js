@@ -3,13 +3,14 @@ import {app, BrowserWindow} from 'electron';
 
 import initFileEventHandlers from "./ipc/FileEventHandlers";
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
-import {SupportedLanguages, SystemPaths} from "./contants/Enums";
+import {SupportedLanguages} from "./contants/Enums";
 import * as path from "node:path";
-import {ensureExists, getSystemPath, readDirectory, readFile, writeFile} from "./utils/FileUtils";
+import {readFile} from "./utils/FileUtils";
 import initTabEventHandlers from "./ipc/TabEventHandlers";
 import {attachTitlebarToWindow, setupTitlebar} from "custom-electron-titlebar/main";
-
-defineGlobals();
+import * as Theme from "./domain/Theme";
+import * as Environment from "./utils/EnvironmentUtils";
+import {getBundledThemes, getUserThemes} from "./utils/EnvironmentUtils";
 
 setupTitlebar();
 
@@ -19,6 +20,8 @@ if (require('electron-squirrel-startup')) {
 }
 
 const createWindow = () => {
+    Environment.loadPreferences(); // load user preferences
+
     const mainWindow = new BrowserWindow({
         width: 1440,
         height: 860,
@@ -31,16 +34,21 @@ const createWindow = () => {
 
     initApplicationMenu();
 
-    // load index.html.
+    // load index.html
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
     attachTitlebarToWindow(mainWindow);
+
+    mainWindow.webContents.on("dom-ready", () => {
+        loadTheme(mainWindow);
+    });
 };
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+
     createWindow();
 
     // On OS X it's common to re-create a window in the app when the
@@ -110,7 +118,7 @@ function generateMenu() {
                     }
                 },
                 {
-                    label: 'Remove',
+                    label: 'Close',
                     accelerator: 'CmdOrCtrl+W',
                     click: () => {
                         BrowserWindow.getFocusedWindow().webContents.send('removeTab');
@@ -163,14 +171,18 @@ function generateMenu() {
                 {
                     label: 'Theme',
                     submenu: [
-                        ...(buildMenuItemsForThemes()),
+                        ...getBundledThemes().map(css => cssFileToMenuItem(css, false)), // bundled themes
+                        ...getUserThemes().map(css => cssFileToMenuItem(css, true)), // user themes
                         {
-                            type: "separator"
+                          type: "separator"
                         },
                         {
                             label: "Reload Themes",
                             click: () => {
                                 initApplicationMenu();
+                                BrowserWindow.getAllWindows().forEach(win => {
+                                    win.webContents.send("rebuildMenu");
+                                });
                             }
                         }
                     ]
@@ -206,73 +218,33 @@ function generateMenu() {
     return menu;
 }
 
-function buildMenuItemsForThemes() {
-    const notifyWindows = (event) => {
-        BrowserWindow.getAllWindows().forEach(window => {
-            window.webContents.send(event);
-        });
-    };
+function cssFileToMenuItem(cssFile, isUserTheme) {
+    return {
+        label: path.parse(cssFile).name,
+        click: () => {
+            Environment.getPreferences().theme = new Theme.Theme(cssFile);
 
-    return readDirectory("themes", {extensions: [".css"]}).map(cssFile => {
-        return {
-            label: cssFile,
-            click: () => {
-                preferences.theme.name = cssFile;
+            Environment.savePreferences();
 
-                updatePreferences();
-
-                initApplicationMenu(); // this is required to update themes menu
-
-                notifyWindows('resetTheme');
-            },
-            type: "radio",
-            checked: preferences.theme.name === cssFile
-        }
-    });
+            BrowserWindow.getAllWindows().forEach(win => {
+                loadTheme(win);
+                win.webContents.send("rebuildMenu");
+            });
+        },
+        type: "radio",
+        sublabel: isUserTheme ? "User Theme" : "Bundled Theme",
+        checked: Environment.getPreferences().theme.file === cssFile
+    }
 }
 
-function defineGlobals() {
-    const dataPath = getSystemPath(SystemPaths.data);
-    const preferencesFileName = "preferences.json";
+function loadTheme(win) {
+    if (global.cssKey) {
+        win.webContents.removeInsertedCSS(global.cssKey)
+            .catch(err => console.error(err));
+    }
 
-    ensureExists(dataPath, preferencesFileName);
-
-    global.appRoot = process.cwd();
-    global.themesFolder = path.join(appRoot, "themes");
-    global.iconsFolder = path.join(appRoot, "icons");
-    global.preferencesFile = path.join(dataPath, preferencesFileName);
-
-    global.reloadPreferences = () => {
-        console.log("loading preferences..");
-
-        const defaultPreferences = {
-            theme: {
-                name: "Dark.css"
-            }
-        }
-
-        try {
-            const preferencesContent = readFile(preferencesFile).trim();
-
-            if(!preferencesContent || preferencesContent === "") {
-                writeFile(preferencesFile, JSON.stringify(defaultPreferences, null, 2));
-                global.preferences = defaultPreferences;
-            } else {
-                global.preferences = JSON.parse(preferencesContent);
-            }
-        } catch(error) {
-            console.error(error);
-
-            global.preferences = defaultPreferences;
-        }
-    };
-
-    global.updatePreferences = () => {
-        console.log("updating preferences..");
-        writeFile(preferencesFile, JSON.stringify(preferences, null, 2));
-    };
-
-    reloadPreferences();
+    win.webContents.insertCSS(Environment.getPreferences().theme.getCSSContent())
+        .then(key => global.cssKey = key);
 }
 
 

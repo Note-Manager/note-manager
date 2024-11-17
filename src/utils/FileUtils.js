@@ -28,23 +28,25 @@ export function getSystemPath(name) {
     }
 }
 
-export function ensureExists(basePath, fileName) {
-    const filePath = path.join(basePath, fileName);
+export function ensureExists(basePath, fileName, defaultContent) {
+    const filePath = fileName ? path.join(basePath, fileName) : basePath;
 
     // Check if the base directory exists
-    if (!fs.existsSync(basePath)) {
+    if (!fs.existsSync(filePath)) {
         // Create the directory (recursive to handle nested paths)
         fs.mkdirSync(basePath, { recursive: true });
         console.log(`directory created: ${basePath}`);
     }
 
     // Check if the file exists
-    if (!fs.existsSync(filePath)) {
-        // Create an empty file
-        fs.writeFileSync(filePath, '');
-        console.log(`requested file created at: ${filePath}`);
-    } else {
-        console.log(`requested file found at: ${filePath}`);
+    if(fileName) {
+        if (!fs.existsSync(filePath)) {
+            // Create an empty file
+            fs.writeFileSync(filePath, defaultContent || "");
+            console.log(`requested file created: ${filePath}`);
+        } else {
+            console.log(`requested file found: ${filePath}`);
+        }
     }
 }
 

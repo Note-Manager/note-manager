@@ -22,6 +22,7 @@ body {
 
 .cet-titlebar.inactive * {
     color: gray !important;
+    fill: gray !important;
 }
 
 .cet-titlebar svg path {
@@ -42,8 +43,21 @@ body {
     color: var(--color) !important;
 }
 
+.cet-submenu {
+    background-color: var(--secondary-bg) !important;
+    background: var(--secondary-bg) !important;
+    color: var(--color) !important;
+}
+
 .cet-action-label, .keybinding {
     color: var(--color) !important;
+}
+
+.separator, .separator * {
+    border-color: var(--color) !important;
+    color: var(--color) !important;
+    fill: var(--color) !important;
+    opacity: 0.5 !important;
 }
 
 .cet-action-item.focused {
@@ -122,15 +136,31 @@ body {
 /* SYNTAX HIGHLIGHTING */
 
 .tok-keyword {
-    color: var(--type-color);
+    color: var(--keyword-color);
+}
+
+.tok-definition{
+    color: var(--attribute-color);
+}
+
+.tok-variableName {
+    color: var(--variable-color);
+}
+
+.tok-typeName ~ .tok-definition {
+    color: var(--color) !important;
 }
 
 .tok-punctuation {
     color: var(--block-color);
 }
 
-.tok-typeName {
+.tok-typeName, .tok-className {
     color: var(--type-color);
+}
+
+.tok-literal {
+    color: var(--attribute-color);
 }
 
 .tok-propertyName {
@@ -160,6 +190,10 @@ body {
 
 .tok-meta {
     color: var(--block-color) !important;
+}
+
+.tok-bool {
+    color: var(--type-color);
 }
 
 .tok-heading {

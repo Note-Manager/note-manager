@@ -143,6 +143,10 @@ body, html {
     cursor: pointer;
 }
 
+.cm-content {
+    font-size: 1rem;
+}
+
 ::-webkit-scrollbar-track {
     background: transparent;
 

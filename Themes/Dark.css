@@ -16,7 +16,9 @@
     --action-bg: rgb(57, 57, 57);
 
     /* syntax highlighting */
-    --type-color: #e3917c;
+    --variable-color: var(--color);
+    --keyword-color: #ea6822;
+    --type-color: #cc5c23;
     --attribute-color: #ad87ff;
     --string-color: #0d7a0d;
     --block-color: #f8f8f8;
@@ -24,3 +26,10 @@
     --number-color: #4f9cf6;
 }
 
+div.cm-content[data-language="xml"], div.cm-content[data-language="html"] {
+    --type-color: #eccb2a !important;
+}
+
+div.cm-content[data-language="java"] {
+    --type-color: var(--color) !important;
+}
