@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useEffect, useRef} from 'react';
+import {useRef} from 'react';
 import * as PropTypes from "prop-types";
 import {SupportedLanguages} from "../../contants/Enums";
 import {xml} from "@codemirror/lang-xml";
@@ -10,19 +10,16 @@ import {java} from "@codemirror/lang-java";
 import {javascript} from "@codemirror/lang-javascript";
 import {json} from "@codemirror/lang-json";
 import {markdown} from "@codemirror/lang-markdown";
-import {useCodeMirror} from "@uiw/react-codemirror";
-import {keymap} from "@codemirror/view";
-import {indentWithTab} from "@codemirror/commands";
-import {basicSetup} from "codemirror";
+import ReactCodeMirror from "@uiw/react-codemirror";
 import {search} from "@codemirror/search";
-import {indentUnit, syntaxHighlighting} from "@codemirror/language";
+import {foldGutter, indentUnit, syntaxHighlighting} from "@codemirror/language";
 import {classHighlighter} from "@lezer/highlight";
 
-export default function Editor({language, content, changeListener, statisticListener}) {
-    if(!content) content = "";
+export default function Editor({language, content, changeListener, statisticListener, initialState}) {
+    if (!content) content = "";
     if (typeof content !== "string") throw new Error("Document content must be a string");
 
-    const editor = useRef();
+    const editorRef = useRef();
 
     let contentLang;
 
@@ -31,30 +28,24 @@ export default function Editor({language, content, changeListener, statisticList
     }
 
     const extensions = [
-        keymap.of([indentWithTab]),
-        basicSetup,
         search({top: true}),
         syntaxHighlighting(classHighlighter),
+        foldGutter({}),
         indentUnit.of("    "),
     ];
 
     if (contentLang) extensions.push(contentLang);
 
-    const {setContainer} = useCodeMirror({
-        container: editor.current,
-        extensions,
-        value: content,
-        onChange: changeListener,
-        onStatistics: statisticListener,
-        theme: "none",
-        placeholder: "Empty document.."
-    });
-
-    useEffect(() => {
-        setContainer(editor.current)
-    }, [editor.current]);
-
-    return <div id={"editorContainer"} ref={editor}/>;
+    return <ReactCodeMirror theme={"none"}
+                            basicSetup={true}
+                            value={content}
+                            indentWithTab={true}
+                            placeholder={"Empty document.."}
+                            onChange={changeListener}
+                            onStatistics={statisticListener}
+                            extensions={extensions}
+                            ref={editorRef}
+    />
 }
 
 const isLanguageSupported = (props, propName, componentName) => {
