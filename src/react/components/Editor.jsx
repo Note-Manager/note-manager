@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useRef} from 'react';
+import {useEffect, useRef} from 'react';
 import * as PropTypes from "prop-types";
 import {SupportedLanguages} from "../../contants/Enums";
 import {xml} from "@codemirror/lang-xml";
@@ -10,12 +10,12 @@ import {java} from "@codemirror/lang-java";
 import {javascript} from "@codemirror/lang-javascript";
 import {json} from "@codemirror/lang-json";
 import {markdown} from "@codemirror/lang-markdown";
-import ReactCodeMirror from "@uiw/react-codemirror";
+import ReactCodeMirror, {EditorState} from "@uiw/react-codemirror";
 import {search} from "@codemirror/search";
 import {foldGutter, indentUnit, syntaxHighlighting} from "@codemirror/language";
 import {classHighlighter} from "@lezer/highlight";
 
-export default function Editor({language, content, changeListener, statisticListener, initialState}) {
+export default function Editor({language, content, changeListener, updateListener, statisticListener, initialState}) {
     if (!content) content = "";
     if (typeof content !== "string") throw new Error("Document content must be a string");
 
@@ -42,9 +42,11 @@ export default function Editor({language, content, changeListener, statisticList
                             indentWithTab={true}
                             placeholder={"Empty document.."}
                             onChange={changeListener}
+                            onUpdate={updateListener}
                             onStatistics={statisticListener}
                             extensions={extensions}
                             ref={editorRef}
+                            initialState={initialState?.doc && {json: initialState}}
     />
 }
 

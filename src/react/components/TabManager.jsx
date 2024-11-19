@@ -113,7 +113,7 @@ export function TabManager() {
             name: generateUniqueName(name || DEFAULT_TAB_NAME),
             file: file,
             content: content,
-            isTemp: isTemp
+            isTemp: isTemp,
         };
 
         tab.displayName = tab.name.length > 20 ? tab.name.substring(0, 20) + "..." : tab.name;
@@ -136,8 +136,12 @@ export function TabManager() {
         if(event && event.stopPropagation) event.stopPropagation();
     }
 
-    const handleChange = (content) => {
+    const handleChange = (content, viewUpdate) => {
         selectedTabRef.current.content = content;
+    }
+
+    const onUpdate = (viewUpdate) => {
+        selectedTabRef.current.state = {...selectedTabRef.current.state, ...viewUpdate.state.toJSON()};
     }
 
     const handleStatistics = (data) => {
@@ -146,7 +150,7 @@ export function TabManager() {
             lineCount: data.lineCount,
             selection: {
                 selectionLength: data.selectedText ? data.selections.map(sel => sel.length).reduce((previous, current) => previous + current, 0) : 0
-            }
+            },
         };
 
         if (JSON.stringify(editorData) !== JSON.stringify(newMetadata)) setEditorData(newMetadata); // sometimes this causing an infinite loop
@@ -181,7 +185,9 @@ export function TabManager() {
                             language={selectedTabRef.current.language || SupportedLanguages.findByFileName(selectedTabRef.current.file)}
                             content={selectedTabRef.current.content}
                             changeListener={(val, viewUpdate) => handleChange(val, viewUpdate)}
-                            statisticListener={(data) => handleStatistics(data)}
+                            updateListener={onUpdate}
+                            statisticListener={handleStatistics}
+                            initialState={selectedTabRef.current.state}
                     />
                 }
             </div>
