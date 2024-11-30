@@ -6,6 +6,7 @@ rules.push({
 });
 
 module.exports = {
+  target: 'electron-renderer',
   // Put your normal webpack config below here
   module: {
     rules,

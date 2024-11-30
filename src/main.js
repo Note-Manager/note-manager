@@ -1,16 +1,14 @@
 import * as electron from 'electron';
-import {app, BrowserWindow} from 'electron';
+import {app, BrowserWindow, ipcMain} from 'electron';
 
-import initFileEventHandlers from "./ipc/FileEventHandlers";
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
 import {SupportedLanguages} from "./contants/Enums";
 import * as path from "node:path";
 import {readFile} from "./utils/FileUtils";
-import initTabEventHandlers from "./ipc/TabEventHandlers";
 import {attachTitlebarToWindow, setupTitlebar} from "custom-electron-titlebar/main";
 import * as Theme from "./domain/Theme";
 import * as Environment from "./utils/EnvironmentUtils";
-import {getBundledThemes, getUserThemes} from "./utils/EnvironmentUtils";
+import {getBundledThemes, getUserThemePath, getUserThemes} from "./utils/EnvironmentUtils";
 
 setupTitlebar();
 
@@ -29,6 +27,9 @@ const createWindow = () => {
         titleBarOverlay: false,
         webPreferences: {
             preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+            nodeIntegration: true,
+            contextIsolation: false,
+            plugins: true
         },
     });
 
@@ -48,7 +49,6 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-
     createWindow();
 
     // On OS X it's common to re-create a window in the app when the
@@ -184,6 +184,11 @@ function generateMenu() {
                                     win.webContents.send("rebuildMenu");
                                 });
                             }
+                        }, {
+                            label: "Open Themes Folder",
+                            click: () => {
+                                electron.shell.openPath(getUserThemePath()).then(r => console.log("path opened"))
+                            }
                         }
                     ]
                 }
@@ -249,5 +254,23 @@ function loadTheme(win) {
 
 
 initLoggingEventHandlers();
-initFileEventHandlers();
-initTabEventHandlers();
+
+ipcMain.handle("showSaveDialog", (event, opts) => {
+    return electron.dialog.showSaveDialogSync(BrowserWindow.getFocusedWindow(), {
+        title: opts?.title || "Save",
+        defaultPath: opts?.defaultName
+    });
+});
+
+ipcMain.handle("showConfirmation", async(event, opts) => {
+    const result = await electron.dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+        type: 'question',
+        buttons: ['Cancel', 'Yes'],
+        defaultId: 1, // Default selected button index
+        cancelId: 0, // Button index for cancel action
+        title: opts.title || 'Confirmation',
+        message: opts.message,
+    });
+
+    return result.response === 1; // Return true if "Yes" was clicked
+});

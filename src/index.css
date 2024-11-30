@@ -29,7 +29,7 @@ body, html {
     justify-content: space-between;
 }
 
-#tabContent {
+.tabContentWrapper {
     flex: 1;
 
     display: flex;
@@ -119,26 +119,6 @@ body, html {
     height: 8px;
 }
 
-.cm-search input {
-    padding: 5px !important;
-}
-
-.cm-search label {
-    display: inline-flex;
-}
-
-.cm-button {
-    padding: 5px !important;
-}
-
-.cm-button:hover {
-    cursor: pointer;
-}
-
-.cm-content {
-    font-size: 1rem;
-}
-
 ::-webkit-scrollbar-track {
     background: transparent;
 
@@ -146,8 +126,6 @@ body, html {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb-color);
-
     border-radius: 5px;
 }
 

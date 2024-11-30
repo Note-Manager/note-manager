@@ -54,6 +54,8 @@ export const SupportedLanguages = {
     },
 
     findByFileName: (fileName) => {
+        if(!fileName) return SupportedLanguages.text;
+
         const extension = fileName && "." + fileName.split(".").pop();
 
         for (const [key, value] of Object.entries(SupportedLanguages)) {

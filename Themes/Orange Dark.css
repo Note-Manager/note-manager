@@ -3,7 +3,7 @@
     --color: #f8ede1;
     --primary-bg: #1e1e1e;
     --secondary-bg: #171717;
-    --border-color: #454545;
+    --border-color: #0e0e0e;
 
     /* misc */
     --negative-color: #af2222;
@@ -11,28 +11,18 @@
 
     /* editor related */
     --selected-highlight-color: #ba6a01;
-    --scrollbar-thumb-color: #303030;
-    --active-line-bg: rgba(129, 92, 71, 0.3);
-    --action-bg: rgb(71, 71, 71);
+    --scrollbar-thumb-color: #716f6f;
+    --active-line-bg: rgb(71, 58, 51);
+    --action-bg: #5a2e0b;
 
     /* syntax highlighting */
-    --variable-color: var(--color);
+    --variable-color: #c48ce6;
     --keyword-color: #e3772a;
     --type-color: #e3772a;
     --attribute-color: #a58dd3;
-    --string-color: #208f20;
+    --string-color: #3b973b;
     --block-color: #f8f8f8;
     --comment-color: #9a9a9a;
     --number-color: #4f9cf6;
+    --xml-tag-color: #eccb2a;
 }
-
-div.cm-content[data-language="xml"], div.cm-content[data-language="html"] {
-    --type-color: #eccb2a !important;
-}
-
-div.cm-content[data-language="java"] {
-    --type-color: var(--color) !important;
-}
-
-
-

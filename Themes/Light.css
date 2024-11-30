@@ -13,7 +13,7 @@
     --selected-highlight-color: #1d59c3;
     --scrollbar-thumb-color: #757575;
     --active-line-bg: rgba(147, 147, 147, 0.28);
-    --action-bg: rgb(193, 193, 193);
+    --action-bg: rgb(220, 220, 220);
 
     /* syntax highlighting */
     --variable-color: var(--color);
@@ -24,12 +24,5 @@
     --block-color: #2e2e2e;
     --comment-color: #635f5f;
     --number-color: #165caf;
-}
-
-div.cm-content[data-language="xml"], div.cm-content[data-language="html"] {
-    --type-color: #487bda !important;
-}
-
-div.cm-content[data-language="java"] {
-    --type-color: var(--color) !important;
+    --xml-tag-color: #487bda;
 }

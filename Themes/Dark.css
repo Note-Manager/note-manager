@@ -24,12 +24,5 @@
     --block-color: #f8f8f8;
     --comment-color: #dfb6b6;
     --number-color: #4f9cf6;
-}
-
-div.cm-content[data-language="xml"], div.cm-content[data-language="html"] {
-    --type-color: #eccb2a !important;
-}
-
-div.cm-content[data-language="java"] {
-    --type-color: var(--color) !important;
+    --xml-tag-color: #eccb2a;
 }
