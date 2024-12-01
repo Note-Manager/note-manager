@@ -1,6 +1,6 @@
 {
   "name": "note-manager",
-  "productName": "note-manager",
+  "productName": "Note Manager",
   "version": "1.0.0",
   "description": "My Electron application description",
   "main": ".webpack/main",
