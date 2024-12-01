@@ -4,7 +4,7 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: true,
-    icon: "./resources/Icons/note-manager.png",
+    icon: "./resources/Icons/note-manager",
     extraResource: [
       "./resources/Themes",
       "./resources/Icons",
@@ -22,13 +22,16 @@ module.exports = {
   makers: [
     {
       name: '@electron-forge/maker-squirrel',
-      config: {},
-      icon: "./resources/Icons/note-manager.png"
+      config: {
+        icon: "./resources/Icons/note-manager.ico",
+        setupIcon: "./resources/Icons/note-manager.ico",
+      },
+      icon: "./resources/Icons/note-manager.ico"
     },
     {
       name: '@electron-forge/maker-zip',
       platforms: ['darwin'],
-      icon: "./resources/Icons/note-manager.png"
+      icon: "./resources/Icons/note-manager.icns"
     },
     {
       name: '@electron-forge/maker-deb',
