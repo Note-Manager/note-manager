@@ -11,13 +11,23 @@
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\""
   },
+  "config": {
+    "makers": [
+      {
+        "name": "@electron-forge/maker-deb",
+        "config": {
+          "maintainer": "Taha Donuk"
+        }
+      }
+    ]
+  },
   "devDependencies": {
     "@babel/core": "^7.25.8",
     "@babel/preset-react": "^7.25.7",
     "@electron-forge/cli": "^7.5.0",
-    "@electron-forge/maker-deb": "^7.5.0",
+    "@electron-forge/maker-deb": "^7.6.0",
     "@electron-forge/maker-rpm": "^7.5.0",
-    "@electron-forge/maker-squirrel": "^7.5.0",
+    "@electron-forge/maker-squirrel": "^7.6.0",
     "@electron-forge/maker-zip": "^7.5.0",
     "@electron-forge/plugin-auto-unpack-natives": "^7.5.0",
     "@electron-forge/plugin-fuses": "^7.5.0",

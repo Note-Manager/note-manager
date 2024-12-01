@@ -1,3 +1,4 @@
+import * as electron from "electron";
 import {app} from "electron";
 import {SystemPaths} from "../contants/Enums";
 import * as path from "node:path";
@@ -25,6 +26,8 @@ export function getSystemPath(name) {
             return os.tmpdir();
         case SystemPaths.data:
             return app.getPath("userData");
+        case SystemPaths.resources:
+            return electron.app.isPackaged ? process.resourcesPath : path.join(process.cwd(), "resources");
     }
 }
 

@@ -6,8 +6,6 @@ import * as Preferences from "../domain/Preferences";
 import * as electron from "electron";
 import * as Theme from "../domain/Theme";
 
-const appRoot = process.cwd();
-
 const _ENV = {
     preferences: new Preferences.Preferences(new Theme.Theme(path.join(getBundledThemePath(), "Dark.css")))
 }
@@ -30,17 +28,15 @@ export function getUserThemes() {
 }
 
 export function getBundledThemePath() {
-    const themesFolder = path.join(appRoot, "Themes");
+    const themesFolder = path.join(getSystemPath(SystemPaths.resources), "Themes");
 
-    if (!fs.existsSync(themesFolder)) throw new Error("'Themes' folder is missing in app root directory (" + appRoot + ")");
+    if (!fs.existsSync(themesFolder)) throw new Error("'Themes' folder is missing in app root directory (" + process.cwd() + ")");
 
     return themesFolder;
 }
 
 export function getUserThemePath() {
-    const themesFolder = path.join(getSystemPath(SystemPaths.data), "Themes");
-
-    return themesFolder;
+    return path.join(getSystemPath(SystemPaths.data), "Themes");
 }
 
 export function getPreferencesFilePath() {

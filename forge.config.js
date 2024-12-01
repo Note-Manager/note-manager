@@ -4,25 +4,39 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: true,
+    icon: "./resources/Icons/note-manager.png",
+    extraResource: [
+      "./resources/Themes",
+      "./resources/Icons",
+    ],
+    appCategoryType: "public.app-category.utilities",
+    win32metadata: {
+      CompanyName: "Note Manager",
+      FileDescription: "Note Manager App",
+      OriginalFileName: "NoteManager.exe",
+      ProductName: "Note Manager"
+    }
   },
+  appBundleId: 'github.note-manager.note-manager',
   rebuildConfig: {},
   makers: [
     {
       name: '@electron-forge/maker-squirrel',
       config: {},
+      icon: "./resources/Icons/note-manager.png"
     },
     {
       name: '@electron-forge/maker-zip',
       platforms: ['darwin'],
+      icon: "./resources/Icons/note-manager.png"
     },
     {
       name: '@electron-forge/maker-deb',
-      config: {},
-    },
-    {
-      name: '@electron-forge/maker-rpm',
-      config: {},
-    },
+      config: {
+        categories: ["Utility", "TextEditor"],
+        icon: "./resources/Icons/note-manager.png"
+      },
+    }
   ],
   plugins: [
     {

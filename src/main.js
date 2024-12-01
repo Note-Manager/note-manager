@@ -2,9 +2,9 @@ import * as electron from 'electron';
 import {app, BrowserWindow, ipcMain} from 'electron';
 
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
-import {SupportedLanguages} from "./contants/Enums";
+import {SupportedLanguages, SystemPaths} from "./contants/Enums";
 import * as path from "node:path";
-import {readFile} from "./utils/FileUtils";
+import {getSystemPath, readFile} from "./utils/FileUtils";
 import {attachTitlebarToWindow, setupTitlebar} from "custom-electron-titlebar/main";
 import * as Theme from "./domain/Theme";
 import * as Environment from "./utils/EnvironmentUtils";
@@ -17,9 +17,9 @@ if (require('electron-squirrel-startup')) {
     app.quit();
 }
 
-const createWindow = () => {
-    Environment.loadPreferences(); // load user preferences
+const appIcon = electron.nativeImage.createFromPath(path.join(getSystemPath(SystemPaths.resources), "Icons/note-manager.png"));
 
+const createWindow = () => {
     const mainWindow = new BrowserWindow({
         width: 1440,
         height: 860,
@@ -29,8 +29,9 @@ const createWindow = () => {
             preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
             nodeIntegration: true,
             contextIsolation: false,
+            sandbox: false,
             plugins: true
-        },
+        }
     });
 
     initApplicationMenu();
@@ -42,6 +43,7 @@ const createWindow = () => {
 
     mainWindow.webContents.on("dom-ready", () => {
         loadTheme(mainWindow);
+        refreshTitlebar();
     });
 };
 
@@ -49,6 +51,8 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+    Environment.loadPreferences(); // load user preferences
+
     createWindow();
 
     // On OS X it's common to re-create a window in the app when the
@@ -180,14 +184,12 @@ function generateMenu() {
                             label: "Reload Themes",
                             click: () => {
                                 initApplicationMenu();
-                                BrowserWindow.getAllWindows().forEach(win => {
-                                    win.webContents.send("rebuildMenu");
-                                });
+                                refreshTitlebar();
                             }
                         }, {
                             label: "Open Themes Folder",
                             click: () => {
-                                electron.shell.openPath(getUserThemePath()).then(r => console.log("path opened"))
+                                electron.shell.openPath(getUserThemePath()).then(() => console.log("path opened"))
                             }
                         }
                     ]
@@ -231,10 +233,7 @@ function cssFileToMenuItem(cssFile, isUserTheme) {
 
             Environment.savePreferences();
 
-            BrowserWindow.getAllWindows().forEach(win => {
-                loadTheme(win);
-                win.webContents.send("rebuildMenu");
-            });
+            refreshTitlebar();
         },
         type: "radio",
         sublabel: isUserTheme ? "User Theme" : "Bundled Theme",
@@ -250,6 +249,15 @@ function loadTheme(win) {
 
     win.webContents.insertCSS(Environment.getPreferences().theme.getCSSContent())
         .then(key => global.cssKey = key);
+}
+
+function refreshTitlebar() {
+    BrowserWindow.getAllWindows().forEach(win => {
+        loadTheme(win);
+        win.webContents.send("buildMenu", {
+            icon: appIcon
+        });
+    });
 }
 
 

@@ -71,5 +71,6 @@ export const SupportedLanguages = {
 export const SystemPaths = {
     temp: "tempDir",
     home: "homeDir",
-    data: "dataPath"
+    data: "dataPath",
+    resources: "resources"
 }

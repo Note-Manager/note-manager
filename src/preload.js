@@ -3,13 +3,14 @@ import {Titlebar} from "custom-electron-titlebar";
 
 let titlebar;
 
-function initCustomTitlebar() {
+function initCustomTitlebar(event, data) {
     console.log("initializing titlebar..");
     if(titlebar) titlebar.dispose();
 
     titlebar = new Titlebar({
         titleHorizontalAlignment: 'center',
         shadow: true,
+        icon: data?.icon
     });
 
     titlebar.theme = null;
@@ -20,4 +21,4 @@ window.addEventListener('DOMContentLoaded', () => {
     initCustomTitlebar();
 });
 
-ipcRenderer.on("rebuildMenu", initCustomTitlebar);
+ipcRenderer.on("buildMenu", initCustomTitlebar);
