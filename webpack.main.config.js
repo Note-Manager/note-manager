@@ -9,5 +9,8 @@ module.exports = {
   module: {
     rules: require('./webpack.rules'),
   },
-  target: 'electron-main'
+  target: 'electron-main',
+  resolve: {
+    extensions: [".js", ".json", ".ts", ".tsx"]
+  }
 };

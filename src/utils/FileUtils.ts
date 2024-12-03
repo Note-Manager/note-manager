@@ -1,24 +1,23 @@
 import * as electron from "electron";
 import {app} from "electron";
-import {SystemPaths} from "../contants/Enums";
 import * as path from "node:path";
+import fs from "node:fs";
+import os from "os";
+import {SystemPaths} from "../contants/Enums";
 
-const fs = require("node:fs");
-const os = require("os");
-
-export function readFile(path) {
+export function readFile(path:string) {
     return fs.readFileSync(path, "utf8");
 }
 
-export function writeFile(path, content) {
+export function writeFile(path:string, content:string) {
     fs.writeFileSync(path, content, {});
 }
 
-export function readSync(path) {
+export function readSync(path:string) {
     return fs.readFileSync(path, "utf8");
 }
 
-export function getSystemPath(name) {
+export function getSystemPath(name:string) {
     if(!name) throw new Error("path name is required");
 
     switch(name) {
@@ -28,10 +27,12 @@ export function getSystemPath(name) {
             return app.getPath("userData");
         case SystemPaths.resources:
             return electron.app.isPackaged ? process.resourcesPath : path.join(process.cwd(), "resources");
+        default:
+            throw new Error("invalid system path: " + name);
     }
 }
 
-export function ensureExists(basePath, fileName, defaultContent) {
+export function ensureExists(basePath:string, fileName?:string, defaultContent?:string) {
     const filePath = fileName ? path.join(basePath, fileName) : basePath;
 
     // Check if the base directory exists
@@ -53,6 +54,6 @@ export function ensureExists(basePath, fileName, defaultContent) {
     }
 }
 
-export function readDirectory(path, opts = {extensions: []}) {
-    return fs.readdirSync(path).filter(f => opts.extensions.some(extension => f.endsWith(extension)));
+export function readDirectory(path:string, opts = {extensions: []}) {
+    return fs.readdirSync(path).filter((f:string) => opts.extensions.some(extension => f.endsWith(extension)));
 }

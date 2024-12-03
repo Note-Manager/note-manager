@@ -1,23 +1,25 @@
 import {Theme} from "./Theme";
 import {readSync} from "../utils/FileUtils";
 
+export interface IPreferences {
+    theme: Theme
+}
+
 export class Preferences {
     theme
 
-    constructor(theme) {
+    constructor(theme:Theme) {
         this.theme = theme;
     }
 }
 
-export function from(file) {
+export function from(file:string) {
     const content = readSync(file);
 
     const prefObj = JSON.parse(content);
 
-    const preferences = new Preferences();
-
-    preferences.theme = new Theme(prefObj.theme.file);
-
-    return preferences;
+    return new Preferences(
+        new Theme(prefObj.theme.file)
+    );
 }
 

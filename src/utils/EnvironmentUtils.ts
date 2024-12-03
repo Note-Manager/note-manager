@@ -1,10 +1,10 @@
 import * as path from "node:path";
 import * as fs from "node:fs";
 import {ensureExists, getSystemPath, writeFile} from "./FileUtils";
-import {SystemPaths} from "../contants/Enums";
 import * as Preferences from "../domain/Preferences";
 import * as electron from "electron";
 import * as Theme from "../domain/Theme";
+import {SystemPaths} from "../contants/Enums";
 
 const _ENV = {
     preferences: new Preferences.Preferences(new Theme.Theme(path.join(getBundledThemePath(), "Dark.css")))
@@ -61,8 +61,8 @@ export function getPreferences() {
     return _ENV.preferences;
 }
 
-export function setPreferences(newPrefs) {
-    return _ENV.preferences = newPrefs;
+export function setPreferences(preferences:Preferences.IPreferences) {
+    return _ENV.preferences = preferences;
 }
 
 loadPreferences();

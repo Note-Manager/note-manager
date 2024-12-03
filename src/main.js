@@ -2,13 +2,14 @@ import * as electron from 'electron';
 import {app, BrowserWindow, ipcMain} from 'electron';
 
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
-import {SupportedLanguages, SystemPaths} from "./contants/Enums";
+import {SystemPaths} from "./contants/Enums";
 import * as path from "node:path";
 import {getSystemPath, readFile} from "./utils/FileUtils";
 import {attachTitlebarToWindow, setupTitlebar} from "custom-electron-titlebar/main";
 import * as Theme from "./domain/Theme";
 import * as Environment from "./utils/EnvironmentUtils";
 import {getBundledThemes, getUserThemePath, getUserThemes} from "./utils/EnvironmentUtils";
+import {SupportedLanguages} from "./domain/SupportedLanguage";
 
 setupTitlebar();
 
@@ -16,6 +17,21 @@ setupTitlebar();
 if (require('electron-squirrel-startup')) {
     app.quit();
 }
+
+const logError = (error) => {
+    const logMessage = `[${new Date().toISOString()}] ${error.stack || error}\n`;
+    console.error(logMessage);
+};
+
+// Catch uncaught exceptions
+process.on('uncaughtException', (error) => {
+    logError(error);
+});
+
+// Catch unhandled promise rejections
+process.on('unhandledRejection', (reason) => {
+    logError(reason);
+});
 
 const appIcon = electron.nativeImage.createFromPath(path.join(getSystemPath(SystemPaths.resources), "Icons/note-manager.png"));
 

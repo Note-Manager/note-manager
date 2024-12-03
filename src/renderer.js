@@ -29,4 +29,4 @@
 import './index.css';
 import './BaseTheme.css'
 
-import './react/App.jsx';
+import './react/App.tsx';

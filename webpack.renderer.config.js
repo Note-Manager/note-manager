@@ -11,4 +11,7 @@ module.exports = {
   module: {
     rules,
   },
+  resolve: {
+    extensions: [".js", ".json", ".ts", ".tsx"]
+  }
 };

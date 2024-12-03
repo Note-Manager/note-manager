@@ -1,10 +1,13 @@
-import * as React from 'react';
 import {useState} from 'react';
-import Editor from "./Editor.jsx";
-import {TabList} from "./TabList.jsx";
+import Editor from "./Editor";
+import {TabList} from "./TabList";
 import * as TextUtils from "../../utils/TextUtils";
+import {Ace} from "ace-builds";
+import React from 'react';
+import {EditorTab} from "../../domain/EditorTab";
+import {EditorData} from "../../domain/EditorData";
 
-const initialEditorData = {
+const initialEditorData:EditorData = {
     length: 0,
     lineCount: 1,
     selection: {
@@ -13,27 +16,27 @@ const initialEditorData = {
     }
 };
 
-export function TabManager() {
-    const [tabs, setTabs] = useState([]);
-    const [selectedTab, setSelectedTab] = useState();
-    const [selectedTabFile, setSelectedTabFile] = useState(selectedTab?.file);
+export default function TabManager() {
+    const [tabs, setTabs] = useState<Array<EditorTab>>([]);
+    const [selectedTab, setSelectedTab] = useState<EditorTab>(tabs[0]);
+    const [selectedTabFile, setSelectedTabFile] = useState<string>(selectedTab?.file || "");
 
-    const [editorData, setEditorData] = useState(initialEditorData);
+    const [editorData, setEditorData] = useState<EditorData>(initialEditorData);
 
-    const onTabSelect = (tab) => {
+    const onTabSelect = (tab:EditorTab) => {
         setSelectedTab(tab);
-        setSelectedTabFile(tab?.file);
+        setSelectedTabFile(tab?.file||"");
     }
 
-    const onTabSave = (savedTab) => {
-        TextUtils.hash(savedTab.content).then(result => {
-            savedTab.initialHash = result;
+    const onTabSave = ({isSaved, savedFile, tab}: {isSaved: boolean, savedFile:string, tab: EditorTab}) => {
+        TextUtils.hash(tab.content||"").then(result => {
+            tab.hash = result;
 
-            setSelectedTabFile(savedTab?.file);
+            setSelectedTabFile(tab?.file||"");
         });
     }
 
-    const onTabRemove = (tabToRemove) => {
+    const onTabRemove = (tabToRemove:EditorTab) => {
         tabs.splice(tabs.indexOf(tabToRemove), 1);
 
         const newTabs = [...tabs];
@@ -42,7 +45,7 @@ export function TabManager() {
         onTabSelect(newTabs[newTabs.length-1]);
     }
 
-    const onTabAdd = (tabToAdd) => {
+    const onTabAdd = (tabToAdd:EditorTab) => {
         tabs.push(tabToAdd)
 
         setTabs(tabs);
@@ -50,34 +53,34 @@ export function TabManager() {
 
         onTabSelect(tabs[tabs.length-1]);
 
-        TextUtils.hash(tabToAdd.content).then((result) => {
-            tabToAdd.initialHash = result;
+        TextUtils.hash(tabToAdd.content||"").then((result) => {
+            tabToAdd.hash = result;
         });
     }
 
-    const onSelectionChange = ({isTextSelected, selectedText, selectionRanges}) => {
+    const onSelectionChange = ({isTextSelected, selectedText, ranges}: {isTextSelected:boolean, selectedText:string, ranges:Array<Ace.Range>}) => {
         setEditorData({
             ...editorData,
             selection: {
                 selectionLength: selectedText?.length,
                 selectionRangeCount: !isTextSelected
                 ? 0
-                : Array.isArray(selectionRanges)
-                    ? selectionRanges?.length
-                    : 1
+                : ranges.length
             }
         });
     }
 
-    const onContentChange = ({value, lineCount}) => {
+    const onContentChange = ({value, lineCount}: {value:string, lineCount:number}) => {
         setEditorData({
             ...editorData,
             length: value.length,
             lineCount: lineCount
         });
 
-        TextUtils.hash(value).then(result => {
-            selectedTab.isChanged = result !== selectedTab.initialHash;
+        TextUtils.hash(value).then((result:string) => {
+            if(!selectedTab) return;
+
+            selectedTab.isChanged = result !== selectedTab.hash;
 
             const newTab = {...selectedTab};
 
@@ -104,7 +107,8 @@ export function TabManager() {
                         tab={selectedTab}
                         selectionListener={onSelectionChange}
                         changeListener={onContentChange}
-                        onTabSave={onTabSave}/>
+                        onTabSave={onTabSave}
+                        onEditorLoad={undefined}/>
                 </div>
             }
 

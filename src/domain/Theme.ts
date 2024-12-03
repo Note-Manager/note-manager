@@ -1,11 +1,16 @@
 import * as path from "node:path";
 import {readSync} from "../utils/FileUtils";
 
-export class Theme {
+export interface ITheme {
+    name:string,
+    file:string
+}
+
+export class Theme implements Theme {
     name;
     file;
 
-    constructor(cssFile) {
+    constructor(cssFile:string) {
         const cssPath = path.parse(cssFile);
 
         this.name = cssPath.name;
