@@ -4,5 +4,6 @@ export interface EditorData {
     selection: {
         selectionLength: number,
         selectionRangeCount: number
-    }
+    },
+    openedFile: string
 }

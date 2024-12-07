@@ -4,7 +4,7 @@ import {ensureExists, getSystemPath, writeFile} from "./FileUtils";
 import * as Preferences from "../domain/Preferences";
 import * as electron from "electron";
 import * as Theme from "../domain/Theme";
-import {SystemPaths} from "../contants/Enums";
+import {SystemPaths} from "../enums";
 
 const _ENV = {
     preferences: new Preferences.Preferences(new Theme.Theme(path.join(getBundledThemePath(), "Dark.css")))

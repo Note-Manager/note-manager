@@ -1,21 +1,27 @@
-import {useEffect} from "react";
+import * as React from "react";
+import {useEffect, useState} from "react";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faFileText} from "@fortawesome/free-regular-svg-icons";
 import {faRectangleTimes} from "@fortawesome/free-regular-svg-icons/faRectangleTimes";
-import * as React from "react";
 import {faPlusSquare} from "@fortawesome/free-regular-svg-icons/faPlusSquare";
-import {ipcRenderer} from "electron";
 import {EditorTab} from "../../domain/EditorTab";
+import {fireEvent, off, on} from "../ApplicationEvents";
+import {EventType} from "../../enums";
+import * as TextUtils from "../../utils/TextUtils";
+import {useEditorContext} from "./editor/EditorContext";
+import {findLanguageByFileName, SupportedLanguages} from "../../domain/SupportedLanguage";
 
 const DEFAULT_TAB_NAME = "New Document.txt";
 
-export function TabList({tabs, activeTab, onTabSelect, onTabAdd, onTabRemove}: {
-    tabs: Array<EditorTab>,
-    activeTab: EditorTab,
+export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
     onTabSelect: (tab: EditorTab) => void,
     onTabAdd: (tab: EditorTab) => void,
     onTabRemove: (tab: EditorTab) => void
 }) {
+    const [tabs, setTabs] = useState<Array<EditorTab>>([]);
+    const [activeTab, setActiveTab] = useState<EditorTab>(tabs[0]);
+
+    const {data, setData, setLanguage} = useEditorContext();
 
     useEffect(() => {
         addTab(
@@ -25,9 +31,20 @@ export function TabList({tabs, activeTab, onTabSelect, onTabAdd, onTabRemove}: {
         );
     }, []);
 
-    if (activeTab?.id) document.getElementById(activeTab.id)?.scrollIntoView();
+    useEffect(() => {
+        if(activeTab?.id) document.getElementById(activeTab.id)?.scrollIntoView()
+    }, [activeTab]);
 
     const tabSelect = (tabToSelect: EditorTab) => {
+        setActiveTab(tabToSelect);
+
+        setData({
+            ...data,
+            openedFile: tabToSelect?.file||""
+        });
+
+        setLanguage(tabToSelect?.language||SupportedLanguages.text);
+
         if (onTabSelect) onTabSelect(tabToSelect);
     }
 
@@ -42,28 +59,52 @@ export function TabList({tabs, activeTab, onTabSelect, onTabAdd, onTabRemove}: {
             file: file,
             content: content,
             isTemp: isTemp,
+            language: findLanguageByFileName(file),
             state: {scroll: {left: 0, top: 0}, selection: undefined}
         };
 
-        tab.displayName = tab.name?.length || 0 > 20 ? tab.name?.substring(0, 20) + "..." : tab.name;
+        tab.displayName = (tab.name?.length || 0) > 28
+            ? (tab.name?.substring(0, 25) + "...")
+            : tab.name;
+
+        tabs.push(tab);
+
+        setTabs(tabs);
+
+        tabSelect(tabs[tabs.length - 1]);
+
+        TextUtils.hash(tab.content || "").then((result) => {
+            tab.hash = result;
+        });
 
         if (onTabAdd) onTabAdd(tab);
     }
 
+    const removeTabFromList = (tabToRemove: EditorTab) => {
+        tabs.splice(tabs.indexOf(tabToRemove), 1);
+
+        const newTabs = [...tabs];
+
+        setTabs(newTabs);
+        tabSelect(newTabs[newTabs.length - 1]);
+
+        if (onTabRemove) onTabRemove(tabToRemove);
+    }
+
     const closeTab = (tabToRemove: EditorTab) => {
         if (tabToRemove.isChanged) {
-            ipcRenderer.invoke("showConfirmation", {
+            fireEvent(EventType.SHOW_CONFIRMATION, {
                 title: "Unsaved changes",
                 message: "All unsaved changes will be lost in " + tabToRemove.name + ". Do you want to proceed?"
             }).then((approved) => {
                 if (approved) {
-                    if (onTabRemove) onTabRemove(tabToRemove);
+                    removeTabFromList(tabToRemove);
                 } else {
                     tabSelect(tabToRemove);
                 }
             });
         } else {
-            if (onTabRemove) onTabRemove(tabToRemove);
+            removeTabFromList(tabToRemove);
         }
     }
 
@@ -84,18 +125,21 @@ export function TabList({tabs, activeTab, onTabSelect, onTabAdd, onTabRemove}: {
             closeTab(activeTab);
         };
 
-        ipcRenderer.on("newTab", onNewTab);
-        ipcRenderer.on("openTab", handleTabOpen);
-        ipcRenderer.on("removeTab", onCloseTab);
+        on(EventType.NEW_TAB, onNewTab);
+        on(EventType.OPEN_TAB, handleTabOpen);
+        on(EventType.CLOSE_TAB, onCloseTab);
 
         return () => {
-            ipcRenderer.off("newTab", onNewTab);
-            ipcRenderer.off("openTab", handleTabOpen);
-            ipcRenderer.off("removeTab", onCloseTab);
+            off(EventType.NEW_TAB, onNewTab);
+            off(EventType.OPEN_TAB, handleTabOpen);
+            off(EventType.CLOSE_TAB, onCloseTab);
         };
     }, [activeTab]);
 
     const handleTabClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, tabIdx: number) => {
+        event.stopPropagation();
+        event.preventDefault();
+
         if (event.button === 1) {
             closeTab(tabs[tabIdx]);
         } else {

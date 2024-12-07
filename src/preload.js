@@ -10,7 +10,7 @@ function initCustomTitlebar(event, data) {
     titlebar = new Titlebar({
         titleHorizontalAlignment: 'center',
         shadow: true,
-        icon: data?.icon
+        icon: data?.icon,
     });
 
     titlebar.theme = null;

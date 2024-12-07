@@ -3,7 +3,7 @@ import {app} from "electron";
 import * as path from "node:path";
 import fs from "node:fs";
 import os from "os";
-import {SystemPaths} from "../contants/Enums";
+import {SystemPaths} from "../enums";
 
 export function readFile(path:string) {
     return fs.readFileSync(path, "utf8");

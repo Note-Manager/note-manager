@@ -10,6 +10,7 @@ module.exports = {
       "./resources/Icons",
     ],
     appCategoryType: "public.app-category.utilities",
+    executableName: "note-manager",
     win32metadata: {
       CompanyName: "Note Manager",
       FileDescription: "Note Manager App",

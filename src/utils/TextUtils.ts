@@ -1,9 +1,9 @@
 import {LanguageName, SupportedLanguage, SupportedLanguages} from "../domain/SupportedLanguage";
 
-export async function format(content:string, language:SupportedLanguage, options:{rangeStart:number, rangeEnd:number}) {
+export async function format(content:string, language:SupportedLanguage, options?:{rangeStart:number, rangeEnd:number}):Promise<string> {
     if(!language || language === SupportedLanguages.text) return content;
 
-    const { rangeStart = 0, rangeEnd = content.length } = options;
+    const { rangeStart = 0, rangeEnd = content.length } = {...options};
 
     const prefix = content.substring(0, rangeStart);
     const rangeToFormat = content.substring(rangeStart, rangeEnd);
@@ -23,6 +23,8 @@ export async function format(content:string, language:SupportedLanguage, options
     }
 
     else return prefix + rangeToFormat + suffix;
+
+    return content;
 }
 
 export async function hash(content:string) {

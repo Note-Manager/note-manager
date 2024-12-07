@@ -2,7 +2,7 @@ import * as electron from 'electron';
 import {app, BrowserWindow, ipcMain} from 'electron';
 
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
-import {SystemPaths} from "./contants/Enums";
+import {EventType, SystemPaths} from "./enums";
 import * as path from "node:path";
 import {getSystemPath, readFile} from "./utils/FileUtils";
 import {attachTitlebarToWindow, setupTitlebar} from "custom-electron-titlebar/main";
@@ -10,6 +10,7 @@ import * as Theme from "./domain/Theme";
 import * as Environment from "./utils/EnvironmentUtils";
 import {getBundledThemes, getUserThemePath, getUserThemes} from "./utils/EnvironmentUtils";
 import {SupportedLanguages} from "./domain/SupportedLanguage";
+import {allPlugins} from "./utils/PluginLoader";
 
 setupTitlebar();
 
@@ -18,7 +19,7 @@ if (require('electron-squirrel-startup')) {
     app.quit();
 }
 
-const logError = (error) => {
+const logError = (error: Error|any) => {
     const logMessage = `[${new Date().toISOString()}] ${error.stack || error}\n`;
     console.error(logMessage);
 };
@@ -29,7 +30,7 @@ process.on('uncaughtException', (error) => {
 });
 
 // Catch unhandled promise rejections
-process.on('unhandledRejection', (reason) => {
+process.on('unhandledRejection', (reason: any) => {
     logError(reason);
 });
 
@@ -42,6 +43,7 @@ const createWindow = () => {
         titleBarStyle: "hidden",
         titleBarOverlay: false,
         webPreferences: {
+            // @ts-ignore
             preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
             nodeIntegration: true,
             contextIsolation: false,
@@ -53,6 +55,7 @@ const createWindow = () => {
     initApplicationMenu();
 
     // load index.html
+    // @ts-ignore
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
     attachTitlebarToWindow(mainWindow);
@@ -93,6 +96,12 @@ app.on('window-all-closed', () => {
     }
 });
 
+const getFocusedWindow = () => BrowserWindow.getFocusedWindow();
+
+const sendToFocusedWindow = (channel: string, data?: any) => {
+    getFocusedWindow()?.webContents.send(channel, data);
+};
+
 function generateMenu() {
     const menu = electron.Menu.buildFromTemplate([
         {
@@ -102,16 +111,18 @@ function generateMenu() {
                     label: 'New',
                     accelerator: 'CmdOrCtrl+N',
                     click: () => {
-                        BrowserWindow.getFocusedWindow().webContents.send('newTab');
+                        sendToFocusedWindow(EventType.NEW_TAB);
                     }
                 },
                 {
                     label: 'Open',
                     accelerator: 'CmdOrCtrl+T',
                     click: () => {
-                        const focusedWindow = BrowserWindow.getFocusedWindow();
+                        const focusedWindow = getFocusedWindow();
 
-                        const file = electron.dialog.showOpenDialogSync(BrowserWindow.getFocusedWindow(), {
+                        if(!focusedWindow) return;
+
+                        const file = electron.dialog.showOpenDialogSync(focusedWindow, {
                             title: "Select file to open",
                             message: "Select file to open",
                             buttonLabel: "Open",
@@ -120,7 +131,7 @@ function generateMenu() {
                         });
 
                         if (file?.length === 1) {
-                            focusedWindow.webContents.send('openTab', {
+                            focusedWindow.webContents.send(EventType.OPEN_TAB, {
                                 name: path.basename(file[0]),
                                 file: file[0],
                                 content: readFile(file[0])
@@ -134,14 +145,14 @@ function generateMenu() {
                     label: 'Save',
                     accelerator: 'CmdOrCtrl+S',
                     click: () => {
-                        BrowserWindow.getFocusedWindow().webContents.send('saveTab');
+                        sendToFocusedWindow(EventType.SAVE_TAB);
                     }
                 },
                 {
                     label: 'Close',
                     accelerator: 'CmdOrCtrl+W',
                     click: () => {
-                        BrowserWindow.getFocusedWindow().webContents.send('removeTab');
+                        sendToFocusedWindow(EventType.CLOSE_TAB);
                     }
                 }
             ],
@@ -154,7 +165,7 @@ function generateMenu() {
                     accelerator: 'CmdOrCtrl+Z',
                     role: "undo",
                     click: () => {
-                        BrowserWindow.getFocusedWindow().webContents.send('undoTab');
+                        sendToFocusedWindow(EventType.UNDO_TAB);
                     }
                 },
                 {
@@ -162,25 +173,25 @@ function generateMenu() {
                     accelerator: 'CmdOrCtrl+Y',
                     role: "redo",
                     click: () => {
-                        BrowserWindow.getFocusedWindow().webContents.send('redoTab');
+                        sendToFocusedWindow(EventType.REDO_TAB);
                     }
                 },
                 {
                     label: 'Format',
                     accelerator: 'CmdOrCtrl+Shift+F',
                     click: () => {
-                        BrowserWindow.getFocusedWindow().webContents.send('formatTab');
+                        sendToFocusedWindow(EventType.FORMAT_TAB);
                     }
                 }
             ],
         },
         {
             label: 'Language',
-            submenu: Object.keys(SupportedLanguages).filter(k => typeof SupportedLanguages[k] === "object").map(key => {
+            submenu: Object.entries(SupportedLanguages).map(([, value]) => {
                 return {
-                    label: SupportedLanguages[key].label,
+                    label: value.label,
                     click: () => {
-                        BrowserWindow.getFocusedWindow().webContents.send('setTabLanguage', SupportedLanguages[key]);
+                        sendToFocusedWindow(EventType.SET_TAB_LANGUAGE, value);
                     }
                 };
             })
@@ -202,7 +213,8 @@ function generateMenu() {
                                 initApplicationMenu();
                                 refreshTitlebar();
                             }
-                        }, {
+                        },
+                        {
                             label: "Open Themes Folder",
                             click: () => {
                                 electron.shell.openPath(getUserThemePath()).then(() => console.log("path opened"))
@@ -211,6 +223,23 @@ function generateMenu() {
                     ]
                 }
             ]
+        },
+        {
+            label: "Plugins",
+            submenu: allPlugins.filter(p => (p.applicationMenuItems?.length||0)>0).flatMap(plugin => plugin.applicationMenuItems).filter(el => el !== undefined).map(menuItem => {
+                return {
+                    label: menuItem.label,
+                    submenu: menuItem.actions.map(action => {
+                        return {
+                            label: action.label,
+                            click: () => {
+                                sendToFocusedWindow(action.code)
+                            },
+                            accelerator: action.accelerator
+                        }
+                    })
+                }
+            })
         }
     ]);
 
@@ -222,14 +251,14 @@ function generateMenu() {
                     label: 'Reload',
                     accelerator: 'CmdOrCtrl+R',
                     click: () => {
-                        BrowserWindow.getFocusedWindow().webContents.reload();
+                        getFocusedWindow()?.webContents.reload();
                     }
                 },
                 {
                     label: 'Developer Tools',
                     accelerator: 'F12',
                     click: () => {
-                        BrowserWindow.getFocusedWindow().webContents.openDevTools();
+                        getFocusedWindow()?.webContents.openDevTools();
                     }
                 }
             ]
@@ -241,7 +270,7 @@ function generateMenu() {
     return menu;
 }
 
-function cssFileToMenuItem(cssFile, isUserTheme) {
+function cssFileToMenuItem(cssFile: string, isUserTheme: boolean) {
     return {
         label: path.parse(cssFile).name,
         click: () => {
@@ -254,23 +283,17 @@ function cssFileToMenuItem(cssFile, isUserTheme) {
         type: "radio",
         sublabel: isUserTheme ? "User Theme" : "Bundled Theme",
         checked: Environment.getPreferences().theme.file === cssFile
-    }
+    } as Electron.MenuItemConstructorOptions
 }
 
-function loadTheme(win) {
-    if (global.cssKey) {
-        win.webContents.removeInsertedCSS(global.cssKey)
-            .catch(err => console.error(err));
-    }
-
-    win.webContents.insertCSS(Environment.getPreferences().theme.getCSSContent())
-        .then(key => global.cssKey = key);
+function loadTheme(win: Electron.BrowserWindow) {
+    win.webContents.insertCSS(Environment.getPreferences().theme.getCSSContent());
 }
 
 function refreshTitlebar() {
     BrowserWindow.getAllWindows().forEach(win => {
         loadTheme(win);
-        win.webContents.send("buildMenu", {
+        win.webContents.send(EventType.BUILD_MENU, {
             icon: appIcon
         });
     });
@@ -279,15 +302,21 @@ function refreshTitlebar() {
 
 initLoggingEventHandlers();
 
-ipcMain.handle("showSaveDialog", (event, opts) => {
-    return electron.dialog.showSaveDialogSync(BrowserWindow.getFocusedWindow(), {
+ipcMain.handle(EventType.SHOW_SAVE_DIALOG, (event, opts) => {
+    const focusedWindow = getFocusedWindow();
+    if(!focusedWindow) return;
+
+    return electron.dialog.showSaveDialogSync(focusedWindow, {
         title: opts?.title || "Save",
         defaultPath: opts?.defaultName
     });
 });
 
-ipcMain.handle("showConfirmation", async(event, opts) => {
-    const result = await electron.dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+ipcMain.handle(EventType.SHOW_CONFIRMATION, async(event, opts) => {
+    const focusedWindow = getFocusedWindow();
+    if(!focusedWindow) return;
+
+    const result = electron.dialog.showMessageBox(focusedWindow, {
         type: 'question',
         buttons: ['Cancel', 'Yes'],
         defaultId: 1, // Default selected button index
@@ -296,5 +325,5 @@ ipcMain.handle("showConfirmation", async(event, opts) => {
         message: opts.message,
     });
 
-    return result.response === 1; // Return true if "Yes" was clicked
+    return result === 1; // Return true if "Yes" was clicked
 });
