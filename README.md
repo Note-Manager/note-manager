@@ -2,8 +2,8 @@
 
 - prerequisites
   - a machine with any os that supports node and npm (this guide is based on ubuntu/linux)
-  - newest version of node
-  - newest version of npm
+  - node (tested on v23.1.0)
+  - npm (tested on 10.9.0)
 - open your terminal
 - clone the repository to your machine:
   - `git clone https://github.com/Note-Manager/note-manager` 
