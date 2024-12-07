@@ -82,11 +82,7 @@ export default function EditorContainer({tab}: {tab: EditorTab}) {
             setLanguage(newLang);
         }
 
-        const onFormatTab = () => {
-            if(editorRef.current) formatEditorContent(editorRef.current, language);
-        }
-
-        const onTabSave = (tab: EditorTab) => {
+        const onTabSave = () => {
             saveTab(tab).then(result => {
                 if(result.isSaved) {
                     console.info("saved to " + result.savedFile);
@@ -94,6 +90,8 @@ export default function EditorContainer({tab}: {tab: EditorTab}) {
                     TextUtils.hash(tab.content || "").then(result => {
                         tab.hash = result;
                     });
+
+                    tab.isChanged = false;
 
                     setData({
                         ...data,
@@ -105,16 +103,14 @@ export default function EditorContainer({tab}: {tab: EditorTab}) {
 
         on(EventType.SAVE_TAB, onTabSave);
         on(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
-        on(EventType.FORMAT_TAB, onFormatTab);
 
         return () => {
             off(EventType.SAVE_TAB, onTabSave);
             off(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
-            off(EventType.FORMAT_TAB, onFormatTab);
 
             tab.state.selection = editorRef.current?.session.selection.toJSON();
         }
-    }, []);
+    }, [tab]);
 
     return (
         <div className={"tabContentWrapper"} key={tab.id}>
@@ -154,31 +150,6 @@ async function saveTab(tab: EditorTab) {
     }
 
     return {isSaved: isSaved, savedFile: targetFile, tab: tab};
-}
-
-function isTextSelected(editor: Ace.Editor) {
-    const selectionRange = editor.getSelectionRange();
-
-    if (!selectionRange) return false;
-
-    return selectionRange.start.row !== selectionRange.end.row ||
-        selectionRange.start.column !== selectionRange.end.column;
-}
-
-function formatEditorContent(editor: Ace.Editor, language: SupportedLanguage) {
-    let formatTarget: string;
-
-    const selectedText = editor.getSelectedText();
-    if (selectedText && selectedText.length > 0) {
-        formatTarget = selectedText;
-    } else {
-        formatTarget = editor.session.getValue() || "";
-    }
-
-    TextUtils.format(formatTarget, language, undefined).then(result => {
-        if (isTextSelected(editor)) editor.session?.replace(editor.getSelectionRange(), result);
-        else editor.session.setValue(result);
-    });
 }
 
 function initializeEditor(editor: Ace.Editor, activeTab: EditorTab) {

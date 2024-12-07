@@ -175,13 +175,6 @@ function generateMenu() {
                     click: () => {
                         sendToFocusedWindow(EventType.REDO_TAB);
                     }
-                },
-                {
-                    label: 'Format',
-                    accelerator: 'CmdOrCtrl+Shift+F',
-                    click: () => {
-                        sendToFocusedWindow(EventType.FORMAT_TAB);
-                    }
                 }
             ],
         },
@@ -306,6 +299,8 @@ ipcMain.handle(EventType.SHOW_SAVE_DIALOG, (event, opts) => {
     const focusedWindow = getFocusedWindow();
     if(!focusedWindow) return;
 
+    console.info(opts.defaultName);
+
     return electron.dialog.showSaveDialogSync(focusedWindow, {
         title: opts?.title || "Save",
         defaultPath: opts?.defaultName
@@ -316,7 +311,7 @@ ipcMain.handle(EventType.SHOW_CONFIRMATION, async(event, opts) => {
     const focusedWindow = getFocusedWindow();
     if(!focusedWindow) return;
 
-    const result = electron.dialog.showMessageBox(focusedWindow, {
+    const result = electron.dialog.showMessageBoxSync(focusedWindow, {
         type: 'question',
         buttons: ['Cancel', 'Yes'],
         defaultId: 1, // Default selected button index

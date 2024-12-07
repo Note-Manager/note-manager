@@ -96,6 +96,7 @@ export default function Editor({content, language, onEditorLoad, changeListener,
             <AceEditor
                 mode={mode ?? undefined}
                 theme={""}
+                focus={true}
                 value={content}
                 onChange={onChange}
                 onCursorChange={handleCursorChange}
@@ -128,7 +129,7 @@ function listenPluginEvents() {
     allPlugins.forEach(plugin => {
         plugin.getAvailableActions().forEach(code => {
             ipcRenderer.on(code, () => {
-                console.info("performed: " + code);
+                console.info("plugin event: " + code);
                 plugin.doAction(code);
             })
         })
