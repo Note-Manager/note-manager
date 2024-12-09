@@ -251,7 +251,7 @@ function generateMenu() {
                     label: 'Developer Tools',
                     accelerator: 'F12',
                     click: () => {
-                        getFocusedWindow()?.webContents.openDevTools();
+                        getFocusedWindow()?.webContents.toggleDevTools();
                     }
                 }
             ]

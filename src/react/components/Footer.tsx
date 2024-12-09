@@ -1,13 +1,14 @@
 import React from "react";
 import {useEditorContext} from "./editor/EditorContext";
+import {SupportedLanguages} from "../../domain/SupportedLanguage";
 
 export default function Footer() {
-    const {data, language} = useEditorContext();
+    const {data, activeTab} = useEditorContext();
 
     return (
         <div id={"footer"}>
             <div id={"footerLeft"}>
-                <span>{data.openedFile}</span>
+                <span>{activeTab?.file}</span>
             </div>
             {data &&
                 <div id={"footerRight"}>
@@ -21,7 +22,7 @@ export default function Footer() {
                         selection: <span className={"dataContent"}>{data.selection?.selectionLength} ({"RNG: " + data.selection.selectionRangeCount})</span>
                     </label>
                     <label className={"editorDataLabel"}>
-                        lang: <span className={"dataContent"}>{language.label}</span>
+                        lang: <span className={"dataContent"}>{(activeTab?.language || SupportedLanguages.text).label}</span>
                     </label>
                 </div>
             }

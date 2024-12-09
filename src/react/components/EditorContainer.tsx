@@ -15,14 +15,48 @@ let changeDebounceTimer: NodeJS.Timeout; // Timer for change event
 let selectionChangeDebounceTimer: NodeJS.Timeout; // Timer for selection event
 let cursorChangeDebounceTimer: NodeJS.Timeout; // Timer for selection event
 
-export default function EditorContainer({tab}: {tab: EditorTab}) {
-    const {language, setLanguage, data, setData} = useEditorContext();
+export default function EditorContainer() {
+    const {language, setLanguage, data, setData, activeTab} = useEditorContext();
 
     const editorRef = useRef<Ace.Editor>();
 
     useEffect(() => {
-        tab.language = language;
+        activeTab.language = language;
     }, [language]);
+
+    useEffect(() => {
+        const onSetTabLanguage = (event: any, newLang: SupportedLanguage) => {
+            setLanguage(newLang);
+        }
+
+        const onTabSave = () => {
+            if(!activeTab.isChanged) return;
+
+            saveTab(activeTab).then(result => {
+                if(result.isSaved) {
+                    console.info("saved to " + result.savedFile);
+
+                    TextUtils.hash(activeTab.content || "").then(result => {
+                        activeTab.hash = result;
+                    });
+
+                    activeTab.isChanged = false;
+
+                    setData(getEditorData());
+                }
+            });
+        }
+
+        on(EventType.SAVE_TAB, onTabSave);
+        on(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
+
+        return () => {
+            off(EventType.SAVE_TAB, onTabSave);
+            off(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
+        }
+    }, [activeTab]);
+
+    if(!activeTab) return null;
 
     const getEditorData = () => {
         return {
@@ -36,25 +70,34 @@ export default function EditorContainer({tab}: {tab: EditorTab}) {
         }
     }
 
+    const updateTabSelection = () => {
+        activeTab.state = {
+            ...activeTab.state,
+            selection: editorRef.current?.session.selection.toJSON()
+        };
+    }
+
     const onSelectionChange = () => {
         clearTimeout(selectionChangeDebounceTimer);
 
         selectionChangeDebounceTimer = setTimeout(() => {
             setData(getEditorData());
-            tab.state.selection = editorRef.current?.session.selection.toJSON();
+
+            updateTabSelection();
+
         }, debounceDelay);
     }
 
     const onContentChange = ({value}: { value: string, lineCount: number }) => {
-        tab.content = value;
+        activeTab.content = value;
 
         clearTimeout(changeDebounceTimer);
 
         changeDebounceTimer = setTimeout(async () => {
             TextUtils.hash(value).then((result: string) => {
-                if (!tab) return;
+                if (!activeTab) return;
 
-                tab.isChanged = result !== tab.hash;
+                activeTab.isChanged = result !== activeTab.hash;
             });
         }, debounceDelay);
     }
@@ -65,7 +108,7 @@ export default function EditorContainer({tab}: {tab: EditorTab}) {
         cursorChangeDebounceTimer = setTimeout(() => {
             setData(getEditorData());
 
-            tab.state.selection = editorRef.current?.session.selection.toJSON();
+            updateTabSelection();
         }, debounceDelay);
     }
 
@@ -74,49 +117,14 @@ export default function EditorContainer({tab}: {tab: EditorTab}) {
 
         setData(getEditorData());
 
-        initializeEditor(editor, tab);
+        initializeEditor(editor, activeTab);
     }
 
-    useEffect(() => {
-        const onSetTabLanguage = (event: any, newLang: SupportedLanguage) => {
-            setLanguage(newLang);
-        }
-
-        const onTabSave = () => {
-            saveTab(tab).then(result => {
-                if(result.isSaved) {
-                    console.info("saved to " + result.savedFile);
-
-                    TextUtils.hash(tab.content || "").then(result => {
-                        tab.hash = result;
-                    });
-
-                    tab.isChanged = false;
-
-                    setData({
-                        ...data,
-                        openedFile: result.savedFile
-                    });
-                }
-            });
-        }
-
-        on(EventType.SAVE_TAB, onTabSave);
-        on(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
-
-        return () => {
-            off(EventType.SAVE_TAB, onTabSave);
-            off(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
-
-            tab.state.selection = editorRef.current?.session.selection.toJSON();
-        }
-    }, [tab]);
-
     return (
-        <div className={"tabContentWrapper"} key={tab.id}>
+        <div className={"tabContentWrapper"} key={activeTab.id}>
             <Editor
-                content={tab.content || ""}
-                language={tab.language||SupportedLanguages.text}
+                content={activeTab.content || ""}
+                language={activeTab.language||SupportedLanguages.text}
                 selectionListener={onSelectionChange}
                 changeListener={onContentChange}
                 cursorListener={onCursorChange}
@@ -163,11 +171,23 @@ function initializeEditor(editor: Ace.Editor, activeTab: EditorTab) {
     }
 
     editor.session.on("changeScrollLeft", (scrollLeft) => {
-        activeTab.state.scroll.left = scrollLeft;
+        activeTab.state = {
+            ...activeTab.state,
+            scroll: {
+                left: scrollLeft,
+                top: activeTab.state?.scroll?.top||0
+            }
+        }
     });
 
     editor.session.on("changeScrollTop", (scrollTop) => {
-        activeTab.state.scroll.top = scrollTop;
+        activeTab.state = {
+            ...activeTab.state,
+            scroll: {
+                left: activeTab.state?.scroll?.left||0,
+                top: scrollTop
+            }
+        }
     });
 
     editor.focus();

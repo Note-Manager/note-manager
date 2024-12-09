@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useEffect, useState} from "react";
+import {useEffect} from "react";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faFileText} from "@fortawesome/free-regular-svg-icons";
 import {faRectangleTimes} from "@fortawesome/free-regular-svg-icons/faRectangleTimes";
@@ -9,7 +9,7 @@ import {fireEvent, off, on} from "../ApplicationEvents";
 import {EventType} from "../../enums";
 import * as TextUtils from "../../utils/TextUtils";
 import {useEditorContext} from "./editor/EditorContext";
-import {findLanguageByFileName, SupportedLanguages} from "../../domain/SupportedLanguage";
+import {findLanguageByFileName} from "../../domain/SupportedLanguage";
 
 const DEFAULT_TAB_NAME = "New Document.txt";
 
@@ -18,32 +18,14 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
     onTabAdd: (tab: EditorTab) => void,
     onTabRemove: (tab: EditorTab) => void
 }) {
-    const [tabs, setTabs] = useState<Array<EditorTab>>([]);
-    const [activeTab, setActiveTab] = useState<EditorTab>(tabs[0]);
-
-    const {data, setData, setLanguage} = useEditorContext();
+    const {tabs, setTabs, activeTab, setActiveTab} = useEditorContext();
 
     useEffect(() => {
-        addTab(
-            generateTempTab(
-                generateUniqueName(tabs, DEFAULT_TAB_NAME)
-            )
-        );
-    }, []);
-
-    useEffect(() => {
-        if(activeTab?.id) document.getElementById(activeTab.id)?.scrollIntoView()
+        if(activeTab?.id) document.getElementById(activeTab.id)?.scrollIntoView();
     }, [activeTab]);
 
     const tabSelect = (tabToSelect: EditorTab) => {
         setActiveTab(tabToSelect);
-
-        setData({
-            ...data,
-            openedFile: tabToSelect?.file||""
-        });
-
-        setLanguage(tabToSelect?.language||SupportedLanguages.text);
 
         if (onTabSelect) onTabSelect(tabToSelect);
     }

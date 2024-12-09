@@ -10,11 +10,11 @@ export interface EditorTab {
     content?:string,
     hash?:string,
     isChanged?:boolean,
-    state: {
-        scroll: {
+    state?: {
+        scroll?: {
             top: number,
             left: number
         },
-        selection: any
+        selection?: any
     }
 }

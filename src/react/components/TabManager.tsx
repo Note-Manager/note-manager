@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {TabList} from "./TabList";
 import {EditorTab} from "../../domain/EditorTab";
 import Footer from "./Footer";
@@ -6,10 +6,8 @@ import EditorContainer from "./EditorContainer";
 import {EditorContextProvider} from "./editor/EditorContext";
 
 export default function TabManager() {
-    const [activeTab, setActiveTab] = useState<EditorTab>();
-
     const onTabSelect = (tab: EditorTab) => {
-        setActiveTab(tab);
+        // do nothing
     }
 
     const onTabRemove = (tabToRemove: EditorTab) => {
@@ -29,9 +27,7 @@ export default function TabManager() {
                     onTabRemove={onTabRemove}
                 />
 
-                {activeTab?.id &&
-                    <EditorContainer tab={activeTab}/>
-                }
+                <EditorContainer/>
 
                 <Footer/>
             </div>
