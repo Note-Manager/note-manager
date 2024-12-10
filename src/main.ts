@@ -63,6 +63,16 @@ const createWindow = () => {
     mainWindow.webContents.on("dom-ready", () => {
         loadTheme(mainWindow);
         refreshTitlebar();
+
+        if(process.argv.length > 1) {
+            const file = process.argv[1];
+
+            mainWindow.webContents.send(EventType.OPEN_TAB, {
+                name: path.basename(file),
+                file: file,
+                content: readFile(file)
+            });
+        }
     });
 };
 
