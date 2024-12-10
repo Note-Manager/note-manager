@@ -8,9 +8,9 @@ import {EditorTab} from "../../domain/EditorTab";
 import {fireEvent, off, on} from "../ApplicationEvents";
 import {EventType} from "../../enums";
 import * as TextUtils from "../../utils/TextUtils";
+import {shortenTabName} from "../../utils/TextUtils";
 import {useEditorContext} from "./editor/EditorContext";
 import {findLanguageByFileName} from "../../domain/SupportedLanguage";
-import {shortenTabName} from "../../utils/TextUtils";
 
 const DEFAULT_TAB_NAME = "New Document.txt";
 
@@ -33,6 +33,8 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
 
     const addTab = ({isTemp, name, file, content}: EditorTab) => {
         if (file && tabs.some(t => t.file === file)) {
+            const existing = tabs.find(t => t.file === file);
+            if(existing) tabSelect(existing);
             return;
         }
 
@@ -99,6 +101,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         };
 
         const handleTabOpen = (event: any, data: any) => {
+            console.info(data);
             addTab(data);
         };
 

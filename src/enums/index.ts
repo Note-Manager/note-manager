@@ -7,7 +7,6 @@ export enum SystemPaths {
 
 export enum EventType {
     SAVE_TAB = "saveTab",
-    FORMAT_TAB = "formatTab",
     NEW_TAB = "newTab",
     OPEN_TAB = "openTab",
     CLOSE_TAB = "closeTab",
@@ -19,5 +18,6 @@ export enum EventType {
     SHOW_CONFIRMATION = "showConfirmation",
     LOG_INFO = "log-info",
     LOG_ERROR = "log-error",
-    LOG_WARN = "log-warning"
+    LOG_WARN = "log-warning",
+    FILES_DROPPED = "files-dropped"
 }

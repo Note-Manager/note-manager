@@ -19,7 +19,7 @@ if (require('electron-squirrel-startup')) {
     app.quit();
 }
 
-const logError = (error: Error|any) => {
+const logError = (error: Error | any) => {
     const logMessage = `[${new Date().toISOString()}] ${error.stack || error}\n`;
     console.error(logMessage);
 };
@@ -64,14 +64,10 @@ const createWindow = () => {
         loadTheme(mainWindow);
         refreshTitlebar();
 
-        if(process.argv.length > 1) {
+        if (process.argv.length > 1) {
             const file = process.argv[1];
 
-            mainWindow.webContents.send(EventType.OPEN_TAB, {
-                name: path.basename(file),
-                file: file,
-                content: readFile(file)
-            });
+            if(file && file !== "." && file !== "./") handleOpenTab(mainWindow, file);
         }
     });
 };
@@ -130,7 +126,7 @@ function generateMenu() {
                     click: () => {
                         const focusedWindow = getFocusedWindow();
 
-                        if(!focusedWindow) return;
+                        if (!focusedWindow) return;
 
                         const file = electron.dialog.showOpenDialogSync(focusedWindow, {
                             title: "Select file to open",
@@ -141,11 +137,7 @@ function generateMenu() {
                         });
 
                         if (file?.length === 1) {
-                            focusedWindow.webContents.send(EventType.OPEN_TAB, {
-                                name: path.basename(file[0]),
-                                file: file[0],
-                                content: readFile(file[0])
-                            });
+                            handleOpenTab(focusedWindow, file[0]);
 
                             focusedWindow.moveTop();
                         }
@@ -208,7 +200,7 @@ function generateMenu() {
                         ...getBundledThemes().map(css => cssFileToMenuItem(css, false)), // bundled themes
                         ...getUserThemes().map(css => cssFileToMenuItem(css, true)), // user themes
                         {
-                          type: "separator"
+                            type: "separator"
                         },
                         {
                             label: "Reload Themes",
@@ -229,7 +221,7 @@ function generateMenu() {
         },
         {
             label: "Plugins",
-            submenu: allPlugins.filter(p => (p.applicationMenuItems?.length||0)>0).flatMap(plugin => plugin.applicationMenuItems).filter(el => el !== undefined).map(menuItem => {
+            submenu: allPlugins.filter(p => (p.applicationMenuItems?.length || 0) > 0).flatMap(plugin => plugin.applicationMenuItems).filter(el => el !== undefined).map(menuItem => {
                 return {
                     label: menuItem.label,
                     submenu: menuItem.actions.map(action => {
@@ -305,9 +297,25 @@ function refreshTitlebar() {
 
 initLoggingEventHandlers();
 
+ipcMain.handle(EventType.FILES_DROPPED, (event, data: any) => {
+    if(!data?.files || !Array.isArray(data.files)) return;
+
+    try {
+        for (let file of data.files) {
+            try {
+                const win = BrowserWindow.fromWebContents(event.sender);
+                if(win) handleOpenTab(win, file);
+            } catch(err) {
+                console.error(err);
+            }
+        }
+    } catch (ignored) {
+    }
+});
+
 ipcMain.handle(EventType.SHOW_SAVE_DIALOG, (event, opts) => {
     const focusedWindow = getFocusedWindow();
-    if(!focusedWindow) return;
+    if (!focusedWindow) return;
 
     return electron.dialog.showSaveDialogSync(focusedWindow, {
         title: opts?.title || "Save",
@@ -315,9 +323,9 @@ ipcMain.handle(EventType.SHOW_SAVE_DIALOG, (event, opts) => {
     });
 });
 
-ipcMain.handle(EventType.SHOW_CONFIRMATION, async(event, opts) => {
+ipcMain.handle(EventType.SHOW_CONFIRMATION, async (event, opts) => {
     const focusedWindow = getFocusedWindow();
-    if(!focusedWindow) return;
+    if (!focusedWindow) return;
 
     const result = electron.dialog.showMessageBoxSync(focusedWindow, {
         type: 'question',
@@ -330,3 +338,12 @@ ipcMain.handle(EventType.SHOW_CONFIRMATION, async(event, opts) => {
 
     return result === 1; // Return true if "Yes" was clicked
 });
+
+function handleOpenTab(window: electron.BrowserWindow, file: string) {
+    console.log("opening file: " + file);
+    window.webContents.send(EventType.OPEN_TAB, {
+        name: path.basename(file),
+        file: file,
+        content: readFile(file)
+    });
+}
