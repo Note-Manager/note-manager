@@ -9,3 +9,9 @@ export async function hash(content:string) {
         .map(b => b.toString(16).padStart(2, "0"))
         .join("");
 }
+
+export function shortenTabName(name: string): string {
+    return (name?.length || 0) > 28
+        ? (name?.substring(0, 25) + "...")
+        : name;
+}

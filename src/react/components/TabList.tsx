@@ -10,6 +10,7 @@ import {EventType} from "../../enums";
 import * as TextUtils from "../../utils/TextUtils";
 import {useEditorContext} from "./editor/EditorContext";
 import {findLanguageByFileName} from "../../domain/SupportedLanguage";
+import {shortenTabName} from "../../utils/TextUtils";
 
 const DEFAULT_TAB_NAME = "New Document.txt";
 
@@ -45,9 +46,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
             state: {scroll: {left: 0, top: 0}, selection: undefined}
         };
 
-        tab.displayName = (tab.name?.length || 0) > 28
-            ? (tab.name?.substring(0, 25) + "...")
-            : tab.name;
+        tab.displayName = shortenTabName(tab.name||"");
 
         tabs.push(tab);
 

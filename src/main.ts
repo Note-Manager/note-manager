@@ -299,8 +299,6 @@ ipcMain.handle(EventType.SHOW_SAVE_DIALOG, (event, opts) => {
     const focusedWindow = getFocusedWindow();
     if(!focusedWindow) return;
 
-    console.info(opts.defaultName);
-
     return electron.dialog.showSaveDialogSync(focusedWindow, {
         title: opts?.title || "Save",
         defaultPath: opts?.defaultName

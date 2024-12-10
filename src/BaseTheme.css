@@ -128,6 +128,10 @@ body {
     background-color: var(--primary-bg);
 }
 
+.ace_line-hover {
+    background-color: var(--selected-highlight-color) !important;
+}
+
 #tabList .editorTabHeader.selected {
     color: var(--selected-highlight-color);
 }
@@ -183,10 +187,6 @@ body {
     color: var(--number-color) !important;
 }
 
-.ace_markup {
-    color: var(--attribute-color) !important;
-}
-
 .ace_punctuation, .ace_paren {
     color: var(--block-color) !important;
 }
@@ -197,6 +197,18 @@ body {
 
 .ace_support {
     color: var(--color) !important;
+}
+
+.ace_heading {
+    color: var(--type-color) !important;
+}
+
+.ace_list {
+    color: var(--number-color) !important;
+}
+
+.ace_markup {
+    color: var(--attribute-color) !important;
 }
 
 .ace_operator {

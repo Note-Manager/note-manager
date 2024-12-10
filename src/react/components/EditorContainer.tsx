@@ -9,6 +9,7 @@ import path from "node:path";
 import {Ace} from "ace-builds";
 import {SupportedLanguage, SupportedLanguages} from "../../domain/SupportedLanguage";
 import {useEditorContext} from "./editor/EditorContext";
+import {shortenTabName} from "../../utils/TextUtils";
 
 const debounceDelay = 200; // Delay in milliseconds
 let changeDebounceTimer: NodeJS.Timeout; // Timer for change event
@@ -16,17 +17,17 @@ let selectionChangeDebounceTimer: NodeJS.Timeout; // Timer for selection event
 let cursorChangeDebounceTimer: NodeJS.Timeout; // Timer for selection event
 
 export default function EditorContainer() {
-    const {language, setLanguage, data, setData, activeTab} = useEditorContext();
+    const {data, setData, activeTab, setActiveTab} = useEditorContext();
 
     const editorRef = useRef<Ace.Editor>();
 
     useEffect(() => {
-        activeTab.language = language;
-    }, [language]);
-
-    useEffect(() => {
         const onSetTabLanguage = (event: any, newLang: SupportedLanguage) => {
-            setLanguage(newLang);
+            activeTab.language = newLang;
+            activeTab.name = activeTab.name?.substring(0, activeTab.name?.lastIndexOf(".")) + newLang.extensions[0];
+            activeTab.displayName = shortenTabName(activeTab.name);
+
+            setData(getEditorData());
         }
 
         const onTabSave = () => {
@@ -77,6 +78,13 @@ export default function EditorContainer() {
         };
     }
 
+    const updateTabUndoHistory = () => {
+        activeTab.state = {
+            ...activeTab.state,
+            undoHistory: editorRef.current?.session.getUndoManager().toJSON()
+        }
+    }
+
     const onSelectionChange = () => {
         clearTimeout(selectionChangeDebounceTimer);
 
@@ -84,6 +92,7 @@ export default function EditorContainer() {
             setData(getEditorData());
 
             updateTabSelection();
+            updateTabUndoHistory();
 
         }, debounceDelay);
     }
@@ -98,6 +107,8 @@ export default function EditorContainer() {
                 if (!activeTab) return;
 
                 activeTab.isChanged = result !== activeTab.hash;
+
+                updateTabUndoHistory();
             });
         }, debounceDelay);
     }
@@ -109,6 +120,7 @@ export default function EditorContainer() {
             setData(getEditorData());
 
             updateTabSelection();
+            updateTabUndoHistory();
         }, debounceDelay);
     }
 
@@ -168,6 +180,10 @@ function initializeEditor(editor: Ace.Editor, activeTab: EditorTab) {
 
     if (activeTab.state?.selection) {
         editor.session.selection.fromJSON(activeTab.state.selection);
+    }
+
+    if(activeTab.state?.undoHistory) {
+        editor.session.getUndoManager().fromJSON(activeTab.state.undoHistory);
     }
 
     editor.session.on("changeScrollLeft", (scrollLeft) => {

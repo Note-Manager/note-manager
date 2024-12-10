@@ -15,6 +15,7 @@ export interface EditorTab {
             top: number,
             left: number
         },
-        selection?: any
+        selection?: any,
+        undoHistory?: any,
     }
 }
