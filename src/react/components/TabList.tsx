@@ -11,6 +11,7 @@ import * as TextUtils from "../../utils/TextUtils";
 import {shortenTabName} from "../../utils/TextUtils";
 import {useEditorContext} from "./editor/EditorContext";
 import {findLanguageByFileName} from "../../domain/SupportedLanguage";
+import {EditorState} from "../../domain/EditorState";
 
 const DEFAULT_TAB_NAME = "New Document.txt";
 
@@ -109,14 +110,42 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
             closeTab(activeTab);
         };
 
+        const onCloseWindow = async () => {
+            const unsavedTabs = tabs.filter(t => !t.isTemp && t.file && t.isChanged);
+            if(unsavedTabs && unsavedTabs.length > 0) {
+                const approved = await fireEvent(EventType.SHOW_CONFIRMATION, {
+                    title: "Unsaved changes",
+                    message: "All unsaved changes will be lost in following tabs:\n\n" + unsavedTabs.map(t => t.name).join("\n") + "\n\nDo you want to proceed?"
+                });
+
+                if(!approved) return;
+            }
+
+            const data: EditorState = {
+                tabs: tabs,
+                activeTabId: activeTab.id || tabs[tabs.length - 1].id
+            };
+
+            await fireEvent(EventType.CLOSE_WITH_STATE, data);
+        };
+
+        const initializeWithState = (event: any, data: EditorState) => {
+            setTabs(data.tabs);
+            setActiveTab(data.tabs.find(t => t.id === data.activeTabId) || tabs[tabs.length - 1]);
+        }
+
         on(EventType.NEW_TAB, onNewTab);
         on(EventType.OPEN_TAB, handleTabOpen);
         on(EventType.CLOSE_TAB, onCloseTab);
+        on(EventType.CLOSE_WINDOW, onCloseWindow);
+        on(EventType.INIT_WITH_STATE, initializeWithState);
 
         return () => {
             off(EventType.NEW_TAB, onNewTab);
             off(EventType.OPEN_TAB, handleTabOpen);
             off(EventType.CLOSE_TAB, onCloseTab);
+            off(EventType.CLOSE_WINDOW, onCloseWindow);
+            off(EventType.INIT_WITH_STATE, initializeWithState);
         };
     }, [activeTab]);
 

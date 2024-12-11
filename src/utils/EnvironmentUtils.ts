@@ -43,6 +43,10 @@ export function getPreferencesFilePath() {
     return path.join(getSystemPath(SystemPaths.data), "preferences.json");
 }
 
+export function getStateFilePath() {
+    return path.join(getSystemPath(SystemPaths.data), "State.json");
+}
+
 export function savePreferences() {
     writeFile(getPreferencesFilePath(), JSON.stringify(_ENV.preferences, null, 2));
 }

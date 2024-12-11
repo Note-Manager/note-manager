@@ -19,5 +19,8 @@ export enum EventType {
     LOG_INFO = "log-info",
     LOG_ERROR = "log-error",
     LOG_WARN = "log-warning",
-    FILES_DROPPED = "files-dropped"
+    FILES_DROPPED = "files-dropped",
+    CLOSE_WINDOW = "close",
+    CLOSE_WITH_STATE = "close-with-state",
+    INIT_WITH_STATE = "initialize-with-state"
 }

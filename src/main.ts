@@ -4,13 +4,15 @@ import {app, BrowserWindow, ipcMain} from 'electron';
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
 import {EventType, SystemPaths} from "./enums";
 import * as path from "node:path";
-import {getSystemPath, readFile} from "./utils/FileUtils";
+import {getSystemPath, isFileExists, readFile, readSync, writeFile} from "./utils/FileUtils";
 import {attachTitlebarToWindow, setupTitlebar} from "custom-electron-titlebar/main";
 import * as Theme from "./domain/Theme";
 import * as Environment from "./utils/EnvironmentUtils";
 import {getBundledThemes, getUserThemePath, getUserThemes} from "./utils/EnvironmentUtils";
 import {SupportedLanguages} from "./domain/SupportedLanguage";
 import {allPlugins} from "./utils/PluginLoader";
+import {EditorState} from "./domain/EditorState";
+import {hash} from "./utils/TextUtils";
 
 setupTitlebar();
 
@@ -32,6 +34,28 @@ process.on('uncaughtException', (error) => {
 // Catch unhandled promise rejections
 process.on('unhandledRejection', (reason: any) => {
     logError(reason);
+});
+
+ipcMain.handle(EventType.CLOSE_WITH_STATE, (event, data: EditorState) => {
+   const sender = BrowserWindow.fromWebContents(event.sender);
+
+   if(sender) {
+       const stateFile = Environment.getStateFilePath();
+
+       console.log("saving state to '"+stateFile+"'");
+
+       data.tabs.forEach(t => {
+           if(!t.isTemp && t.file) {
+               t.content = undefined;
+               t.isChanged = false;
+           }
+       })
+
+       writeFile(stateFile, JSON.stringify(data, null, 4));
+
+       sender.removeAllListeners(EventType.CLOSE_WINDOW);
+       sender.close();
+   }
 });
 
 const appIcon = electron.nativeImage.createFromPath(path.join(getSystemPath(SystemPaths.resources), "Icons/note-manager.png"));
@@ -60,16 +84,47 @@ const createWindow = () => {
 
     attachTitlebarToWindow(mainWindow);
 
+    const stateFile = Environment.getStateFilePath();
+
     mainWindow.webContents.on("dom-ready", () => {
         loadTheme(mainWindow);
         refreshTitlebar();
 
-        if (process.argv.length > 1) {
+        if (app.isPackaged && process.argv.length > 1) { // 'open with ...' option
             const file = process.argv[1];
 
             if(file && file !== "." && file !== "./") handleOpenTab(mainWindow, file);
+        } else if(isFileExists(stateFile)) { // restore the state
+            const initialState: EditorState = JSON.parse(readSync(stateFile));
+            initialState.tabs.forEach(async (t) => {
+               if(!t.isTemp && t.file) {
+                   try {
+                       t.content = readFile(t.file);
+
+                       const fileHash = await hash(t.content);
+
+                       if(t.hash !== fileHash) { // if the file is changed while app is closed, update the tab's hash and unset the state to prevent unwanted undo/redo behaviors
+                           t.hash = fileHash;
+                           t.isChanged = false;
+                           t.state = undefined;
+                       }
+                   } catch(ignored) { // if cannot read the file that was opened in the previous session
+                       console.warn(`expected file '${t.file}' is not found on the system.`);
+                       t.isTemp = true;
+                       t.content = "";
+                   }
+               }
+            });
+
+            mainWindow.webContents.send(EventType.INIT_WITH_STATE, initialState);
         }
     });
+
+    mainWindow.on(EventType.CLOSE_WINDOW, (event) => {
+        event.preventDefault();
+
+        mainWindow.webContents.send(EventType.CLOSE_WINDOW);
+    })
 };
 
 // This method will be called when Electron has finished

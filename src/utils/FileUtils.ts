@@ -57,3 +57,7 @@ export function ensureExists(basePath:string, fileName?:string, defaultContent?:
 export function readDirectory(path:string, opts = {extensions: []}) {
     return fs.readdirSync(path).filter((f:string) => opts.extensions.some(extension => f.endsWith(extension)));
 }
+
+export function isFileExists(filePath: string) {
+    return fs.existsSync(filePath);
+}
