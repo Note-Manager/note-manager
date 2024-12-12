@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {TabList} from "./TabList";
 import {EditorTab} from "../../domain/EditorTab";
 import Footer from "./Footer";
@@ -9,11 +9,9 @@ import {EventType} from "../../enums";
 import electron from "electron";
 
 export default function TabManager() {
-    const [isDragging, setDragging] = useState(false);
 
     const handleDragEnter = (event: any) => {
         event.preventDefault();
-        setDragging(true);
     };
 
     const handleDragOver = (event: any) => {
@@ -21,12 +19,10 @@ export default function TabManager() {
     };
 
     const handleDragLeave = () => {
-        setDragging(false);
     };
 
     const handleDrop = (event: React.DragEvent) => {
         event.preventDefault();
-        setDragging(false);
 
         const droppedFiles = Array.from(event.dataTransfer.files).map(f => electron.webUtils.getPathForFile(f));
 
@@ -59,9 +55,7 @@ export default function TabManager() {
                     onTabRemove={onTabRemove}
                 />
 
-                {!isDragging &&
-                    <EditorContainer/>
-                }
+                <EditorContainer/>
 
                 <Footer/>
             </div>

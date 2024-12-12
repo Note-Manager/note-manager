@@ -6,7 +6,7 @@ export interface ITheme {
     file:string
 }
 
-export class Theme implements Theme {
+export class Theme implements ITheme {
     name;
     file;
 
