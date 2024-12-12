@@ -40,6 +40,13 @@ module.exports = {
         categories: ["Utility", "TextEditor"],
         icon: "./resources/Icons/note-manager.png"
       },
+    },
+    {
+      name: "@electron-forge/maker-dmg",
+      config: {
+        icon: "./resources/Icons/note-manager.icns",
+        format: "ULFO"
+      }
     }
   ],
   plugins: [
