@@ -97,8 +97,11 @@ function format(lang: string, content: string) {
     try {
         if(lang === LanguageName.XML) {
             return handleXML(content);
+        } else if(lang === LanguageName.JSON) {
+            return JSON.stringify(JSON.parse(content), null, 4);
         }
     } catch (ignored) {
+        console.warn("cannot format content: " + ignored);
         return content;
     }
 

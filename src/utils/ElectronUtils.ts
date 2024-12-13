@@ -1,5 +1,5 @@
 import electron, {app, BrowserWindow} from "electron";
-import {getFocusedWindow, openInFocusedWindow, sendToFocusedWindow} from "./EditorUtils";
+import {getFocusedWindow, openInWindow, sendToFocusedWindow} from "./EditorUtils";
 import {EventType, SystemPaths} from "../enums";
 import {SupportedLanguages} from "../domain/SupportedLanguage";
 import * as Environment from "./EnvironmentUtils";
@@ -41,11 +41,11 @@ export function createApplicationMenu() {
                         });
 
                         if (file?.length === 1) {
-                            openInFocusedWindow(file[0]);
+                            openInWindow(focusedWindow, file[0]);
 
                             focusedWindow.moveTop();
                         }
-                    }
+                    },
                 },
                 {
                     label: 'Save',

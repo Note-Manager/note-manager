@@ -8,7 +8,7 @@ import electron, {BrowserWindow} from "electron";
 import {EventType} from "../enums";
 import {findLanguageByFileName} from "../domain/SupportedLanguage";
 
-export async function fileToTab(file: string): Promise<EditorTab> {
+export async function fileToTab(file: string) {
     if (!isFileExists(file)) throw new Error("Cannot found file for open: " + file);
 
     const fileName = path.basename(file);
@@ -18,14 +18,14 @@ export async function fileToTab(file: string): Promise<EditorTab> {
     return {
         id: crypto.randomUUID(),
         name: fileName,
+        hash: await hash(content),
         displayName: shortenTabName(fileName),
         file: file,
         isTemp: false,
         isChanged: false,
-        hash: await hash(content),
         content: content,
         language: findLanguageByFileName(fileName)
-    };
+    } as EditorTab;
 }
 
 export function readEditorState() {
@@ -76,9 +76,9 @@ export function openInFocusedWindow(file: string) {
 }
 
 export function openInWindow(window: electron.BrowserWindow, file: string) {
-    console.log("opening file: " + file);
-    fileToTab(file).then(result => {
-        window.webContents.send(EventType.OPEN_TAB, result);
+    console.log("opening file: " + file + " in " + window.id);
+    fileToTab(file).then(tab => {
+        window.webContents.send(EventType.OPEN_TAB, tab);
     });
 }
 

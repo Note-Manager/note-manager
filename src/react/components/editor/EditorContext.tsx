@@ -1,4 +1,4 @@
-import {SupportedLanguage, SupportedLanguages} from "../../../domain/SupportedLanguage";
+import {SupportedLanguages} from "../../../domain/SupportedLanguage";
 import {EditorData} from "../../../domain/EditorData";
 import React, {createContext, ReactNode, useContext, useEffect, useState} from "react";
 import {EditorTab} from "../../../domain/EditorTab";

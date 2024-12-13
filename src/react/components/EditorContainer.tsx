@@ -2,6 +2,7 @@ import {EditorTab} from "../../domain/EditorTab";
 import Editor from "./editor/Editor";
 import React, {useEffect, useRef} from "react";
 import * as TextUtils from "../../utils/TextUtils";
+import {shortenTabName} from "../../utils/TextUtils";
 import {writeFile} from "../../utils/FileUtils";
 import {fireEvent, off, on} from "../ApplicationEvents";
 import {EventType} from "../../enums";
@@ -9,7 +10,6 @@ import path from "node:path";
 import {Ace} from "ace-builds";
 import {SupportedLanguage, SupportedLanguages} from "../../domain/SupportedLanguage";
 import {useEditorContext} from "./editor/EditorContext";
-import {shortenTabName} from "../../utils/TextUtils";
 
 const debounceDelay = 200; // Delay in milliseconds
 let changeDebounceTimer: NodeJS.Timeout; // Timer for change event

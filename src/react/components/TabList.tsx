@@ -102,7 +102,6 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         };
 
         const handleTabOpen = (event: any, data: any) => {
-            console.info(data);
             addTab(data);
         };
 
