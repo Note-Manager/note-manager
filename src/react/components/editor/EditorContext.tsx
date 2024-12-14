@@ -1,8 +1,6 @@
-import {SupportedLanguages} from "../../../domain/SupportedLanguage";
 import {EditorData} from "../../../domain/EditorData";
 import React, {createContext, ReactNode, useContext, useEffect, useState} from "react";
 import {EditorTab} from "../../../domain/EditorTab";
-import {hash} from "../../../utils/TextUtils";
 
 interface IEditorContext {
     data: EditorData;
@@ -13,16 +11,6 @@ interface IEditorContext {
     setActiveTab: (activeTab: EditorTab) => void;
     setTabs: (activeTabs: EditorTab[]) => void;
 }
-
-const initialTabs: Array<EditorTab> = [
-    {
-        id: crypto.randomUUID(),
-        name: "New Document.txt",
-        displayName: "New Document.txt",
-        content: "",
-        language: SupportedLanguages.text,
-    }
-];
 
 // Initial values for the context
 export const initial = {
@@ -35,7 +23,7 @@ export const initial = {
         },
         openedFile: "",
     },
-    tabs: initialTabs
+    tabs: []
 };
 
 // Create the context
@@ -55,14 +43,6 @@ export const EditorContextProvider: React.FC<{ children: ReactNode }> = ({childr
     const [data, setData] = useState<EditorData>(initial.data);
     const [activeTab, setActiveTab] = useState<EditorTab>(initial.tabs[0]);
     const [tabs, setTabs] = useState<Array<EditorTab>>(initial.tabs);
-
-    useEffect(() => {
-        const init = async() => {
-            activeTab.hash = await hash(activeTab.content||"");
-        }
-
-        init().then(r => r);
-    }, []);
 
     return (
         <EditorContext.Provider value={{data, tabs, activeTab, setData, setTabs, setActiveTab}}>

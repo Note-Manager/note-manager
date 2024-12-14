@@ -22,6 +22,9 @@ export default function EditorContainer() {
     const editorRef = useRef<Ace.Editor>();
 
     useEffect(() => {
+        if(!activeTab){
+            return;
+        }
         const onSetTabLanguage = (event: any, newLang: SupportedLanguage) => {
             activeTab.language = newLang;
             activeTab.name = activeTab.name?.substring(0, activeTab.name?.lastIndexOf(".")) + newLang.extensions[0];
@@ -133,7 +136,9 @@ export default function EditorContainer() {
     }
 
     return (
-        <div className={"tabContentWrapper"} key={activeTab.id}>
+        <>
+        {activeTab.id&&
+            <div className={"tabContentWrapper"} key={activeTab.id}>
             <Editor
                 content={activeTab.content || ""}
                 language={activeTab.language||SupportedLanguages.text}
@@ -142,6 +147,8 @@ export default function EditorContainer() {
                 cursorListener={onCursorChange}
                 onEditorLoad={onEditorLoad}/>
         </div>
+        }
+        </>
     );
 }
 

@@ -1,13 +1,14 @@
-import {app, BrowserWindow} from 'electron';
+import { app, BrowserWindow } from 'electron';
 
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
-import {EventType} from "./enums";
-import {attachTitlebarToWindow, setupTitlebar} from "custom-electron-titlebar/main";
+import { EventType } from "./enums";
+import { attachTitlebarToWindow, setupTitlebar } from "custom-electron-titlebar/main";
 import * as Environment from "./utils/EnvironmentUtils";
-import {fileToTab, readEditorState} from "./utils/EditorUtils";
+import { fileToTab, readEditorState } from "./utils/EditorUtils";
 import initIpcMainListeners from "./ipc/IpcMainListener";
-import {initApplicationMenu, loadThemeToWindow, refreshTitlebar} from "./utils/ElectronUtils";
-import {EditorState} from "./domain/EditorState";
+import { initApplicationMenu, loadThemeToWindow, refreshTitlebar } from "./utils/ElectronUtils";
+import { EditorState } from "./domain/EditorState";
+import { SupportedLanguages } from './domain/SupportedLanguage';
 
 setupTitlebar();
 
@@ -60,18 +61,25 @@ const createWindow = () => {
         refreshTitlebar();
 
         const fileArg = getFileArgument();
-
+        const activeTabId = crypto.randomUUID();
         let initialState: EditorState = {
-            tabs: [],
+            tabs: [{
+                id: activeTabId,
+                name: "New Document.txt",
+                displayName: "New Document.txt",
+                content: "",
+                language: SupportedLanguages.text,
+            }], 
+            activeTabId: activeTabId
         }
 
         const persistentState = readEditorState();
 
-        if(persistentState) { // restore the state
+        if (persistentState) { // restore the state
             initialState = persistentState;
         }
 
-        if(fileArg && !initialState.tabs.map(t => t.file).includes(fileArg)) {
+        if (fileArg && !initialState.tabs.map(t => t.file).includes(fileArg)) {
             const tab = await fileToTab(fileArg);
 
             initialState.tabs.push(tab);
@@ -114,11 +122,11 @@ app.on('window-all-closed', () => {
     }
 });
 
-function getFileArgument ()  {
+function getFileArgument() {
     if (app.isPackaged && process.argv.length > 1) { // 'open with ...' option
         const file = process.argv[1];
 
-        if(file && file !== "." && file !== "./") return file;
+        if (file && file !== "." && file !== "./") return file;
     }
 }
 

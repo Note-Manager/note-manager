@@ -76,6 +76,9 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
     }
 
     const closeTab = (tabToRemove: EditorTab) => {
+        if(!tabToRemove){
+            return;
+        }
         if (tabToRemove.isChanged) {
             fireEvent(EventType.SHOW_CONFIRMATION, {
                 title: "Unsaved changes",
@@ -122,7 +125,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
 
             const data: EditorState = {
                 tabs: tabs,
-                activeTabId: activeTab.id || tabs[tabs.length - 1].id
+                activeTabId: activeTab?.id || tabs[tabs.length - 1]?.id
             };
 
             await fireEvent(EventType.CLOSE_WITH_STATE, data);
@@ -130,7 +133,9 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
 
         const initializeWithState = (event: any, data: EditorState) => {
             setTabs(data.tabs);
-            setActiveTab(data.tabs.find(t => t.id === data.activeTabId) || tabs[tabs.length - 1]);
+            if(data.tabs?.length>0){
+                setActiveTab(data.tabs.find(t => t.id === data.activeTabId) || tabs[tabs.length - 1]);
+            }
         }
 
         on(EventType.NEW_TAB, onNewTab);
