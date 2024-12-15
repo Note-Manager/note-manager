@@ -29,11 +29,77 @@ body, html {
     justify-content: space-between;
 }
 
-.tabContentWrapper {
+#editorBody {
     flex: 1;
 
     display: flex;
+    justify-content: space-between;
     overflow: hidden;
+}
+
+#editorContentWrapper {
+    flex: 1;
+}
+
+#tabContentWrapper {
+    flex: 1;
+}
+
+#editorToolsWrapper {
+    display: flex;
+    justify-content: space-between;
+    width: fit-content;
+    max-width: 50%;
+
+    border: 1px solid;
+}
+
+#editorTools {
+    border: 1px solid;
+
+    min-width: 50px;
+    max-width: 100%;
+
+    align-items: center;
+}
+
+#toolWindow {
+    padding: 5px;
+
+    height: 100%;
+    max-width: 100%;
+
+    width: fit-content;
+
+    display: flex;
+    justify-content: center;
+
+    resize: horizontal;
+    overflow: auto;
+}
+
+#toolWindowContent {
+    padding: 5px;
+    width: 100%;
+}
+
+.editorToolWrapper {
+    width: min-content;
+    height: min-content;
+    display: flex;
+    justify-content: space-between;
+
+    padding: 5px;
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+}
+
+.editorToolWrapper:hover {
+    cursor: pointer;
+}
+
+.editorToolWrapper > * {
+    margin: 5px;
 }
 
 .cm-theme-none {

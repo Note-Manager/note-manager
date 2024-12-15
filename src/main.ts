@@ -1,14 +1,14 @@
-import { app, BrowserWindow } from 'electron';
+import {app, BrowserWindow} from 'electron';
 
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
-import { EventType } from "./enums";
-import { attachTitlebarToWindow, setupTitlebar } from "custom-electron-titlebar/main";
+import {EventType} from "./enums";
+import {attachTitlebarToWindow, setupTitlebar} from "custom-electron-titlebar/main";
 import * as Environment from "./utils/EnvironmentUtils";
-import { fileToTab, readEditorState } from "./utils/EditorUtils";
+import {fileToTab, readEditorState} from "./utils/EditorUtils";
 import initIpcMainListeners from "./ipc/IpcMainListener";
-import { initApplicationMenu, loadThemeToWindow, refreshTitlebar } from "./utils/ElectronUtils";
-import { EditorState } from "./domain/EditorState";
-import { SupportedLanguages } from './domain/SupportedLanguage';
+import {initApplicationMenu, loadThemeToWindow, refreshTitlebar} from "./utils/ElectronUtils";
+import {EditorState} from "./domain/EditorState";
+import {SupportedLanguages} from './domain/SupportedLanguage';
 
 setupTitlebar();
 
@@ -44,7 +44,7 @@ const createWindow = () => {
             nodeIntegration: true,
             contextIsolation: false,
             sandbox: false,
-            plugins: true
+            plugins: true,
         }
     });
 
@@ -53,6 +53,17 @@ const createWindow = () => {
     // load index.html
     // @ts-ignore
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+        console.log(`Blocked navigation to: ${url}`);
+        event.preventDefault(); // Prevent navigation
+    });
+
+    // Intercept link clicks that try to open new windows
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        console.log(`Blocked new window for: ${url}`);
+        return { action: 'deny' }; // Prevent the new window from opening
+    });
 
     attachTitlebarToWindow(mainWindow);
 

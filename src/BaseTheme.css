@@ -12,6 +12,14 @@ body {
     background-color: var(--secondary-bg);
 }
 
+.editorToolWrapper:hover {
+    background-color: var(--action-bg);
+}
+
+.selected {
+    background-color: var(--action-bg);
+}
+
 /* TOP BAR */
 .cet-menubar-menu-button {
     cursor: pointer !important;

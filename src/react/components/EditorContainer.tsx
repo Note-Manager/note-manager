@@ -1,6 +1,6 @@
 import {EditorTab} from "../../domain/EditorTab";
 import Editor from "./editor/Editor";
-import React, {useEffect, useRef} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import * as TextUtils from "../../utils/TextUtils";
 import {shortenTabName} from "../../utils/TextUtils";
 import {writeFile} from "../../utils/FileUtils";
@@ -10,6 +10,9 @@ import path from "node:path";
 import {Ace} from "ace-builds";
 import {SupportedLanguage, SupportedLanguages} from "../../domain/SupportedLanguage";
 import {useEditorContext} from "./editor/EditorContext";
+import {allPlugins} from "../../utils/PluginLoader";
+import {ToolbarMenuItem} from "./editor/plugins";
+import DOMPurify from "dompurify";
 
 const debounceDelay = 200; // Delay in milliseconds
 let changeDebounceTimer: NodeJS.Timeout; // Timer for change event
@@ -17,7 +20,9 @@ let selectionChangeDebounceTimer: NodeJS.Timeout; // Timer for selection event
 let cursorChangeDebounceTimer: NodeJS.Timeout; // Timer for selection event
 
 export default function EditorContainer() {
-    const {data, setData, activeTab, setActiveTab} = useEditorContext();
+    const {data, setData, activeTab} = useEditorContext();
+
+    const[activeTool, setActiveTool] = useState<ToolbarMenuItem>();
 
     const editorRef = useRef<Ace.Editor>();
 
@@ -27,8 +32,11 @@ export default function EditorContainer() {
         }
         const onSetTabLanguage = (event: any, newLang: SupportedLanguage) => {
             activeTab.language = newLang;
-            activeTab.name = activeTab.name?.substring(0, activeTab.name?.lastIndexOf(".")) + newLang.extensions[0];
-            activeTab.displayName = shortenTabName(activeTab.name);
+
+            if(activeTab.isTemp) {
+                activeTab.name = activeTab.name?.substring(0, activeTab.name?.lastIndexOf(".")) + newLang.extensions[0];
+                activeTab.displayName = shortenTabName(activeTab.name);
+            }
 
             setData(getEditorData());
         }
@@ -59,6 +67,19 @@ export default function EditorContainer() {
             off(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
         }
     }, [activeTab]);
+
+    useEffect(() => {
+        const toolWindowContent = activeTool?.getToolbarWindowContent();
+        const el = document.getElementById("toolWindowContent");
+        if(el) {
+            const sanitizedContent = toolWindowContent ? DOMPurify.sanitize(toolWindowContent) : toolWindowContent;
+
+            const shadow = el.attachShadow({mode: "open"});
+            shadow.innerHTML = sanitizedContent || "";
+
+            if(activeTool?.onContentMount) activeTool?.onContentMount(shadow);
+        }
+    }, [activeTool]);
 
     if(!activeTab) return null;
 
@@ -136,19 +157,43 @@ export default function EditorContainer() {
     }
 
     return (
-        <>
-        {activeTab.id&&
-            <div className={"tabContentWrapper"} key={activeTab.id}>
-            <Editor
-                content={activeTab.content || ""}
-                language={activeTab.language||SupportedLanguages.text}
-                selectionListener={onSelectionChange}
-                changeListener={onContentChange}
-                cursorListener={onCursorChange}
-                onEditorLoad={onEditorLoad}/>
+        <div id={"editorBody"}>
+            {activeTab &&
+                <div id={"tabContentWrapper"} key={activeTab.id}>
+                    <Editor
+                        content={activeTab.content || ""}
+                        language={activeTab.language || SupportedLanguages.text}
+                        selectionListener={onSelectionChange}
+                        changeListener={onContentChange}
+                        cursorListener={onCursorChange}
+                        onEditorLoad={onEditorLoad}/>
+                </div>
+            }
+            <div id={"editorToolsWrapper"}>
+                { activeTool &&
+                    <div id={"toolWindow"}>
+                        <div id={"toolWindowContent"}>
+                        </div>
+                    </div>
+                }
+                <div id={"editorTools"}>
+                    {
+                        allPlugins.filter(p => p.toolbarMenuItems && p.toolbarMenuItems.length > 0).flatMap(plugin => plugin.toolbarMenuItems).map((item, idx) => {
+                            return (
+                                <div key={idx} className={"editorToolWrapper" + (activeTool === item ? " selected" : "")} onClick={() => setActiveTool(activeTool === item ? undefined : item)}>
+                                    <img src={item?.icon} style={{
+                                        width: '20px',
+                                        fill: "white",
+                                        color: "white"
+                                    }} alt={"img"}/>
+                                    <span>{item?.label}</span>
+                                </div>
+                            );
+                        })
+                    }
+                </div>
+            </div>
         </div>
-        }
-        </>
     );
 }
 

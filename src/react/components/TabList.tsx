@@ -221,6 +221,7 @@ function generateTempTab(name:string): EditorTab {
     return {
         id: crypto.randomUUID(),
         name: name,
+        isTemp: true,
         state: {scroll: {left: 0, top: 0}, selection: undefined}
     }
 }

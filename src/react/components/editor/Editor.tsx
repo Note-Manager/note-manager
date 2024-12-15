@@ -92,7 +92,7 @@ export default function Editor({content, language, onEditorLoad, changeListener,
     }
 
     return (
-        <div style={{height: '100%', maxHeight: '100%', width: '100%', maxWidth: '100%'}}>
+        <div style={{height: '100%', width: '100%'}}>
             <AceEditor
                 mode={mode ?? undefined}
                 theme={""}
@@ -108,6 +108,7 @@ export default function Editor({content, language, onEditorLoad, changeListener,
                 tabSize={4}
                 fontSize={"1rem"}
                 setOptions={{
+                    fontFamily: "Courier New",
                     animatedScroll: true,
                     highlightActiveLine: true,
                     highlightGutterLine: true,

@@ -95,7 +95,7 @@ function format(lang: string, content: string) {
     if(lang === LanguageName.TEXT) return content;
 
     try {
-        if(lang === LanguageName.XML) {
+        if([LanguageName.XML, LanguageName.HTML].includes(lang as LanguageName)) {
             return handleXML(content);
         } else if(lang === LanguageName.JSON) {
             return JSON.stringify(JSON.parse(content), null, 4);
