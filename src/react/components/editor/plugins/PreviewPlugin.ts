@@ -44,21 +44,37 @@ export default class PreviewPlugin implements EditorPlugin {
                             * {
                                 font-size: 14px;
                             }
+                            
+                            .warning {
+                                padding: 5px;
+                            }
+                            
                             .warning, .warning > *{
                                 background-color: rgb(195,169,90) !important;
                                 color: black !important;
                             }
+                            
                             #previewRefresh {
                                 transition: 0.2s all ease;
-                                margin: 5px;
+                                margin: 5px 0;
                                 padding: 5px;
                                 border: 1px solid black;
                                 cursor: pointer;
                                 display: flex;
                                 align-items: center;
+                                background-color: darkgray;
+                                border-radius: 5px;
+                                color: black;
                             }
+                            
                             #previewRefresh:hover {
                                 background-color: #cf681f !important;
+                            }
+                            
+                            #previewButtons {
+                                display: flex;
+                                align-items: center;
+                                border-bottom: 1px solid;
                             }
                             
                             #previewContent {
@@ -70,9 +86,10 @@ export default class PreviewPlugin implements EditorPlugin {
                                 color: black;
                                 padding: 5px;
                                 box-sizing: border-box;
+                                overflow: auto;
                             }
                         </style>
-                        <div id="previewButtons" style="display: flex; align-items: center; border-bottom: 1px solid; background-color: #323232;">
+                        <div id="previewButtons">
                             <div id="previewRefresh">
                                 <img src="${refreshIcon}" alt="" width="20" style="margin: 0 5px"/>
                                 <span>Refresh</span>

@@ -21,8 +21,6 @@ body, html {
 
     height: 100% !important;
 
-    border: 1px solid;
-
     display: flex;
     flex-direction: column;
 
@@ -50,8 +48,6 @@ body, html {
     justify-content: space-between;
     width: fit-content;
     max-width: 50%;
-
-    border: 1px solid;
 }
 
 #editorTools {
@@ -59,25 +55,38 @@ body, html {
 
     min-width: 50px;
     max-width: 100%;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }
 
 #toolWindow {
-    padding: 5px;
-
     height: 100%;
     max-width: 100%;
 
-    width: fit-content;
-
-    display: flex;
-    justify-content: center;
+    width: 40vw;
 
     resize: horizontal;
     overflow: auto;
+
+    border-left: 1px solid;
+}
+
+#toolWindowHeader {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid;
+}
+
+#toolWindowTitle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px;
+    margin-right: 5px;
+}
+
+#toolWindowButtons {
+    padding: 5px;
+    display: flex;
+    align-items: center;
 }
 
 #toolWindowContent {
@@ -86,10 +95,11 @@ body, html {
 }
 
 .editorToolWrapper {
-    width: min-content;
+    width: 100%;
     height: min-content;
     display: flex;
     justify-content: space-between;
+    align-items: center;
 
     padding: 5px;
     writing-mode: vertical-lr;
@@ -102,15 +112,6 @@ body, html {
 
 .editorToolWrapper > * {
     margin: 5px;
-}
-
-.cm-theme-none {
-    width: 100%;
-    height: 100%;
-}
-
-.cm-editor {
-    height: 100%;
 }
 
 #footer {

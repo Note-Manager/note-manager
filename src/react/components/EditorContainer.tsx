@@ -13,6 +13,8 @@ import {useEditorContext} from "./editor/EditorContext";
 import {allPlugins} from "../../utils/PluginLoader";
 import {ToolbarMenuItem} from "./editor/plugins";
 import DOMPurify from "dompurify";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faTimesRectangle} from "@fortawesome/free-regular-svg-icons/faTimesRectangle";
 
 const debounceDelay = 200; // Delay in milliseconds
 let changeDebounceTimer: NodeJS.Timeout; // Timer for change event
@@ -172,6 +174,14 @@ export default function EditorContainer() {
             <div id={"editorToolsWrapper"}>
                 { activeTool &&
                     <div id={"toolWindow"}>
+                        <div id={"toolWindowHeader"}>
+                            <div id={"toolWindowButtons"}>
+                                <FontAwesomeIcon className={"iconButton"} icon={faTimesRectangle} onClick={() => setActiveTool(undefined)} />
+                            </div>
+                            <div id={"toolWindowTitle"}>
+                                <span>{activeTool.label}</span>
+                            </div>
+                        </div>
                         <div id={"toolWindowContent"}>
                         </div>
                     </div>

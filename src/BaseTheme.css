@@ -16,8 +16,12 @@ body {
     background-color: var(--action-bg);
 }
 
-.selected {
+.editorToolWrapper.selected {
     background-color: var(--action-bg);
+}
+
+#toolWindowHeader {
+    background-color: var(--secondary-bg);
 }
 
 /* TOP BAR */
