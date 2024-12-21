@@ -63,16 +63,29 @@ body, html {
 
     width: 40vw;
 
-    resize: horizontal;
-    overflow: auto;
+    resize: both;
 
     border-left: 1px solid;
+
+    display: flex;
+    flex-direction: column;
+
+    justify-content: flex-start;
+    align-items: center;
 }
 
 #toolWindowHeader {
+    width: 100%;
     display: flex;
     justify-content: space-between;
     border-bottom: 1px solid;
+}
+
+#toolWindowContent {
+    padding: 5px;
+    width: 100%;
+    max-height: 100%;
+    box-sizing: border-box;
 }
 
 #toolWindowTitle {
@@ -87,11 +100,6 @@ body, html {
     padding: 5px;
     display: flex;
     align-items: center;
-}
-
-#toolWindowContent {
-    padding: 5px;
-    width: 100%;
 }
 
 .editorToolWrapper {

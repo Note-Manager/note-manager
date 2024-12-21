@@ -4,11 +4,14 @@ import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
 import {EventType} from "./enums";
 import {attachTitlebarToWindow, setupTitlebar} from "custom-electron-titlebar/main";
 import * as Environment from "./utils/EnvironmentUtils";
-import {fileToTab, readEditorState} from "./utils/EditorUtils";
+import {fileToTab, openInWindow, readEditorState} from "./utils/EditorUtils";
 import initIpcMainListeners from "./ipc/IpcMainListener";
 import {initApplicationMenu, loadThemeToWindow, refreshTitlebar} from "./utils/ElectronUtils";
 import {EditorState} from "./domain/EditorState";
 import {SupportedLanguages} from './domain/SupportedLanguage';
+import {hash} from "./utils/TextUtils";
+import {isFileExists} from "./utils/FileUtils";
+
 
 setupTitlebar();
 
@@ -32,8 +35,10 @@ process.on('unhandledRejection', (reason: any) => {
     logError(reason);
 });
 
+let mainWindow: BrowserWindow;
+
 const createWindow = () => {
-    const mainWindow = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: 1440,
         height: 860,
         titleBarStyle: "hidden",
@@ -71,33 +76,9 @@ const createWindow = () => {
         loadThemeToWindow(mainWindow);
         refreshTitlebar();
 
-        const fileArg = getFileArgument();
-        const activeTabId = crypto.randomUUID();
-        let initialState: EditorState = {
-            tabs: [{
-                id: activeTabId,
-                name: "New Document.txt",
-                displayName: "New Document.txt",
-                content: "",
-                language: SupportedLanguages.text,
-            }], 
-            activeTabId: activeTabId
-        }
+        const state = await getEditorState();
 
-        const persistentState = readEditorState();
-
-        if (persistentState) { // restore the state
-            initialState = persistentState;
-        }
-
-        if (fileArg && !initialState.tabs.map(t => t.file).includes(fileArg)) {
-            const tab = await fileToTab(fileArg);
-
-            initialState.tabs.push(tab);
-            initialState.activeTabId = tab.id;
-        }
-
-        mainWindow.webContents.send(EventType.INIT_WITH_STATE, initialState);
+        mainWindow.webContents.send(EventType.INIT_WITH_STATE, state);
     });
 
     mainWindow.on(EventType.CLOSE_WINDOW, (event) => {
@@ -107,22 +88,84 @@ const createWindow = () => {
     })
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
-    Environment.loadPreferences(); // load user preferences
+async function getEditorState() {
+    const fileArg = getFileArgument();
 
-    createWindow();
+    const tempTabId = crypto.randomUUID();
+    let initialState: EditorState = {
+        tabs: [{
+            id: tempTabId,
+            name: "New Document.txt",
+            displayName: "New Document.txt",
+            content: "",
+            hash: await hash(""),
+            language: SupportedLanguages.text,
+        }],
+        activeTabId: tempTabId
+    }
 
-    // On OS X it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow();
+    const persistentState = readEditorState();
+
+    if (persistentState) { // restore the state
+        initialState = persistentState;
+    }
+
+    if (fileArg && !initialState.tabs.map(t => t.file).includes(fileArg)) {
+        const tab = await fileToTab(fileArg);
+
+        initialState.tabs.push(tab);
+        initialState.activeTabId = tab.id;
+    }
+
+    return initialState;
+}
+
+if (!app.requestSingleInstanceLock()) {
+    app.quit(); // Quit if another instance is already running
+} else {
+    app.on('second-instance', (_, argv) => {
+        // When a second instance is launched
+        if (mainWindow) {
+            // Focus the existing window
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
+
+            // Pass the file argument (e.g., argv[2] on Windows, argv[1] on macOS)
+            const fileArg = getFileArgument(argv);
+            if (fileArg) {
+                openInWindow(mainWindow, fileArg);
+            }
         }
     });
-});
+
+    // This method will be called when Electron has finished
+    // initialization and is ready to create browser windows.
+    // Some APIs can only be used after this event occurs.
+    app.whenReady().then(() => {
+        Environment.loadPreferences(); // load user preferences
+
+        const arg = getFileArgument(); // open with...
+
+        if(arg && mainWindow) {
+            const targetWindow = mainWindow;
+
+            openInWindow(targetWindow, arg);
+
+            targetWindow.moveTop();
+            targetWindow.focus();
+        } else {
+            createWindow();
+        }
+
+        // On OS X it's common to re-create a window in the app when the
+        // dock icon is clicked and there are no other windows open.
+        app.on('activate', () => {
+            if (BrowserWindow.getAllWindows().length === 0) {
+                createWindow();
+            }
+        });
+    });
+}
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -133,12 +176,22 @@ app.on('window-all-closed', () => {
     }
 });
 
-function getFileArgument() {
-    if (app.isPackaged && process.argv.length > 1) { // 'open with ...' option
-        const file = process.argv[1];
+function getFileArgument(args?: string[]) {
+    let result;
 
-        if (file && file !== "." && file !== "./") return file;
+    const processArguments = args || process.argv;
+
+    if (app.isPackaged && processArguments?.length > 1) { // 'open with ...' option
+        processArguments?.forEach((arg, idx) => {
+            if(idx === 0) return; // pass the first argument, it is the working directory
+
+            if(arg && arg !== "." && arg !== "./") {
+                if(isFileExists(arg)) result = arg;
+            }
+        });
     }
+
+    return result;
 }
 
 initLoggingEventHandlers();

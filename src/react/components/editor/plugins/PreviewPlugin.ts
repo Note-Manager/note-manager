@@ -39,7 +39,7 @@ export default class PreviewPlugin implements EditorPlugin {
             },
             getToolbarWindowContent: () => {
                 return `
-                    <div>
+                    <div style="width: 100%; height: 100%;">
                         <style>
                             * {
                                 font-size: 14px;
@@ -79,9 +79,9 @@ export default class PreviewPlugin implements EditorPlugin {
                             
                             #previewContent {
                                 width: 100%;
-                                height: 100%;
+                                height: 80%;
                                 max-width: 100%;
-                                max-height: 100%;
+                                max-height: 80%;
                                 background-color: white;
                                 color: black;
                                 padding: 5px;
