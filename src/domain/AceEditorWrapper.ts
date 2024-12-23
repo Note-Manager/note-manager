@@ -28,11 +28,11 @@ export class AceEditorWrapper implements EditorWrapper {
     replaceRange(range: Ace.Range, text: string): void {
         if(!range) return;
 
-        this._editor?.session.replace(range, text);
+        this._editor.session.replace(range, text);
     }
 
     getSelectedText() {
-        return this._editor?.getSelectedText() || "";
+        return this._editor.getSelectedText() || "";
     }
 
     replaceAllSelectionRanges(text: string): void {
@@ -52,14 +52,14 @@ export class AceEditorWrapper implements EditorWrapper {
     }
 
     getLanguage(): LanguageName {
-        return this._editor?.getOption("mode").split("/").pop() as LanguageName || LanguageName.TEXT;
+        return this._editor.getOption("mode").split("/").pop() as LanguageName || LanguageName.TEXT;
     }
 
     getTextRange(range: Ace.Range): string {
-        return this._editor?.session.getTextRange(range) || "";
+        return this._editor.session.getTextRange(range) || "";
     }
 
     getValue(): string {
-        return this._editor?.session.getValue();
+        return this._editor.session.getValue();
     }
 }
