@@ -9,6 +9,7 @@ import {fireEvent} from "../../ApplicationEvents";
 import {EventType} from "../../../enums";
 import {allPlugins} from "../../../utils/PluginLoader";
 import {ipcRenderer} from "electron";
+import {AceEditorWrapper} from "../../../domain/AceEditorWrapper";
 
 export default function Editor({content, language, onEditorLoad, changeListener, cursorListener, selectionListener}: {
     content: string,
@@ -60,7 +61,12 @@ export default function Editor({content, language, onEditorLoad, changeListener,
 
     const handleLoad = (editor: Ace.Editor) => {
         try {
-            allPlugins.forEach(p => p.initializePlugin(editor));
+            const editorWrapper = new AceEditorWrapper(editor);
+
+            allPlugins.forEach(p => {
+                console.log("initializing plugin... ("+p.name+")");
+                p.initializePlugin(editorWrapper)
+            });
         } catch (err) {
             console.error("could not initialize plugin: " + err);
         }
@@ -117,7 +123,10 @@ export default function Editor({content, language, onEditorLoad, changeListener,
                     showPrintMargin: false,
                     useWorker: false,
                     enableSnippets: true,
-                    cursorStyle: "ace"
+                    cursorStyle: "ace",
+                    scrollPastEnd: false,
+                    useSoftTabs: false,
+                    navigateWithinSoftTabs: false,
                 }}
                 width={"100%"}
                 height={"100%"}

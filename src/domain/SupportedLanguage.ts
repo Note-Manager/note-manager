@@ -14,6 +14,7 @@ export enum LanguageName {
     CSS = "css",
     MARKDOWN = "markdown",
     JAVA = "java",
+    SH = "sh"
 }
 
 export const SupportedLanguages: Record<LanguageName, SupportedLanguage> = {
@@ -62,6 +63,11 @@ export const SupportedLanguages: Record<LanguageName, SupportedLanguage> = {
         label: "Java",
         extensions: [".java", ".class"]
     },
+    [LanguageName.SH]: {
+        name: LanguageName.SH,
+        label: "SH",
+        extensions: [".sh"]
+    }
 };
 
 export function findLanguageByFileName(fileName: string|undefined): SupportedLanguage {

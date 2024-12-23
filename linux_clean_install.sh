@@ -1,7 +1,7 @@
 # Script to quickly fresh-install note-manager
 
 # 1- Remove existing installation if exists
-# 2- Delete 'out' folder
+# 2- Delete 'out' folder if exists
 # 3- Run 'npm make' to create new artifact
 # 4- Install the newly created artifact
 # 5- Launch the app

@@ -59,17 +59,6 @@ const createWindow = () => {
     // @ts-ignore
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-    mainWindow.webContents.on('will-navigate', (event, url) => {
-        console.log(`Blocked navigation to: ${url}`);
-        event.preventDefault(); // Prevent navigation
-    });
-
-    // Intercept link clicks that try to open new windows
-    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        console.log(`Blocked new window for: ${url}`);
-        return { action: 'deny' }; // Prevent the new window from opening
-    });
-
     attachTitlebarToWindow(mainWindow);
 
     mainWindow.webContents.on("dom-ready", async () => {
