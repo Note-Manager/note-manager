@@ -1,6 +1,7 @@
 import {EditorAction, EditorMenuItem, EditorPlugin} from "./index";
 import {LanguageName} from "../../../../domain/SupportedLanguage";
 import xmlFormat from "xml-formatter";
+import { format as sqlFormat } from 'sql-formatter';
 import os from "os";
 import {EditorWrapper} from "../../../../domain/EditorWrapper";
 
@@ -85,6 +86,19 @@ function format(lang: string, content: string) {
             return handleXML(content);
         } else if(lang === LanguageName.JSON) {
             return JSON.stringify(JSON.parse(content), null, 4);
+        } else if(lang === LanguageName.SQL || lang === LanguageName.PLSQL) {
+            return sqlFormat(
+                content,
+                {
+                    dataTypeCase: "preserve",
+                    keywordCase: "preserve",
+                    functionCase: "preserve",
+                    identifierCase: "preserve",
+                    language: lang === LanguageName.PLSQL ? "plsql" : "sql",
+                    useTabs: false,
+                    tabWidth: 4
+                }
+            );
         }
     } catch (ignored) {
         console.warn("cannot format content: " + ignored);

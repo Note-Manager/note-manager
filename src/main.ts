@@ -104,6 +104,8 @@ async function getEditorState() {
 
         initialState.tabs.push(tab);
         initialState.activeTabId = tab.id;
+    } else if (fileArg && initialState.tabs.map(t => t.file).includes(fileArg)) {
+        initialState.activeTabId = initialState.tabs.find(t => t.file === fileArg)?.id;
     }
 
     return initialState;

@@ -12,6 +12,7 @@ import {shortenTabName} from "../../utils/TextUtils";
 import {useEditorContext} from "./editor/EditorContext";
 import {findLanguageByFileName} from "../../domain/SupportedLanguage";
 import {EditorState} from "../../domain/EditorState";
+import IpcRendererEvent = Electron.IpcRendererEvent;
 
 const DEFAULT_TAB_NAME = "New Document.txt";
 
@@ -96,7 +97,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
     }
 
     useEffect(() => { // listen for menu accelerators
-        const onNewTab = () => {
+        const onNewTab = (event: IpcRendererEvent, data: any) => {
             addTab(
                 generateTempTab(
                     generateUniqueName(tabs, DEFAULT_TAB_NAME)
@@ -104,7 +105,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
             );
         };
 
-        const handleTabOpen = (event: any, data: any) => {
+        const handleTabOpen = (event: IpcRendererEvent, data: any) => {
             addTab(data);
         };
 

@@ -14,7 +14,9 @@ export enum LanguageName {
     CSS = "css",
     MARKDOWN = "markdown",
     JAVA = "java",
-    SH = "sh"
+    SH = "sh",
+    SQL = "sql",
+    PLSQL = "plsql",
 }
 
 export const SupportedLanguages: Record<LanguageName, SupportedLanguage> = {
@@ -31,7 +33,7 @@ export const SupportedLanguages: Record<LanguageName, SupportedLanguage> = {
     [LanguageName.XML]: {
         name: LanguageName.XML,
         label: "XML",
-        extensions: [".xml", ".xslt", ".xsl"]
+        extensions: [".xml", ".xslt", ".xsl", ".wsdl", ".xsd", ".jrxml"]
     },
     [LanguageName.JSON]: {
         name: LanguageName.JSON,
@@ -67,6 +69,16 @@ export const SupportedLanguages: Record<LanguageName, SupportedLanguage> = {
         name: LanguageName.SH,
         label: "SH",
         extensions: [".sh"]
+    },
+    [LanguageName.SQL]: {
+        name: LanguageName.SQL,
+        label: "SQL",
+        extensions: [".sql"]
+    },
+    [LanguageName.PLSQL]: {
+        name: LanguageName.PLSQL,
+        label: "PL/SQL",
+        extensions: [".sql", ".pck", ".pkg"]
     }
 };
 

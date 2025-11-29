@@ -65,11 +65,18 @@ export function getFocusedWindow() {
 }
 
 export function sendToFocusedWindow(channel: string, data?: any) {
-    getFocusedWindow()?.webContents.send(channel, data);
+    const win = getFocusedWindow();
+
+    if(win) sendToWindow(win, channel, data);
+}
+
+export function sendToWindow(window: electron.BrowserWindow, channel: string, data?: any) {
+    window.webContents.send(channel, data);
 }
 
 export function openInFocusedWindow(file: string) {
     console.log("opening file: " + file);
+
     const win = getFocusedWindow();
 
     if(win) openInWindow(win, file);
@@ -77,8 +84,9 @@ export function openInFocusedWindow(file: string) {
 
 export function openInWindow(window: electron.BrowserWindow, file: string) {
     console.log("opening file: " + file + " in " + window.id);
+
     fileToTab(file).then(tab => {
-        window.webContents.send(EventType.OPEN_TAB, tab);
+        sendToWindow(window, EventType.OPEN_TAB, tab);
     });
 }
 
