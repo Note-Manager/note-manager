@@ -52,7 +52,10 @@ export class AceEditorWrapper implements EditorWrapper {
     }
 
     getLanguage(): LanguageName {
-        return this._editor.getOption("mode").split("/").pop() as LanguageName || LanguageName.TEXT;
+        const mode = this._editor.getOption("mode"); // may be a mode id string or a SyntaxMode object
+        const modeId = typeof mode === "string" ? mode : String((mode as any)?.$id || "");
+
+        return modeId.split("/").pop() as LanguageName || LanguageName.TEXT;
     }
 
     getTextRange(range: Ace.Range): string {

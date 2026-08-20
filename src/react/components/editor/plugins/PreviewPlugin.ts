@@ -116,7 +116,7 @@ export default class PreviewPlugin implements EditorPlugin {
             const el = document.getElementById('previewContent');
 
             if(el) {
-                el.innerHTML = this.editor?.getValue();
+                el.innerHTML = preview(this.editor?.getValue(), this.editor?.getLanguage()) || "";
             }
         }
     }
@@ -133,12 +133,14 @@ export default class PreviewPlugin implements EditorPlugin {
 function preview(content?: string, lang?: string) {
     if(!content || !lang) return "";
 
+    // sanitize every branch: the renderer runs with nodeIntegration, so any
+    // script/event-handler smuggled into the preview would run with node access
     if(lang === LanguageName.HTML) {
-        return content;
+        return DOMPurify.sanitize(content);
     } else if(lang === LanguageName.MARKDOWN) {
         return DOMPurify.sanitize(marked(content, {async: false}));
     } else {
-        return content;
+        return DOMPurify.sanitize(content);
     }
 }
 
