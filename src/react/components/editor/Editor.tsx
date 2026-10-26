@@ -10,6 +10,8 @@ import {EventType} from "../../../enums";
 import {allPlugins} from "../../../utils/PluginLoader";
 import {AceEditorWrapper} from "../../../domain/AceEditorWrapper";
 
+const LARGE_CONTENT_LENGTH = 2 * 1024 * 1024;
+
 export default function Editor({content, language, onEditorLoad, changeListener, cursorListener, selectionListener}: {
     content: string,
     language: SupportedLanguage
@@ -25,6 +27,8 @@ export default function Editor({content, language, onEditorLoad, changeListener,
     const editorRef = useRef<Ace.Editor>();
 
     const [mode, setMode] = useState<string>();
+
+    const isLargeContent = content.length > LARGE_CONTENT_LENGTH;
 
     const isTextSelected = (): boolean => {
         const selectionRange = editorRef.current?.getSelectionRange();
@@ -108,20 +112,20 @@ export default function Editor({content, language, onEditorLoad, changeListener,
                 onLoad={handleLoad}
                 onSelectionChange={handleSelectionChange}
                 placeholder={"Empty document.."}
-                enableLiveAutocompletion={true}
-                enableBasicAutocompletion={true}
+                enableLiveAutocompletion={!isLargeContent}
+                enableBasicAutocompletion={!isLargeContent}
                 tabSize={4}
                 fontSize={"1rem"}
                 setOptions={{
                     fontFamily: "Courier New",
-                    animatedScroll: true,
+                    animatedScroll: !isLargeContent,
                     highlightActiveLine: true,
                     highlightGutterLine: true,
-                    highlightSelectedWord: true,
+                    highlightSelectedWord: !isLargeContent,
                     newLineMode: "auto",
                     showPrintMargin: false,
                     useWorker: false,
-                    enableSnippets: true,
+                    enableSnippets: !isLargeContent,
                     cursorStyle: "ace",
                     scrollPastEnd: false,
                     useSoftTabs: false,

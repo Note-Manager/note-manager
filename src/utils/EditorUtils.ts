@@ -1,10 +1,10 @@
 import path from "node:path";
-import {backupFile, isFileExists, readFile, readSync, writeFileAtomic} from "./FileUtils";
+import {backupFile, getFileSize, isBinaryFile, isFileExists, readFileAsync, writeFileAtomic} from "./FileUtils";
 import {EditorTab} from "../domain/EditorTab";
 import {hash, shortenTabName} from "./TextUtils";
 import * as Environment from "./EnvironmentUtils";
 import {EditorState} from "../domain/EditorState";
-import electron, {BrowserWindow} from "electron";
+import electron, {BrowserWindow, dialog} from "electron";
 import {EventType} from "../enums";
 import {findLanguageByFileName} from "../domain/SupportedLanguage";
 
@@ -13,7 +13,7 @@ export async function fileToTab(file: string) {
 
     const fileName = path.basename(file);
 
-    const content = readFile(file);
+    const content = await readFileAsync(file);
 
     return {
         id: crypto.randomUUID(),
@@ -38,7 +38,7 @@ export async function readEditorState(): Promise<EditorState | undefined> {
     let editorState: EditorState;
 
     try {
-        editorState = JSON.parse(readSync(stateFile));
+        editorState = JSON.parse(await readFileAsync(stateFile));
     } catch (err) {
         console.error(`cannot parse state file '${stateFile}': ${err}`);
         backupFile(stateFile, "corrupt");
@@ -53,7 +53,7 @@ export async function readEditorState(): Promise<EditorState | undefined> {
         let fileContent: string;
 
         try {
-            fileContent = readFile(t.file);
+            fileContent = await readFileAsync(t.file);
         } catch (ignored) {
             console.warn(`expected file '${t.file}' is not found on the system.`);
             t.isTemp = true;
@@ -123,11 +123,41 @@ export function openInFocusedWindow(file: string) {
     if(win) openInWindow(win, file);
 }
 
-export function openInWindow(window: electron.BrowserWindow, file: string) {
-    console.log("opening file: " + file + " in " + window.id);
+export const LARGE_FILE_WARNING_SIZE = 50 * 1024 * 1024;
 
-    fileToTab(file).then(tab => {
-        sendToWindow(window, EventType.OPEN_TAB, tab);
+export async function confirmOpen(window: BrowserWindow, file: string) {
+    const size = await getFileSize(file);
+    const binary = await isBinaryFile(file);
+
+    if (size < LARGE_FILE_WARNING_SIZE && !binary) return true;
+
+    const reason = binary
+        ? "This file looks like a binary file."
+        : `This file is ${(size / 1024 / 1024).toFixed(1)} MB. Large files may make the editor slow.`;
+
+    const {response} = await dialog.showMessageBox(window, {
+        type: "warning",
+        buttons: ["Cancel", "Open"],
+        defaultId: 1,
+        cancelId: 0,
+        title: "Open file",
+        message: path.basename(file),
+        detail: reason + "\n\nDo you want to open it anyway?"
     });
+
+    return response === 1;
 }
 
+export async function openInWindow(window: BrowserWindow, file: string) {
+    console.log("opening file: " + file + " in " + window.id);
+
+    try {
+        if (!(await confirmOpen(window, file))) return;
+
+        const tab = await fileToTab(file);
+
+        sendToWindow(window, EventType.OPEN_TAB, tab);
+    } catch (err) {
+        console.error(`cannot open file '${file}': ${err}`);
+    }
+}

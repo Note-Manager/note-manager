@@ -194,8 +194,19 @@ export function refreshTitlebar() {
     });
 }
 
-export function loadThemeToWindow(win: Electron.BrowserWindow) {
-    win.webContents.insertCSS(Environment.getPreferences().theme.getCSSContent());
+const insertedThemeKeys = new Map<number, string>();
+
+export function loadThemeToWindow(win: BrowserWindow) {
+    const contents = win.webContents;
+    const previousKey = insertedThemeKeys.get(contents.id);
+
+    contents.insertCSS(Environment.getPreferences().theme.getCSSContent())
+        .then(key => {
+            insertedThemeKeys.set(contents.id, key);
+
+            if (previousKey) return contents.removeInsertedCSS(previousKey);
+        })
+        .catch(err => console.error("cannot load theme: " + err));
 }
 
 export function initApplicationMenu() {
