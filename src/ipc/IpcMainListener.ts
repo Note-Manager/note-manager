@@ -1,9 +1,10 @@
 import electron, {BrowserWindow, ipcMain} from "electron";
 import {EventType} from "../enums";
-import {getFocusedWindow, openInWindow} from "../utils/EditorUtils";
+import {getFocusedWindow, openInWindow, writeEditorState} from "../utils/EditorUtils";
 import {EditorState} from "../domain/EditorState";
 import * as Environment from "../utils/EnvironmentUtils";
-import {writeFile} from "../utils/FileUtils";
+
+const closingWindows = new Set<number>();
 
 export default function initIpcMainListeners() {
     ipcMain.handle(EventType.FILES_DROPPED, (event, data: any) => {
@@ -48,22 +49,29 @@ export default function initIpcMainListeners() {
         return result === 1; // Return true if "Yes" was clicked
     });
 
+    ipcMain.handle(EventType.SAVE_STATE, (event, data: EditorState) => {
+        if (closingWindows.has(event.sender.id) || !Array.isArray(data?.tabs)) return;
+
+        try {
+            writeEditorState(data, false);
+        } catch (err) {
+            console.error(err);
+        }
+    });
+
     ipcMain.handle(EventType.CLOSE_WITH_STATE, (event, data: EditorState) => {
         const sender = BrowserWindow.fromWebContents(event.sender);
 
         if(sender) {
-            const stateFile = Environment.getStateFilePath();
+            closingWindows.add(event.sender.id);
 
-            console.log("saving state to '"+stateFile+"'");
+            console.log("saving state to '" + Environment.getStateFilePath() + "'");
 
-            data.tabs.forEach(t => {
-                if(!t.isTemp && t.file) {
-                    t.content = undefined;
-                    t.isChanged = false;
-                }
-            })
-
-            writeFile(stateFile, JSON.stringify(data, null, 4));
+            try {
+                writeEditorState(data, true);
+            } catch (err) {
+                console.error(err);
+            }
 
             sender.removeAllListeners(EventType.CLOSE_WINDOW);
             sender.close();

@@ -73,7 +73,7 @@ const createWindow = () => {
             activeTabId: activeTabId
         }
 
-        const persistentState = readEditorState();
+        const persistentState = await readEditorState();
 
         if (persistentState) { // restore the state
             initialState = persistentState;

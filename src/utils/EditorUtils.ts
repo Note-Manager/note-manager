@@ -1,5 +1,5 @@
 import path from "node:path";
-import {isFileExists, readFile, readSync} from "./FileUtils";
+import {backupFile, isFileExists, readFile, readSync, writeFileAtomic} from "./FileUtils";
 import {EditorTab} from "../domain/EditorTab";
 import {hash, shortenTabName} from "./TextUtils";
 import * as Environment from "./EnvironmentUtils";
@@ -28,36 +28,77 @@ export async function fileToTab(file: string) {
     } as EditorTab;
 }
 
-export function readEditorState() {
+export async function readEditorState(): Promise<EditorState | undefined> {
     const stateFile = Environment.getStateFilePath();
 
-    if (!isFileExists(stateFile)) { // restore the state
+    if (!isFileExists(stateFile)) {
         return undefined;
     }
 
-    const editorState: EditorState = JSON.parse(readSync(stateFile));
+    let editorState: EditorState;
 
-    editorState.tabs.forEach(async (t) => {
-        if (!t.isTemp && t.file) {
-            try {
-                t.content = readFile(t.file);
+    try {
+        editorState = JSON.parse(readSync(stateFile));
+    } catch (err) {
+        console.error(`cannot parse state file '${stateFile}': ${err}`);
+        backupFile(stateFile, "corrupt");
+        return undefined;
+    }
 
-                const fileHash = await hash(t.content);
+    if (!Array.isArray(editorState?.tabs)) return undefined;
 
-                if (t.hash !== fileHash) { // if the file is changed while app is closed, update the tab's hash and unset the state to prevent unwanted undo/redo behaviors
-                    t.hash = fileHash;
-                    t.isChanged = false;
-                    t.state = undefined;
-                }
-            } catch (ignored) { // if cannot read the file that was opened in the previous session
-                console.warn(`expected file '${t.file}' is not found on the system.`);
-                t.isTemp = true;
-                t.content = "";
-            }
+    await Promise.all(editorState.tabs.map(async (t) => {
+        if (t.isTemp || !t.file) return;
+
+        let fileContent: string;
+
+        try {
+            fileContent = readFile(t.file);
+        } catch (ignored) {
+            console.warn(`expected file '${t.file}' is not found on the system.`);
+            t.isTemp = true;
+            t.content = t.content ?? "";
+            return;
+        }
+
+        const fileHash = await hash(fileContent);
+
+        if (t.isChanged && t.content !== undefined) {
+            t.hash = fileHash;
+            return;
+        }
+
+        t.content = fileContent;
+        t.isChanged = false;
+
+        if (t.hash !== fileHash) {
+            t.hash = fileHash;
+            t.state = undefined;
+        }
+    }));
+
+    return editorState;
+}
+
+let lastWrittenState: string | undefined;
+
+export function writeEditorState(state: EditorState, discardUnsaved: boolean) {
+    state.tabs.forEach(t => {
+        if (t.isTemp || !t.file) return;
+
+        if (discardUnsaved || !t.isChanged) {
+            t.content = undefined;
+            t.isChanged = false;
         }
     });
 
-    return editorState;
+    const serialized = JSON.stringify(state, null, 4);
+
+    if (serialized === lastWrittenState) return;
+
+    writeFileAtomic(Environment.getStateFilePath(), serialized);
+
+    lastWrittenState = serialized;
 }
 
 export function getFocusedWindow() {

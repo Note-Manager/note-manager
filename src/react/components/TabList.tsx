@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useEffect} from "react";
+import {useEffect, useRef} from "react";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faFileText} from "@fortawesome/free-regular-svg-icons";
 import {faRectangleTimes} from "@fortawesome/free-regular-svg-icons/faRectangleTimes";
@@ -14,6 +14,7 @@ import {findLanguageByFileName} from "../../domain/SupportedLanguage";
 import {EditorState} from "../../domain/EditorState";
 
 const DEFAULT_TAB_NAME = "New Document.txt";
+const AUTOSAVE_INTERVAL = 5000;
 
 export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
     onTabSelect: (tab: EditorTab) => void,
@@ -21,6 +22,20 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
     onTabRemove: (tab: EditorTab) => void
 }) {
     const {tabs, setTabs, activeTab, setActiveTab} = useEditorContext();
+
+    const isStateInitialized = useRef(false);
+    const latestState = useRef<EditorState>({tabs: tabs, activeTabId: activeTab?.id});
+    latestState.current = {tabs: tabs, activeTabId: activeTab?.id};
+
+    useEffect(() => {
+        const autosaveTimer = setInterval(() => {
+            if (!isStateInitialized.current) return;
+
+            fireEvent(EventType.SAVE_STATE, latestState.current).catch(err => console.error(err));
+        }, AUTOSAVE_INTERVAL);
+
+        return () => clearInterval(autosaveTimer);
+    }, []);
 
     useEffect(() => {
         if(activeTab?.id) document.getElementById(activeTab.id)?.scrollIntoView();
@@ -132,6 +147,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         };
 
         const initializeWithState = (event: any, data: EditorState) => {
+            isStateInitialized.current = true;
             setTabs(data.tabs);
             if(data.tabs?.length>0){
                 setActiveTab(data.tabs.find(t => t.id === data.activeTabId) || tabs[tabs.length - 1]);
