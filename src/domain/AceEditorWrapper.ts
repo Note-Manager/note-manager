@@ -65,4 +65,11 @@ export class AceEditorWrapper implements EditorWrapper {
     getValue(): string {
         return this._editor.session.getValue();
     }
+
+    getFullRange() {
+        const doc = this._editor.session.getDocument();
+        const lastRow = doc.getLength() - 1;
+
+        return {start: {row: 0, column: 0}, end: {row: lastRow, column: doc.getLine(lastRow).length}};
+    }
 }

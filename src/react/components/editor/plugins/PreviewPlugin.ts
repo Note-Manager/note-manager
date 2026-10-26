@@ -122,7 +122,7 @@ export default class PreviewPlugin implements EditorPlugin {
     }
 
     getAvailableActions(): Array<string> {
-        return Object.keys(Keys);
+        return Object.values(Keys);
     }
 
     initializePlugin(editor: EditorWrapper): void {
@@ -150,4 +150,4 @@ function getEmptyPreviewResult() {
             No content found for preview
         </div>
     `;
-}
+}
