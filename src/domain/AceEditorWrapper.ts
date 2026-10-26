@@ -39,7 +39,7 @@ export class AceEditorWrapper implements EditorWrapper {
         const ranges = this.getAllSelectionRanges();
 
         if(ranges?.length > 0) { // multi cursor
-            for(let range of ranges) {
+            for(const range of ranges) {
                 this.replaceRange(range, text);
             }
         }
@@ -65,4 +65,4 @@ export class AceEditorWrapper implements EditorWrapper {
     getValue(): string {
         return this._editor.session.getValue();
     }
-}
+}

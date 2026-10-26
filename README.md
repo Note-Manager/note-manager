@@ -14,3 +14,9 @@
   - `npm install`
 - finally, run the application:
   - `npm run start`
+
+# Development scripts
+
+- `npm run lint`: run ESLint
+- `npm run typecheck`: run the TypeScript compiler without emitting files
+- `npm test`: run the unit tests with Vitest

@@ -57,7 +57,7 @@ export default class Base64Plugin implements EditorPlugin {
                 const selectionRanges = editor.getAllSelectionRanges();
 
                 if(selectionRanges && selectionRanges.length > 0 && (editor.getSelectedText() || "").length > 0) {
-                    for(let range of selectionRanges) {
+                    for(const range of selectionRanges) {
                         const target = editor.getTextRange(range);
 
                         target && editor.replaceRange(range, encode(target));
@@ -75,7 +75,7 @@ export default class Base64Plugin implements EditorPlugin {
                 const selectionRanges = editor.getAllSelectionRanges();
 
                 if(selectionRanges && selectionRanges.length > 0 && (editor.getSelectedText() || "").length > 0) {
-                    for(let range of selectionRanges) {
+                    for(const range of selectionRanges) {
                         const target = editor.getTextRange(range);
 
                         target && editor.replaceRange(range, decode(target));
@@ -103,4 +103,4 @@ function encode(str: string):string {
     }
 
     return btoa(binary);
-}
+}
