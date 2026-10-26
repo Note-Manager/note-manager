@@ -24,5 +24,16 @@ export enum EventType {
     CLOSE_WITH_STATE = "close-with-state",
     SAVE_STATE = "save-state",
     WRITE_FILE = "write-file",
+    SHOW_TAB_CONTEXT_MENU = "show-tab-context-menu",
+    TAB_ACTION = "tab-action",
     INIT_WITH_STATE = "initialize-with-state"
+}
+
+export enum TabAction {
+    CLOSE = "close",
+    CLOSE_OTHERS = "close-others",
+    CLOSE_UNMODIFIED = "close-unmodified",
+    CLOSE_ALL = "close-all",
+    TOGGLE_PIN = "toggle-pin",
+    REOPEN_CLOSED = "reopen-closed",
 }
