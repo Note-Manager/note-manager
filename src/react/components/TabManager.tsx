@@ -4,9 +4,8 @@ import {EditorTab} from "../../domain/EditorTab";
 import Footer from "./Footer";
 import EditorContainer from "./EditorContainer";
 import {EditorContextProvider} from "./editor/EditorContext";
-import {fireEvent} from "../ApplicationEvents";
+import {fireEvent, getPathForFile} from "../ApplicationEvents";
 import {EventType} from "../../enums";
-import electron from "electron";
 
 export default function TabManager() {
 
@@ -24,7 +23,7 @@ export default function TabManager() {
     const handleDrop = (event: React.DragEvent) => {
         event.preventDefault();
 
-        const droppedFiles = Array.from(event.dataTransfer.files).map(f => electron.webUtils.getPathForFile(f));
+        const droppedFiles = Array.from(event.dataTransfer.files).map(f => getPathForFile(f));
 
         fireEvent(EventType.FILES_DROPPED, {files: droppedFiles}).then(ignore => ignore);
     };

@@ -1,4 +1,4 @@
-import {app, BrowserWindow} from 'electron';
+import {app, BrowserWindow, shell} from 'electron';
 
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
 import {EventType} from "./enums";
@@ -46,11 +46,23 @@ const createWindow = () => {
         webPreferences: {
             // @ts-ignore
             preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
-            nodeIntegration: true,
-            contextIsolation: false,
+            nodeIntegration: false,
+            contextIsolation: true,
             sandbox: false,
-            plugins: true,
         }
+    });
+
+    mainWindow.webContents.setWindowOpenHandler(({url}) => {
+        openExternalUrl(url);
+
+        return {action: "deny"};
+    });
+
+    mainWindow.webContents.on("will-navigate", (event, url) => {
+        if (url === mainWindow.webContents.getURL()) return;
+
+        event.preventDefault();
+        openExternalUrl(url);
     });
 
     initApplicationMenu();
@@ -166,6 +178,15 @@ app.on('window-all-closed', () => {
         app.quit();
     }
 });
+
+function openExternalUrl(url: string) {
+    try {
+        const protocol = new URL(url).protocol;
+
+        if (protocol === "http:" || protocol === "https:") shell.openExternal(url);
+    } catch (ignored) {
+    }
+}
 
 function getFileArgument(args?: string[]) {
     let result;

@@ -23,5 +23,6 @@ export enum EventType {
     CLOSE_WINDOW = "close",
     CLOSE_WITH_STATE = "close-with-state",
     SAVE_STATE = "save-state",
+    WRITE_FILE = "write-file",
     INIT_WITH_STATE = "initialize-with-state"
 }

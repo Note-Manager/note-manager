@@ -3,6 +3,7 @@ import {EventType} from "../enums";
 import {getFocusedWindow, openInWindow, writeEditorState} from "../utils/EditorUtils";
 import {EditorState} from "../domain/EditorState";
 import * as Environment from "../utils/EnvironmentUtils";
+import {writeFile} from "../utils/FileUtils";
 
 const closingWindows = new Set<number>();
 
@@ -47,6 +48,12 @@ export default function initIpcMainListeners() {
         });
 
         return result === 1; // Return true if "Yes" was clicked
+    });
+
+    ipcMain.handle(EventType.WRITE_FILE, (event, data: {file: string, content: string}) => {
+        if (typeof data?.file !== "string" || !data.file) throw new Error("file is required");
+
+        writeFile(data.file, typeof data.content === "string" ? data.content : "");
     });
 
     ipcMain.handle(EventType.SAVE_STATE, (event, data: EditorState) => {

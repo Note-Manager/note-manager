@@ -1,4 +1,6 @@
-const rules = require('./webpack.rules');
+const rules = require('./webpack.rules').filter(rule =>
+  rule.use !== 'node-loader' && rule.use?.loader !== '@vercel/webpack-asset-relocator-loader'
+);
 
 rules.push({
   test: /\.css$/,
@@ -6,7 +8,6 @@ rules.push({
 });
 
 module.exports = {
-  target: 'electron-renderer',
   // Put your normal webpack config below here
   module: {
     rules,
