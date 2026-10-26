@@ -1,10 +1,11 @@
-import {Ace} from "ace-builds";
+import {EditorWrapper} from "../../../../domain/EditorWrapper";
 
 export interface EditorPlugin {
     name: string,
     contextMenuItems?: Array<EditorMenuItem>,
     applicationMenuItems?: Array<EditorMenuItem>,
-    initializePlugin: (editor: Ace.Editor) => void,
+    toolbarMenuItems?: Array<ToolbarMenuItem>,
+    initializePlugin: (editor: EditorWrapper) => void,
     getAvailableActions: () => Array<string>,
     doAction: (code: string) => void,
 }
@@ -17,6 +18,13 @@ export interface EditorMenuItem {
 export interface EditorAction {
     label: string,
     code: string,
-    perform?: (editor: Ace.Editor) => void
+    perform?: (editor: EditorWrapper) => void
     accelerator?: string,
+}
+
+export interface ToolbarMenuItem {
+    label: string,
+    icon: string,
+    onContentMount?: (parent: ShadowRoot) => void,
+    getToolbarWindowContent: () => string
 }

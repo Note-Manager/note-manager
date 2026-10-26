@@ -1,5 +1,5 @@
 import {EditorAction, EditorMenuItem, EditorPlugin} from "./index";
-import {Ace} from "ace-builds";
+import {EditorWrapper} from "../../../../domain/EditorWrapper";
 
 enum Keys {
     B64_ENCODE = "Base64_base64Encode",
@@ -28,7 +28,7 @@ export default class Base64Plugin implements EditorPlugin {
             ]
         }
     ];
-    editor?: Ace.Editor
+    editor?: EditorWrapper
 
     doAction(code: string): void {
         if(!this.editor) throw new Error("Plugin not initialized !");
@@ -43,7 +43,7 @@ export default class Base64Plugin implements EditorPlugin {
         return Array.from(this.actionMap.keys());
     }
 
-    initializePlugin(editor: Ace.Editor): void {
+    initializePlugin(editor: EditorWrapper): void {
         this.editor = editor;
 
         this.initializeActionMap();
@@ -53,16 +53,36 @@ export default class Base64Plugin implements EditorPlugin {
         this.actionMap.set(Keys.B64_ENCODE, {
             label: "Base64 Encode",
             code: Keys.B64_ENCODE,
-            perform: (editor: Ace.Editor) => {
-                editor.session.replace(editor.getSelectionRange(), encode(editor.getSelectedText()));
+            perform: (editor: EditorWrapper) => {
+                const selectionRanges = editor.getAllSelectionRanges();
+
+                if(selectionRanges && selectionRanges.length > 0 && (editor.getSelectedText() || "").length > 0) {
+                    for(let range of selectionRanges) {
+                        const target = editor.getTextRange(range);
+
+                        target && editor.replaceRange(range, encode(target));
+                    }
+
+                    return;
+                }
             }
         });
 
         this.actionMap.set(Keys.B64_DECODE, {
             label: "Base64 Decode",
             code: Keys.B64_DECODE,
-            perform: (editor: Ace.Editor) => {
-                editor.session.replace(editor.getSelectionRange(), decode(editor.getSelectedText()));
+            perform: (editor: EditorWrapper) => {
+                const selectionRanges = editor.getAllSelectionRanges();
+
+                if(selectionRanges && selectionRanges.length > 0 && (editor.getSelectedText() || "").length > 0) {
+                    for(let range of selectionRanges) {
+                        const target = editor.getTextRange(range);
+
+                        target && editor.replaceRange(range, decode(target));
+                    }
+
+                    return;
+                }
             }
         });
     }

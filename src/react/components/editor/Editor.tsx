@@ -9,6 +9,7 @@ import {fireEvent} from "../../ApplicationEvents";
 import {EventType} from "../../../enums";
 import {allPlugins} from "../../../utils/PluginLoader";
 import {ipcRenderer} from "electron";
+import {AceEditorWrapper} from "../../../domain/AceEditorWrapper";
 
 export default function Editor({content, language, onEditorLoad, changeListener, cursorListener, selectionListener}: {
     content: string,
@@ -60,7 +61,12 @@ export default function Editor({content, language, onEditorLoad, changeListener,
 
     const handleLoad = (editor: Ace.Editor) => {
         try {
-            allPlugins.forEach(p => p.initializePlugin(editor));
+            const editorWrapper = new AceEditorWrapper(editor);
+
+            allPlugins.forEach(p => {
+                console.log("initializing plugin... ("+p.name+")");
+                p.initializePlugin(editorWrapper)
+            });
         } catch (err) {
             console.error("could not initialize plugin: " + err);
         }
@@ -92,7 +98,7 @@ export default function Editor({content, language, onEditorLoad, changeListener,
     }
 
     return (
-        <div style={{height: '100%', maxHeight: '100%', width: '100%', maxWidth: '100%'}}>
+        <div style={{height: '100%', width: '100%'}}>
             <AceEditor
                 mode={mode ?? undefined}
                 theme={""}
@@ -108,6 +114,7 @@ export default function Editor({content, language, onEditorLoad, changeListener,
                 tabSize={4}
                 fontSize={"1rem"}
                 setOptions={{
+                    fontFamily: "Courier New",
                     animatedScroll: true,
                     highlightActiveLine: true,
                     highlightGutterLine: true,
@@ -116,7 +123,10 @@ export default function Editor({content, language, onEditorLoad, changeListener,
                     showPrintMargin: false,
                     useWorker: false,
                     enableSnippets: true,
-                    cursorStyle: "ace"
+                    cursorStyle: "ace",
+                    scrollPastEnd: false,
+                    useSoftTabs: false,
+                    navigateWithinSoftTabs: false,
                 }}
                 width={"100%"}
                 height={"100%"}

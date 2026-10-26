@@ -66,23 +66,16 @@ export function createApplicationMenu() {
         {
             label: 'Edit',
             submenu: [
-                {
-                    label: 'Undo',
-                    accelerator: 'CmdOrCtrl+Z',
-                    role: "undo",
-                    click: () => {
-                        sendToFocusedWindow(EventType.UNDO_TAB);
-                    }
-                },
-                {
-                    label: 'Redo',
-                    accelerator: 'CmdOrCtrl+Y',
-                    role: "redo",
-                    click: () => {
-                        sendToFocusedWindow(EventType.REDO_TAB);
-                    }
-                }
-            ],
+                {role: 'undo'},
+                {role: 'redo'},
+                {type: 'separator'},
+                {role: 'cut'},
+                {role: 'copy'},
+                {role: 'paste'},
+                {role: 'pasteAndMatchStyle'},
+                {role: 'delete'},
+                {role: 'selectAll'}
+            ]
         },
         {
             label: 'Language',

@@ -11,6 +11,12 @@
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\""
   },
+  "overrides": {
+    "tar": "^7.5.22",
+    "tmp": "^0.2.7",
+    "uuid": "^11.1.1",
+    "webpack-dev-server": "^5.2.6"
+  },
   "config": {
     "makers": [
       {
@@ -41,7 +47,8 @@
     "@vercel/webpack-asset-relocator-loader": "^1.7.3",
     "babel-loader": "^9.2.1",
     "css-loader": "^6.11.0",
-    "electron": "33.0.1",
+    "custom-electron-titlebar": "^4.4.1",
+    "electron": "^43.4.1",
     "node-loader": "^2.0.0",
     "style-loader": "^3.3.4",
     "ts-loader": "^9.5.1",
@@ -57,14 +64,18 @@
     "@fortawesome/fontawesome-svg-core": "^6.6.0",
     "@fortawesome/free-regular-svg-icons": "^6.6.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
+    "@types/dompurify": "^3.0.5",
+    "@types/marked": "^5.0.2",
     "ace-builds": "^1.36.5",
-    "custom-electron-titlebar": "^4.2.8",
+    "dompurify": "^3.2.3",
     "electron-squirrel-startup": "^1.0.1",
     "js-beautify": "^1.15.1",
+    "marked": "^15.0.4",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-ace": "^13.0.0",
     "react-dom": "^18.3.1",
+    "sql-formatter": "^15.6.10",
     "xml-formatter": "^3.6.3"
   }
 }

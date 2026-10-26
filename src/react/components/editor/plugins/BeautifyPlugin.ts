@@ -1,8 +1,9 @@
 import {EditorAction, EditorMenuItem, EditorPlugin} from "./index";
-import {Ace} from "ace-builds";
 import {LanguageName} from "../../../../domain/SupportedLanguage";
 import xmlFormat from "xml-formatter";
+import { format as sqlFormat } from 'sql-formatter';
 import os from "os";
+import {EditorWrapper} from "../../../../domain/EditorWrapper";
 
 enum Keys {
     FORMAT = "beautify.format",
@@ -28,7 +29,7 @@ export default class BeautifyPlugin implements EditorPlugin{
 
     ];
 
-    editor?: Ace.Editor;
+    editor?: EditorWrapper;
 
     actionMap?: Map<string, EditorAction>;
 
@@ -47,7 +48,7 @@ export default class BeautifyPlugin implements EditorPlugin{
         return Array.from(this.actionMap.keys());
     }
 
-    initializePlugin(editor: Ace.Editor): void {
+    initializePlugin(editor: EditorWrapper): void {
         this.editor = editor;
 
         this.initializeActionMap();
@@ -60,32 +61,18 @@ export default class BeautifyPlugin implements EditorPlugin{
             label: "Format",
             code: Keys.FORMAT,
             perform: () => {
-                let langName = this.editor?.getOption("mode").split("/").pop() || LanguageName.TEXT;
+                let langName = this.editor?.getLanguage() || LanguageName.TEXT;
 
-                // multi selection
-                const multiCursorRanges = this.editor?.getSelection().getAllRanges();
-                if(multiCursorRanges && multiCursorRanges.length > 0 && (this.editor?.getSelectedText() || "").length > 0) {
-                    for(let range of multiCursorRanges) {
-                        const target = this.editor?.session.getTextRange(range) || "";
+                const selectionRanges = this.editor?.getAllSelectionRanges();
+                if(selectionRanges && selectionRanges.length > 0 && (this.editor?.getSelectedText() || "").length > 0) {
+                    for(let range of selectionRanges) {
+                        const target = this.editor?.getTextRange(range) || "";
 
-                        this.editor?.session.replace(range, format(langName, target));
+                        this.editor?.replaceRange(range, format(langName, target));
                     }
 
                     return;
                 }
-
-                // single selection
-                const singleCursorRange = this.editor?.getSelection().getRange();
-                if(singleCursorRange && (this.editor?.getSelectedText() || "").length > 0) {
-                    const target = this.editor?.session.getTextRange(singleCursorRange) || "";
-
-                    this.editor?.session.replace(singleCursorRange, format(langName, target));
-
-                    return;
-                }
-
-                // no selection
-                this.editor?.setValue(format(langName, this.editor?.getValue()));
             }
         });
     }
@@ -95,10 +82,23 @@ function format(lang: string, content: string) {
     if(lang === LanguageName.TEXT) return content;
 
     try {
-        if(lang === LanguageName.XML) {
+        if([LanguageName.XML, LanguageName.HTML].includes(lang as LanguageName)) {
             return handleXML(content);
         } else if(lang === LanguageName.JSON) {
             return JSON.stringify(JSON.parse(content), null, 4);
+        } else if(lang === LanguageName.SQL || lang === LanguageName.PLSQL) {
+            return sqlFormat(
+                content,
+                {
+                    dataTypeCase: "preserve",
+                    keywordCase: "preserve",
+                    functionCase: "preserve",
+                    identifierCase: "preserve",
+                    language: lang === LanguageName.PLSQL ? "plsql" : "sql",
+                    useTabs: false,
+                    tabWidth: 4
+                }
+            );
         }
     } catch (ignored) {
         console.warn("cannot format content: " + ignored);
