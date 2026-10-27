@@ -12,7 +12,7 @@ export default function initIpcMainListeners() {
         if(!data?.files || !Array.isArray(data.files)) return;
 
         try {
-            for (let file of data.files) {
+            for (const file of data.files) {
                 try {
                     const win = BrowserWindow.fromWebContents(event.sender);
                     if(win) openInWindow(win, file);
@@ -109,4 +109,4 @@ export default function initIpcMainListeners() {
             sender.close();
         }
     });
-}
+}

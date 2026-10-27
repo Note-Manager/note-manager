@@ -60,11 +60,11 @@ export default class BeautifyPlugin implements EditorPlugin{
             label: "Format",
             code: Keys.FORMAT,
             perform: () => {
-                let langName = this.editor?.getLanguage() || LanguageName.TEXT;
+                const langName = this.editor?.getLanguage() || LanguageName.TEXT;
 
                 const selectionRanges = this.editor?.getAllSelectionRanges();
                 if(selectionRanges && selectionRanges.length > 0 && (this.editor?.getSelectedText() || "").length > 0) {
-                    for(let range of selectionRanges) {
+                    for(const range of selectionRanges) {
                         const target = this.editor?.getTextRange(range) || "";
 
                         this.editor?.replaceRange(range, format(langName, target));
@@ -109,4 +109,4 @@ function format(lang: string, content: string) {
 
 function handleXML(content: string) {
     return xmlFormat(content, {lineSeparator: "\n", strictMode: false, collapseContent: true, indentation: "    "});
-}
+}

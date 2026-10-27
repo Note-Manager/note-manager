@@ -1,5 +1,5 @@
 import {EditorData} from "../../../domain/EditorData";
-import React, {createContext, ReactNode, useContext, useEffect, useState} from "react";
+import React, {createContext, ReactNode, useContext, useState} from "react";
 import {EditorTab} from "../../../domain/EditorTab";
 
 interface IEditorContext {
@@ -60,4 +60,4 @@ export const useEditorContext = () => {
     }
 
     return context;
-};
+};
