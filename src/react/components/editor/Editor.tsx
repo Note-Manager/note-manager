@@ -10,6 +10,7 @@ import {EventType} from "../../../enums";
 import {allPlugins} from "../../../utils/PluginLoader";
 import {AceEditorWrapper} from "../../../domain/AceEditorWrapper";
 import {useEditorContext} from "./EditorContext";
+import {getUserPlugins, onUserPluginsChanged} from "../../UserPluginRegistry";
 
 const LARGE_CONTENT_LENGTH = 2 * 1024 * 1024;
 
@@ -27,6 +28,7 @@ export default function Editor({content, language, onEditorLoad, changeListener,
 }) {
     const editorRef = useRef<Ace.Editor>();
     const containerRef = useRef<HTMLDivElement>(null);
+    const wrapperRef = useRef<AceEditorWrapper>();
 
     const {settings} = useEditorContext();
     const editorSettings = settings.editor;
@@ -68,6 +70,16 @@ export default function Editor({content, language, onEditorLoad, changeListener,
     }, [language]);
 
     useEffect(() => {
+        return onUserPluginsChanged(() => {
+            const editorWrapper = wrapperRef.current;
+
+            if (editorWrapper) getUserPlugins().forEach(p => p.initializePlugin(editorWrapper));
+
+            listenPluginEvents();
+        });
+    }, []);
+
+    useEffect(() => {
         const container = containerRef.current;
 
         if (!container) return;
@@ -85,7 +97,9 @@ export default function Editor({content, language, onEditorLoad, changeListener,
         try {
             const editorWrapper = new AceEditorWrapper(editor);
 
-            allPlugins.forEach(p => {
+            wrapperRef.current = editorWrapper;
+
+            [...allPlugins, ...getUserPlugins()].forEach(p => {
                 console.log("initializing plugin... ("+p.name+")");
                 p.initializePlugin(editorWrapper)
             });
@@ -165,7 +179,7 @@ let pluginEventSubscriptions: Array<() => void> = [];
 function listenPluginEvents() {
     unListenPluginEvents();
 
-    allPlugins.forEach(plugin => {
+    [...allPlugins, ...getUserPlugins()].forEach(plugin => {
         plugin.getAvailableActions().forEach(code => {
             const listener = () => {
                 console.info("plugin event: " + code);

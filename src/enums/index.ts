@@ -35,7 +35,9 @@ export enum EventType {
     GET_THEME_VARIABLES = "get-theme-variables",
     CREATE_THEME = "create-theme",
     RECORD_SHORTCUT = "record-shortcut",
-    SHORTCUT_KEY = "shortcut-key"
+    SHORTCUT_KEY = "shortcut-key",
+    GET_USER_PLUGINS = "get-user-plugins",
+    USER_PLUGINS_CHANGED = "user-plugins-changed"
 }
 
 export enum UnsavedChangesChoice {

@@ -16,6 +16,7 @@ const INVOKE_CHANNELS = [
     EventType.GET_THEME_VARIABLES,
     EventType.CREATE_THEME,
     EventType.RECORD_SHORTCUT,
+    EventType.GET_USER_PLUGINS,
     EventType.LOG_INFO,
     EventType.LOG_WARN,
     EventType.LOG_ERROR,
