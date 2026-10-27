@@ -50,4 +50,6 @@ export interface EditorWrapper {
      * Returns the current value of the editor.
      */
     getValue: () => string;
-}
+
+    getFullRange: () => any;
+}

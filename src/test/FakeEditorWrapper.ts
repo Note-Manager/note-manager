@@ -55,4 +55,8 @@ export class FakeEditorWrapper implements EditorWrapper {
     getValue() {
         return this.text;
     }
+
+    getFullRange() {
+        return {start: 0, end: this.text.length};
+    }
 }

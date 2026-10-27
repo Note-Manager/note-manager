@@ -6,7 +6,8 @@ import * as Environment from "./EnvironmentUtils";
 import {getBundledThemes, getUserThemePath, getUserThemes} from "./EnvironmentUtils";
 import {allPlugins} from "./PluginLoader";
 import path from "node:path";
-import {getSystemPath} from "./FileUtils";
+import {getSystemPath, isFileExists} from "./FileUtils";
+import {clearRecentFiles, getRecentFiles, onRecentFilesChanged, removeRecentFile} from "./RecentFiles";
 import {Theme} from "../domain/Theme";
 
 
@@ -46,6 +47,10 @@ export function createApplicationMenu() {
                             focusedWindow.moveTop();
                         }
                     },
+                },
+                {
+                    label: 'Open Recent',
+                    submenu: createRecentFilesMenu()
                 },
                 {
                     label: 'Save',
@@ -169,6 +174,41 @@ export function createApplicationMenu() {
     return menu;
 }
 
+function createRecentFilesMenu(): Array<Electron.MenuItemConstructorOptions> {
+    const files = getRecentFiles();
+
+    const items: Array<Electron.MenuItemConstructorOptions> = files.map((file, index) => ({
+        label: (index < 9 ? `&${index + 1} ` : "") + file.replace(/&/g, "&&"),
+        click: () => openRecentFile(file)
+    }));
+
+    if (items.length === 0) items.push({label: "No Recent Files", enabled: false});
+
+    items.push({type: "separator"});
+    items.push({label: "Clear Recently Opened", enabled: files.length > 0, click: () => clearRecentFiles()});
+
+    return items;
+}
+
+function openRecentFile(file: string) {
+    const focusedWindow = getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+
+    if (!focusedWindow) return;
+
+    if (!isFileExists(file)) {
+        electron.dialog.showMessageBox(focusedWindow, {
+            type: "warning",
+            title: "Open Recent",
+            message: "File not found",
+            detail: file + "\n\nIt will be removed from the recent files list."
+        }).finally(() => removeRecentFile(file));
+
+        return;
+    }
+
+    openInWindow(focusedWindow, file);
+}
+
 function cssFileToMenuItem(cssFile: string, isUserTheme: boolean) {
     return {
         label: path.parse(cssFile).name,
@@ -194,6 +234,18 @@ export function refreshTitlebar() {
     });
 }
 
+export function rebuildMenus() {
+    initApplicationMenu();
+
+    BrowserWindow.getAllWindows().forEach(win => {
+        win.webContents.send(EventType.BUILD_MENU, {
+            icon: appIcon
+        });
+    });
+}
+
+onRecentFilesChanged(rebuildMenus);
+
 const insertedThemeKeys = new Map<number, string>();
 
 export function loadThemeToWindow(win: BrowserWindow) {
@@ -211,4 +263,4 @@ export function loadThemeToWindow(win: BrowserWindow) {
 
 export function initApplicationMenu() {
     electron.Menu.setApplicationMenu(createApplicationMenu());
-}
+}

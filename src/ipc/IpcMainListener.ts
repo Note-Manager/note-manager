@@ -4,6 +4,7 @@ import {getFocusedWindow, openInWindow, writeEditorState} from "../utils/EditorU
 import {EditorState} from "../domain/EditorState";
 import * as Environment from "../utils/EnvironmentUtils";
 import {writeFile} from "../utils/FileUtils";
+import {addRecentFile} from "../utils/RecentFiles";
 
 const closingWindows = new Set<number>();
 
@@ -54,6 +55,8 @@ export default function initIpcMainListeners() {
         if (typeof data?.file !== "string" || !data.file) throw new Error("file is required");
 
         writeFile(data.file, typeof data.content === "string" ? data.content : "");
+
+        addRecentFile(data.file);
     });
 
     ipcMain.handle(EventType.SHOW_TAB_CONTEXT_MENU, (event, data: {

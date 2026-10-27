@@ -7,6 +7,7 @@ import {EditorState} from "../domain/EditorState";
 import electron, {BrowserWindow, dialog} from "electron";
 import {EventType} from "../enums";
 import {findLanguageByFileName} from "../domain/SupportedLanguage";
+import {addRecentFile} from "./RecentFiles";
 
 export async function fileToTab(file: string) {
     if (!isFileExists(file)) throw new Error("Cannot found file for open: " + file);
@@ -157,6 +158,8 @@ export async function openInWindow(window: BrowserWindow, file: string) {
         const tab = await fileToTab(file);
 
         sendToWindow(window, EventType.OPEN_TAB, tab);
+
+        addRecentFile(file);
     } catch (err) {
         console.error(`cannot open file '${file}': ${err}`);
     }
