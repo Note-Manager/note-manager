@@ -12,6 +12,7 @@ import {shortenTabName} from "../../utils/TextUtils";
 import {useEditorContext} from "./editor/EditorContext";
 import {findLanguageByFileName} from "../../domain/SupportedLanguage";
 import {EditorState} from "../../domain/EditorState";
+import {getStateRevision, markStateChanged} from "../StateChangeTracker";
 import IpcRendererEvent = Electron.IpcRendererEvent;
 
 const DEFAULT_TAB_NAME = "New Document.txt";
@@ -30,11 +31,23 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
     const latestState = useRef<EditorState>({tabs: tabs, activeTabId: activeTab?.id});
     latestState.current = {tabs: tabs, activeTabId: activeTab?.id};
 
+    const lastSavedRevision = useRef(-1);
+
+    useEffect(() => {
+        markStateChanged();
+    }, [tabs, activeTab]);
+
     useEffect(() => {
         const autosaveTimer = setInterval(() => {
             if (!isStateInitialized.current) return;
 
-            fireEvent(EventType.SAVE_STATE, latestState.current).catch(err => console.error(err));
+            const revision = getStateRevision();
+
+            if (revision === lastSavedRevision.current) return;
+
+            fireEvent(EventType.SAVE_STATE, latestState.current)
+                .then(() => lastSavedRevision.current = revision)
+                .catch(err => console.error(err));
         }, AUTOSAVE_INTERVAL);
 
         return () => clearInterval(autosaveTimer);

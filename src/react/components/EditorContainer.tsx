@@ -8,6 +8,7 @@ import {EventType} from "../../enums";
 import {Ace} from "ace-builds";
 import {SupportedLanguage, SupportedLanguages} from "../../domain/SupportedLanguage";
 import {useEditorContext} from "./editor/EditorContext";
+import {markStateChanged} from "../StateChangeTracker";
 import {allPlugins} from "../../utils/PluginLoader";
 import {ToolbarMenuItem} from "./editor/plugins";
 import DOMPurify from "dompurify";
@@ -33,6 +34,8 @@ export default function EditorContainer() {
         const onSetTabLanguage = (event: any, newLang: SupportedLanguage) => {
             activeTab.language = newLang;
 
+            markStateChanged();
+
             if(activeTab.isTemp) {
                 activeTab.name = activeTab.name?.substring(0, activeTab.name?.lastIndexOf(".")) + newLang.extensions[0];
                 activeTab.displayName = shortenTabName(activeTab.name);
@@ -54,6 +57,7 @@ export default function EditorContainer() {
 
                     activeTab.isChanged = false;
 
+                    markStateChanged();
                     setData(getEditorData());
                 }
             }).catch(err => console.error("cannot save " + activeTab.name + ": " + err));
@@ -96,6 +100,8 @@ export default function EditorContainer() {
     }
 
     const updateTabSelection = () => {
+        markStateChanged();
+
         activeTab.state = {
             ...activeTab.state,
             selection: editorRef.current?.session.selection.toJSON()
@@ -123,6 +129,8 @@ export default function EditorContainer() {
 
     const onContentChange = ({value}: { value: string, lineCount: number }) => {
         activeTab.content = value;
+
+        markStateChanged();
 
         clearTimeout(changeDebounceTimer);
 
@@ -247,6 +255,8 @@ function initializeEditor(editor: Ace.Editor, activeTab: EditorTab) {
     }
 
     editor.session.on("changeScrollLeft", (scrollLeft) => {
+        markStateChanged();
+
         activeTab.state = {
             ...activeTab.state,
             scroll: {
@@ -257,6 +267,8 @@ function initializeEditor(editor: Ace.Editor, activeTab: EditorTab) {
     });
 
     editor.session.on("changeScrollTop", (scrollTop) => {
+        markStateChanged();
+
         activeTab.state = {
             ...activeTab.state,
             scroll: {

@@ -3,7 +3,6 @@ import {app, BrowserWindow, shell} from 'electron';
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
 import {EventType} from "./enums";
 import {attachTitlebarToWindow, setupTitlebar} from "custom-electron-titlebar/main";
-import * as Environment from "./utils/EnvironmentUtils";
 import {fileToTab, openInWindow, readEditorState} from "./utils/EditorUtils";
 import initIpcMainListeners from "./ipc/IpcMainListener";
 import {initApplicationMenu, loadThemeToWindow, refreshTitlebar} from "./utils/ElectronUtils";
@@ -145,8 +144,6 @@ if (!app.requestSingleInstanceLock()) {
     // initialization and is ready to create browser windows.
     // Some APIs can only be used after this event occurs.
     app.whenReady().then(() => {
-        Environment.loadPreferences(); // load user preferences
-
         const arg = getFileArgument(); // open with...
 
         if(arg && mainWindow) {

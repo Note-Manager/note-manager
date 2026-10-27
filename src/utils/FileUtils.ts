@@ -38,6 +38,27 @@ export function backupFile(filePath: string, suffix: string) {
     fs.copyFileSync(filePath, `${filePath}.${suffix}`);
 }
 
+export async function readFileAsync(filePath: string) {
+    return fs.promises.readFile(filePath, "utf8");
+}
+
+export async function getFileSize(filePath: string) {
+    return (await fs.promises.stat(filePath)).size;
+}
+
+export async function isBinaryFile(filePath: string) {
+    const handle = await fs.promises.open(filePath, "r");
+
+    try {
+        const buffer = Buffer.alloc(8000);
+        const {bytesRead} = await handle.read(buffer, 0, buffer.length, 0);
+
+        return buffer.subarray(0, bytesRead).includes(0);
+    } finally {
+        await handle.close();
+    }
+}
+
 export function readSync(path:string) {
     return fs.readFileSync(path, "utf8");
 }
