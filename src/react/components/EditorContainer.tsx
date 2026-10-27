@@ -14,6 +14,7 @@ import {ToolbarMenuItem} from "./editor/plugins";
 import DOMPurify from "dompurify";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTimesRectangle} from "@fortawesome/free-regular-svg-icons/faTimesRectangle";
+import {applySavedFile} from "../../utils/TabUtils";
 
 const debounceDelay = 200; // Delay in milliseconds
 let changeDebounceTimer: NodeJS.Timeout; // Timer for change event
@@ -231,9 +232,7 @@ async function saveTab(tab: EditorTab) {
         if (targetFile) {
             await fireEvent(EventType.WRITE_FILE, {file: targetFile, content: tab.content || ""});
             isSaved = true;
-            tab.file = targetFile;
-            tab.name = TextUtils.getFileName(targetFile);
-            tab.displayName = tab.name.length > 20 ? tab.name.substring(0, 17) + "..." : tab.name;
+            applySavedFile(tab, targetFile);
         }
     }
 
