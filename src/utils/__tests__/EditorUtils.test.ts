@@ -13,12 +13,18 @@ vi.mock("electron", () => ({
     dialog: {},
 }));
 
-vi.mock("../EnvironmentUtils", () => ({
-    getStateFilePath: () => paths.stateFile,
-}));
+vi.mock("../EnvironmentUtils", async () => {
+    const {DEFAULT_SETTINGS} = await import("../../domain/Settings");
 
-import {readEditorState, writeEditorState} from "../EditorUtils";
-import {hash} from "../TextUtils";
+    return {
+        getStateFilePath: () => paths.stateFile,
+        getSettings: () => ({...DEFAULT_SETTINGS, files: {...DEFAULT_SETTINGS.files, defaultEol: "LF"}}),
+    };
+});
+
+import {fileToTab, readEditorState, writeEditorState} from "../EditorUtils";
+import {documentHash, hash} from "../TextUtils";
+import {setAnsiCodePage} from "../EncodingUtils";
 
 let dir: string;
 
@@ -109,7 +115,62 @@ describe("readEditorState", () => {
         const state = await readEditorState();
 
         expect(state?.tabs[0].content).toBe("changed outside");
-        expect(state?.tabs[0].hash).toBe(await hash("changed outside"));
+        expect(state?.tabs[0].hash).toBe(await documentHash("changed outside", "utf-8", "LF"));
         expect(state?.tabs[0].state).toBeUndefined();
+    });
+
+    it("keeps editor state when an old style hash still matches the file", async () => {
+        const file = path.join(dir, "note.txt");
+        fs.writeFileSync(file, "same");
+
+        fs.writeFileSync(paths.stateFile, JSON.stringify({tabs: [
+            {id: "1", file: file, hash: await hash("same"), state: {scroll: {top: 10, left: 0}}},
+        ]}));
+
+        const state = await readEditorState();
+
+        expect(state?.tabs[0].state?.scroll?.top).toBe(10);
+        expect(state?.tabs[0].encoding).toBe("utf-8");
+        expect(state?.tabs[0].eol).toBe("LF");
+    });
+
+    it("reads an unchanged tab again with its saved encoding", async () => {
+        setAnsiCodePage("windows-1254");
+
+        const file = path.join(dir, "ansi.txt");
+        fs.writeFileSync(file, Buffer.from([0x61, 0xFD, 0x0D, 0x0A, 0x62]));
+
+        fs.writeFileSync(paths.stateFile, JSON.stringify({tabs: [
+            {id: "1", file: file, encoding: "iso-8859-1"},
+            {id: "2", isTemp: true, content: "a\r\nb"},
+        ]}));
+
+        const state = await readEditorState();
+
+        expect(state?.tabs[0].content).toBe("a\u00FD\r\nb");
+        expect(state?.tabs[0].encoding).toBe("iso-8859-1");
+        expect(state?.tabs[0].eol).toBe("CRLF");
+        expect(state?.tabs[1].encoding).toBe("utf-8");
+        expect(state?.tabs[1].eol).toBe("CRLF");
+
+        setAnsiCodePage(undefined);
+    });
+});
+
+describe("fileToTab", () => {
+    it("detects encoding and line endings", async () => {
+        setAnsiCodePage("windows-1254");
+
+        const file = path.join(dir, "turkish.txt");
+        fs.writeFileSync(file, Buffer.from([0xFE, 0xFD, 0xF0, 0x0A, 0x61]));
+
+        const tab = await fileToTab(file);
+
+        expect(tab.encoding).toBe("ansi");
+        expect(tab.eol).toBe("LF");
+        expect(tab.content).toBe("\u015F\u0131\u011F\na");
+        expect(tab.hash).toBe(await documentHash(tab.content || "", "ansi", "LF"));
+
+        setAnsiCodePage(undefined);
     });
 });

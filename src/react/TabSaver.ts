@@ -21,11 +21,15 @@ export async function saveTab(tab: EditorTab): Promise<boolean> {
 
     const content = tab.content || "";
 
-    await fireEvent(EventType.WRITE_FILE, {file: targetFile, content: content});
+    const result = await fireEvent(EventType.WRITE_FILE, {file: targetFile, content: content, encoding: tab.encoding, eol: tab.eol});
+
+    if (!result?.saved) return false;
+
+    tab.encoding = result.encoding;
 
     if (!tab.file) applySavedFile(tab, targetFile);
 
-    tab.hash = await TextUtils.hash(content);
+    tab.hash = await TextUtils.documentHash(content, tab.encoding, tab.eol);
     tab.isChanged = tab.content !== undefined && tab.content !== content;
 
     markStateChanged();

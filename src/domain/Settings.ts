@@ -1,3 +1,5 @@
+import {DEFAULT_ENCODING, EolType, getSystemDefaultEol, isKnownEncoding, isKnownEol} from "./Encoding";
+
 export enum TabLayout {
     SCROLL = "scroll",
     WRAP = "wrap",
@@ -19,9 +21,17 @@ export interface InterfaceSettings {
     startMaximized: boolean,
 }
 
+export interface FileSettings {
+    defaultEncoding: string,
+    defaultEol: EolType,
+    applyToAnsiFiles: boolean,
+    autodetectEncoding: boolean,
+}
+
 export interface Settings {
     editor: EditorSettings,
     ui: InterfaceSettings,
+    files: FileSettings,
     keyBindings: Record<string, string>,
 }
 
@@ -41,6 +51,12 @@ export const DEFAULT_SETTINGS: Settings = {
     ui: {
         tabLayout: TabLayout.SCROLL,
         startMaximized: false,
+    },
+    files: {
+        defaultEncoding: DEFAULT_ENCODING,
+        defaultEol: getSystemDefaultEol(),
+        applyToAnsiFiles: true,
+        autodetectEncoding: true,
     },
     keyBindings: {},
 };
@@ -99,6 +115,15 @@ export function resolveAccelerator(settings: Settings | undefined, id: string, d
     return custom || undefined;
 }
 
+export function getDetectionOptions(settings: Settings | undefined) {
+    const files = settings?.files || DEFAULT_SETTINGS.files;
+
+    return {
+        asciiAsUtf8: files.defaultEncoding === DEFAULT_ENCODING && files.applyToAnsiFiles,
+        autodetect: files.autodetectEncoding,
+    };
+}
+
 export function findShortcutConflicts(shortcuts: Array<{id: string, accelerator?: string}>): Set<string> {
     const byAccelerator = new Map<string, Array<string>>();
 
@@ -116,6 +141,7 @@ export function findShortcutConflicts(shortcuts: Array<{id: string, accelerator?
 export function normalizeSettings(raw: any): Settings {
     const editor = raw?.editor || {};
     const ui = raw?.ui || {};
+    const files = raw?.files || {};
     const defaults = DEFAULT_SETTINGS;
 
     const keyBindings: Record<string, string> = {};
@@ -139,6 +165,12 @@ export function normalizeSettings(raw: any): Settings {
         ui: {
             tabLayout: Object.values(TabLayout).includes(ui.tabLayout) ? ui.tabLayout : defaults.ui.tabLayout,
             startMaximized: toBoolean(ui.startMaximized, defaults.ui.startMaximized),
+        },
+        files: {
+            defaultEncoding: isKnownEncoding(files.defaultEncoding) ? files.defaultEncoding : defaults.files.defaultEncoding,
+            defaultEol: isKnownEol(files.defaultEol) ? files.defaultEol : defaults.files.defaultEol,
+            applyToAnsiFiles: toBoolean(files.applyToAnsiFiles, defaults.files.applyToAnsiFiles),
+            autodetectEncoding: toBoolean(files.autodetectEncoding, defaults.files.autodetectEncoding),
         },
         keyBindings: keyBindings,
     };

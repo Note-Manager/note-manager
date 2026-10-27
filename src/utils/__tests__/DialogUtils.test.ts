@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {getUnsavedChangesMessage, UNSAVED_CHANGES_BUTTONS} from "../DialogUtils";
+import {getUnencodableMessage, getUnsavedChangesMessage, UNSAVED_CHANGES_BUTTONS} from "../DialogUtils";
 import {UnsavedChangesChoice} from "../../enums";
 
 describe("DialogUtils", () => {
@@ -23,5 +23,10 @@ describe("DialogUtils", () => {
             UnsavedChangesChoice.DISCARD,
             UnsavedChangesChoice.CANCEL,
         ]);
+    });
+
+    it("names the characters an encoding cannot hold", () => {
+        expect(getUnencodableMessage("ANSI", 1, ["€"])).toBe('1 character cannot be represented in ANSI and will be replaced with "?": "€"');
+        expect(getUnencodableMessage("ISO 8859-1", 12, ["ş", "ğ"])).toBe('12 characters cannot be represented in ISO 8859-1 and will be replaced with "?": "ş" "ğ" ...');
     });
 });

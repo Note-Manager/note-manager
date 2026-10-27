@@ -125,6 +125,26 @@ body, html {
     margin-right: 10px;
 }
 
+#footerRight {
+    display: flex;
+    align-items: center;
+}
+
+#footer .statusButton {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    border-left: 1px solid;
+    padding: 0 0 0 10px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#footer .statusButton:hover {
+    text-decoration: underline;
+}
+
 #tabListWrapper {
     display: flex;
     align-items: center;

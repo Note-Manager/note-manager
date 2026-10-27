@@ -3,8 +3,8 @@ import Editor from "./editor/Editor";
 import React, {useEffect, useRef, useState} from "react";
 import * as TextUtils from "../../utils/TextUtils";
 import {shortenTabName} from "../../utils/TextUtils";
-import {off, on} from "../ApplicationEvents";
-import {EventType} from "../../enums";
+import {fireEvent, off, on} from "../ApplicationEvents";
+import {EncodingAction, EventType} from "../../enums";
 import {Ace} from "ace-builds";
 import {SupportedLanguage, SupportedLanguages} from "../../domain/SupportedLanguage";
 import {useEditorContext} from "./editor/EditorContext";
@@ -15,6 +15,7 @@ import DOMPurify from "dompurify";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTimesRectangle} from "@fortawesome/free-regular-svg-icons/faTimesRectangle";
 import {saveTab} from "../TabSaver";
+import {EolType, getEditorNewLineMode, isKnownEncoding, isKnownEol} from "../../domain/Encoding";
 
 const debounceDelay = 200; // Delay in milliseconds
 let changeDebounceTimer: NodeJS.Timeout; // Timer for change event
@@ -53,12 +54,84 @@ export default function EditorContainer() {
             }).catch(err => console.error("cannot save " + activeTab.name + ": " + err));
         }
 
+        const refreshChangedState = async () => {
+            const editor = editorRef.current;
+
+            if (editor) activeTab.content = editor.getValue();
+
+            activeTab.isChanged = await TextUtils.documentHash(activeTab.content || "", activeTab.encoding, activeTab.eol) !== activeTab.hash;
+
+            markStateChanged();
+            setData(getEditorData());
+        }
+
+        const reinterpret = async (encoding: string) => {
+            if (!activeTab.file) {
+                activeTab.encoding = encoding;
+                await refreshChangedState();
+                return;
+            }
+
+            if (activeTab.isChanged && !await fireEvent(EventType.CONFIRM_REINTERPRET, {name: activeTab.name})) return;
+
+            const result = await fireEvent(EventType.READ_FILE_AS, {file: activeTab.file, encoding: encoding, fallbackEol: activeTab.eol});
+
+            activeTab.encoding = result.encoding;
+            activeTab.eol = result.eol;
+            activeTab.content = result.content;
+            activeTab.hash = await TextUtils.documentHash(result.content, result.encoding, result.eol);
+            activeTab.isChanged = false;
+
+            const editor = editorRef.current;
+
+            if (editor) {
+                editor.session.setNewLineMode(getEditorNewLineMode(result.eol));
+                editor.session.setValue(result.content);
+                activeTab.state = {...activeTab.state, undoHistory: undefined};
+            }
+
+            markStateChanged();
+            setData(getEditorData());
+        }
+
+        const convert = async (encoding: string) => {
+            if (encoding === activeTab.encoding) return;
+
+            if (!await fireEvent(EventType.CONFIRM_CONVERSION, {content: editorRef.current?.getValue() ?? activeTab.content ?? "", encoding: encoding})) return;
+
+            activeTab.encoding = encoding;
+
+            await refreshChangedState();
+        }
+
+        const onEncodingAction = (event: any, data: {action: EncodingAction, encoding: string}) => {
+            if (!isKnownEncoding(data?.encoding)) return;
+
+            const action = data.action === EncodingAction.CONVERT ? convert : reinterpret;
+
+            action(data.encoding).catch(err => console.error("cannot change encoding of " + activeTab.name + ": " + err));
+        }
+
+        const onEolAction = (event: any, data: {eol: EolType}) => {
+            if (!isKnownEol(data?.eol) || data.eol === activeTab.eol) return;
+
+            activeTab.eol = data.eol;
+
+            editorRef.current?.session.setNewLineMode(getEditorNewLineMode(data.eol));
+
+            refreshChangedState().catch(err => console.error("cannot change line endings of " + activeTab.name + ": " + err));
+        }
+
         on(EventType.SAVE_TAB, onTabSave);
         on(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
+        on(EventType.ENCODING_ACTION, onEncodingAction);
+        on(EventType.EOL_ACTION, onEolAction);
 
         return () => {
             off(EventType.SAVE_TAB, onTabSave);
             off(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
+            off(EventType.ENCODING_ACTION, onEncodingAction);
+            off(EventType.EOL_ACTION, onEolAction);
         }
     }, [activeTab]);
 
@@ -125,7 +198,7 @@ export default function EditorContainer() {
         clearTimeout(changeDebounceTimer);
 
         changeDebounceTimer = setTimeout(async () => {
-            TextUtils.hash(value).then((result: string) => {
+            TextUtils.documentHash(value, activeTab.encoding, activeTab.eol).then((result: string) => {
                 if (!activeTab) return;
 
                 activeTab.isChanged = result !== activeTab.hash;
@@ -161,6 +234,7 @@ export default function EditorContainer() {
                     <Editor
                         content={activeTab.content || ""}
                         language={activeTab.language || SupportedLanguages.text}
+                        newLineMode={getEditorNewLineMode(activeTab.eol)}
                         selectionListener={onSelectionChange}
                         changeListener={onContentChange}
                         cursorListener={onCursorChange}

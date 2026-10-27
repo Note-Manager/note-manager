@@ -10,6 +10,10 @@ export async function hash(content:string) {
         .join("");
 }
 
+export async function documentHash(content: string, encoding?: string, eol?: string) {
+    return hash((encoding || "") + "\u0000" + (eol || "") + "\u0000" + content);
+}
+
 export function getFileName(filePath: string): string {
     return filePath.split(/[\\/]/).pop() || filePath;
 }

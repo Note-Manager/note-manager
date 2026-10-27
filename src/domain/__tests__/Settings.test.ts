@@ -2,6 +2,7 @@ import {describe, expect, it} from "vitest";
 import {
     DEFAULT_SETTINGS,
     findShortcutConflicts,
+    getDetectionOptions,
     isValidAccelerator,
     keyEventToAccelerator,
     normalizeSettings,
@@ -17,6 +18,18 @@ describe("Settings", () => {
     it("uses the defaults for missing or invalid values", () => {
         expect(normalizeSettings(undefined)).toEqual(DEFAULT_SETTINGS);
         expect(normalizeSettings({editor: {fontSize: "big", tabSize: null, wrap: "yes"}, ui: {tabLayout: "diagonal"}})).toEqual(DEFAULT_SETTINGS);
+    });
+
+    it("keeps valid new document settings and drops invalid ones", () => {
+        expect(normalizeSettings({files: {defaultEncoding: "windows-1254", defaultEol: "CR", applyToAnsiFiles: false, autodetectEncoding: false}}).files)
+            .toEqual({defaultEncoding: "windows-1254", defaultEol: "CR", applyToAnsiFiles: false, autodetectEncoding: false});
+        expect(normalizeSettings({files: {defaultEncoding: "utf-7", defaultEol: "LS", applyToAnsiFiles: "no"}}).files).toEqual(DEFAULT_SETTINGS.files);
+    });
+
+    it("applies the ANSI option only when new documents use UTF-8", () => {
+        expect(getDetectionOptions(DEFAULT_SETTINGS)).toEqual({asciiAsUtf8: true, autodetect: true});
+        expect(getDetectionOptions({...DEFAULT_SETTINGS, files: {...DEFAULT_SETTINGS.files, defaultEncoding: "utf-8-bom"}}).asciiAsUtf8).toBe(false);
+        expect(getDetectionOptions({...DEFAULT_SETTINGS, files: {...DEFAULT_SETTINGS.files, applyToAnsiFiles: false, autodetectEncoding: false}})).toEqual({asciiAsUtf8: false, autodetect: false});
     });
 
     it("clamps numbers and keeps valid values", () => {

@@ -38,6 +38,15 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - Large documents stay responsive: heavy editor features are turned off for very large content.
 - Only one instance runs at a time; files opened from a second launch go to the existing window.
 
+**Encoding and line endings**
+
+- Files are opened with the right encoding: the BOM first, then UTF-8, then an automatic guess of the character set, and ANSI (the system code page) as the last resort.
+- The Encoding menu reopens the file with another encoding (ANSI, UTF-8, UTF-8-BOM, UTF-16 BE BOM, UTF-16 LE BOM or one of nearly 50 character sets) or converts the text to another encoding, which is used on the next save.
+- Edit > EOL Conversion switches between Windows (CR LF), Unix (LF) and Macintosh (CR) line endings.
+- The status bar always shows the line ending and the encoding of the current document; click them to change either one.
+- Characters that the target encoding cannot hold are listed before a conversion or a save, so nothing is lost silently.
+- The encoding and line ending of new documents, and automatic detection, can be set in Settings > New Document.
+
 **Editing tools** (Plugins menu)
 
 - **Format**: JSON, XML, HTML, SQL, PL/SQL, JavaScript, TypeScript, CSS, YAML, Markdown and Java (powered by Prettier and dedicated formatters). Formats the selections, or the whole document when nothing is selected.
@@ -48,7 +57,7 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 
 **Customization**
 
-- A settings page (Preferences > Settings, `Ctrl+,`) for font, font size, word wrap, soft tabs, tab size, invisible characters, line numbers, tab layout and starting maximized.
+- A settings page (Preferences > Settings, `Ctrl+,`) for font, font size, word wrap, soft tabs, tab size, invisible characters, line numbers, tab layout, starting maximized and the defaults of new documents.
 - Every menu shortcut can be changed or removed, with conflict detection.
 - Five bundled themes (Dark, Light, Matrix, Orange Dark, Soft Light), plus your own themes whose colors you can edit from the settings page.
 - Your own plugins, written in plain JavaScript (see [User plugins](#user-plugins)).

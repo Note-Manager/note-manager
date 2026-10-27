@@ -14,9 +14,10 @@ import {getUserPlugins, onUserPluginsChanged} from "../../UserPluginRegistry";
 
 const LARGE_CONTENT_LENGTH = 2 * 1024 * 1024;
 
-export default function Editor({content, language, onEditorLoad, changeListener, cursorListener, selectionListener}: {
+export default function Editor({content, language, newLineMode, onEditorLoad, changeListener, cursorListener, selectionListener}: {
     content: string,
-    language: SupportedLanguage
+    language: SupportedLanguage,
+    newLineMode: "windows" | "unix",
     onEditorLoad: ((editor: Ace.Editor) => void) | undefined,
     changeListener: ({value, lineCount}: { value: string, lineCount: number }) => void,
     cursorListener: (value: any) => void,
@@ -158,7 +159,7 @@ export default function Editor({content, language, onEditorLoad, changeListener,
                     highlightActiveLine: true,
                     highlightGutterLine: true,
                     highlightSelectedWord: !isLargeContent,
-                    newLineMode: "auto",
+                    newLineMode: newLineMode,
                     showPrintMargin: false,
                     useWorker: false,
                     enableSnippets: !isLargeContent,

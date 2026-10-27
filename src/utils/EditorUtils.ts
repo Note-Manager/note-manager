@@ -1,25 +1,36 @@
 import path from "node:path";
-import {backupFile, getFileSize, isBinaryFile, isFileExists, readFileAsync, writeFileAtomic} from "./FileUtils";
+import {backupFile, getFileSize, isBinaryFile, isFileExists, readFileAsync, readFileBytes, writeFileAtomic} from "./FileUtils";
 import {EditorTab} from "../domain/EditorTab";
-import {hash, shortenTabName} from "./TextUtils";
+import {documentHash, hash, shortenTabName} from "./TextUtils";
 import * as Environment from "./EnvironmentUtils";
 import {EditorState} from "../domain/EditorState";
 import electron, {BrowserWindow, dialog} from "electron";
 import {EventType} from "../enums";
 import {findLanguageByFileName} from "../domain/SupportedLanguage";
 import {addRecentFile} from "./RecentFiles";
+import {decodeText, DecodedText} from "./EncodingUtils";
+import {getDetectionOptions} from "../domain/Settings";
+import {detectEol, EolType, isKnownEncoding, isKnownEol, toEditorText} from "../domain/Encoding";
+
+export async function readTextFile(file: string, preferredEncoding?: string): Promise<DecodedText> {
+    const settings = Environment.getSettings();
+
+    return decodeText(await readFileBytes(file), getDetectionOptions(settings), preferredEncoding, settings?.files?.defaultEol || EolType.LF);
+}
 
 export async function fileToTab(file: string) {
     if (!isFileExists(file)) throw new Error("Cannot found file for open: " + file);
 
     const fileName = path.basename(file);
 
-    const content = await readFileAsync(file);
+    const {content, encoding, eol} = await readTextFile(file);
 
     return {
         id: crypto.randomUUID(),
         name: fileName,
-        hash: await hash(content),
+        hash: await documentHash(content, encoding, eol),
+        encoding: encoding,
+        eol: eol,
         displayName: shortenTabName(fileName),
         file: file,
         isTemp: false,
@@ -49,36 +60,53 @@ export async function readEditorState(): Promise<EditorState | undefined> {
     if (!Array.isArray(editorState?.tabs)) return undefined;
 
     await Promise.all(editorState.tabs.map(async (t) => {
-        if (t.isTemp || !t.file) return;
+        if (t.isTemp || !t.file) {
+            normalizeTempTab(t);
+            return;
+        }
 
-        let fileContent: string;
+        let decoded: DecodedText;
 
         try {
-            fileContent = await readFileAsync(t.file);
+            decoded = await readTextFile(t.file, t.isChanged ? undefined : t.encoding);
         } catch (ignored) {
             console.warn(`expected file '${t.file}' is not found on the system.`);
             t.isTemp = true;
             t.content = t.content ?? "";
+            normalizeTempTab(t);
             return;
         }
 
-        const fileHash = await hash(fileContent);
+        const fileHash = await documentHash(decoded.content, decoded.encoding, decoded.eol);
 
         if (t.isChanged && t.content !== undefined) {
             t.hash = fileHash;
+            if (!isKnownEncoding(t.encoding)) t.encoding = decoded.encoding;
+            if (!isKnownEol(t.eol)) t.eol = detectEol(t.content, decoded.eol);
+            t.content = toEditorText(t.content, t.eol);
             return;
         }
 
-        t.content = fileContent;
-        t.isChanged = false;
+        const isSameContent = t.hash === fileHash || t.hash === await hash(decoded.content);
 
-        if (t.hash !== fileHash) {
-            t.hash = fileHash;
-            t.state = undefined;
-        }
+        t.content = decoded.content;
+        t.encoding = decoded.encoding;
+        t.eol = decoded.eol;
+        t.isChanged = false;
+        t.hash = fileHash;
+
+        if (!isSameContent) t.state = undefined;
     }));
 
     return editorState;
+}
+
+function normalizeTempTab(tab: EditorTab) {
+    const settings = Environment.getSettings();
+
+    if (!isKnownEncoding(tab.encoding)) tab.encoding = settings?.files?.defaultEncoding;
+    if (!isKnownEol(tab.eol)) tab.eol = detectEol(tab.content || "", settings?.files?.defaultEol || EolType.LF);
+    if (tab.content !== undefined) tab.content = toEditorText(tab.content, tab.eol);
 }
 
 let lastWrittenState: string | undefined;
