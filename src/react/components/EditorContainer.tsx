@@ -3,10 +3,8 @@ import Editor from "./editor/Editor";
 import React, {useEffect, useRef, useState} from "react";
 import * as TextUtils from "../../utils/TextUtils";
 import {shortenTabName} from "../../utils/TextUtils";
-import {writeFile} from "../../utils/FileUtils";
 import {fireEvent, off, on} from "../ApplicationEvents";
 import {EventType} from "../../enums";
-import path from "node:path";
 import {Ace} from "ace-builds";
 import {SupportedLanguage, SupportedLanguages} from "../../domain/SupportedLanguage";
 import {useEditorContext} from "./editor/EditorContext";
@@ -58,7 +56,7 @@ export default function EditorContainer() {
 
                     setData(getEditorData());
                 }
-            });
+            }).catch(err => console.error("cannot save " + activeTab.name + ": " + err));
         }
 
         on(EventType.SAVE_TAB, onTabSave);
@@ -214,7 +212,7 @@ async function saveTab(tab: EditorTab) {
     let targetFile = tab.file;
 
     if (targetFile) {
-        writeFile(targetFile, tab.content || "");
+        await fireEvent(EventType.WRITE_FILE, {file: targetFile, content: tab.content || ""});
         isSaved = true;
     } else {
         targetFile = await fireEvent(EventType.SHOW_SAVE_DIALOG, {
@@ -223,10 +221,10 @@ async function saveTab(tab: EditorTab) {
         }) as string;
 
         if (targetFile) {
-            writeFile(targetFile, tab.content || "");
+            await fireEvent(EventType.WRITE_FILE, {file: targetFile, content: tab.content || ""});
             isSaved = true;
             tab.file = targetFile;
-            tab.name = path.basename(targetFile);
+            tab.name = TextUtils.getFileName(targetFile);
             tab.displayName = tab.name.length > 20 ? tab.name.substring(0, 17) + "..." : tab.name;
         }
     }

@@ -21,6 +21,8 @@ body, html {
 
     height: 100% !important;
 
+    border: 1px solid;
+
     display: flex;
     flex-direction: column;
 
@@ -29,97 +31,83 @@ body, html {
 
 #editorBody {
     flex: 1;
+    min-height: 0;
 
     display: flex;
-    justify-content: space-between;
     overflow: hidden;
-}
-
-#editorContentWrapper {
-    flex: 1;
 }
 
 #tabContentWrapper {
     flex: 1;
+    min-width: 0;
+
+    display: flex;
+    overflow: hidden;
 }
 
 #editorToolsWrapper {
     display: flex;
-    justify-content: space-between;
-    width: fit-content;
-    max-width: 50%;
-}
-
-#editorTools {
-    border: 1px solid;
-
-    min-width: 50px;
-    max-width: 100%;
 }
 
 #toolWindow {
-    height: 100%;
-    max-width: 100%;
-
-    width: 40vw;
-
-    resize: both;
-
-    border-left: 1px solid;
+    width: 400px;
 
     display: flex;
     flex-direction: column;
 
-    justify-content: flex-start;
-    align-items: center;
+    border-left: 1px solid;
 }
 
 #toolWindowHeader {
-    width: 100%;
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+
+    padding: 5px;
     border-bottom: 1px solid;
 }
 
 #toolWindowContent {
-    padding: 5px;
-    width: 100%;
-    max-height: 100%;
-    box-sizing: border-box;
+    flex: 1;
+    overflow: auto;
 }
 
-#toolWindowTitle {
+#editorTools {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px;
-    margin-right: 5px;
-}
+    flex-direction: column;
 
-#toolWindowButtons {
     padding: 5px;
-    display: flex;
-    align-items: center;
+    border-left: 1px solid;
 }
 
 .editorToolWrapper {
-    width: 100%;
-    height: min-content;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
 
     padding: 5px;
-    writing-mode: vertical-lr;
-    text-orientation: mixed;
-}
+    font-size: 0.8rem;
 
-.editorToolWrapper:hover {
     cursor: pointer;
 }
 
-.editorToolWrapper > * {
-    margin: 5px;
+.editorToolWrapper.selected {
+    color: dodgerblue;
+}
+
+.tabContentWrapper {
+    flex: 1;
+
+    display: flex;
+    overflow: hidden;
+}
+
+.cm-theme-none {
+    width: 100%;
+    height: 100%;
+}
+
+.cm-editor {
+    height: 100%;
 }
 
 #footer {

@@ -10,6 +10,10 @@ export async function hash(content:string) {
         .join("");
 }
 
+export function getFileName(filePath: string): string {
+    return filePath.split(/[\\/]/).pop() || filePath;
+}
+
 export function shortenTabName(name: string): string {
     return (name?.length || 0) > 28
         ? (name?.substring(0, 25) + "...")

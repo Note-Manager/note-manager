@@ -2,7 +2,6 @@ import {EditorAction, EditorMenuItem, EditorPlugin} from "./index";
 import {LanguageName} from "../../../../domain/SupportedLanguage";
 import xmlFormat from "xml-formatter";
 import { format as sqlFormat } from 'sql-formatter';
-import os from "os";
 import {EditorWrapper} from "../../../../domain/EditorWrapper";
 
 enum Keys {
@@ -109,5 +108,5 @@ function format(lang: string, content: string) {
 }
 
 function handleXML(content: string) {
-    return xmlFormat(content, {lineSeparator: os.EOL, strictMode: false, collapseContent: true, indentation: "    "});
+    return xmlFormat(content, {lineSeparator: "\n", strictMode: false, collapseContent: true, indentation: "    "});
 }

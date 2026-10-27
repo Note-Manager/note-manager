@@ -5,10 +5,9 @@ import 'ace-builds/src-noconflict/ext-searchbox';
 import "ace-builds/src-noconflict/ext-language_tools";
 import {Ace} from "ace-builds";
 import {SupportedLanguage} from "../../../domain/SupportedLanguage";
-import {fireEvent} from "../../ApplicationEvents";
+import {fireEvent, off, on} from "../../ApplicationEvents";
 import {EventType} from "../../../enums";
 import {allPlugins} from "../../../utils/PluginLoader";
-import {ipcRenderer} from "electron";
 import {AceEditorWrapper} from "../../../domain/AceEditorWrapper";
 
 export default function Editor({content, language, onEditorLoad, changeListener, cursorListener, selectionListener}: {
@@ -135,19 +134,25 @@ export default function Editor({content, language, onEditorLoad, changeListener,
     );
 }
 
+let pluginEventSubscriptions: Array<() => void> = [];
+
 function listenPluginEvents() {
+    unListenPluginEvents();
+
     allPlugins.forEach(plugin => {
         plugin.getAvailableActions().forEach(code => {
-            ipcRenderer.on(code, () => {
+            const listener = () => {
                 console.info("plugin event: " + code);
                 plugin.doAction(code);
-            })
+            };
+
+            on(code, listener);
+            pluginEventSubscriptions.push(() => off(code, listener));
         })
     });
 }
 
 function unListenPluginEvents() {
-    allPlugins.flatMap(plugin => plugin.getAvailableActions()).forEach(code => {
-        ipcRenderer.removeAllListeners(code);
-    });
+    pluginEventSubscriptions.forEach(unsubscribe => unsubscribe());
+    pluginEventSubscriptions = [];
 }

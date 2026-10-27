@@ -89,9 +89,18 @@ export default class Base64Plugin implements EditorPlugin {
 }
 
 function decode(str: string):string {
-    return Buffer.from(str, 'base64').toString('utf-8');
+    const binary = atob(str.replace(/\s/g, ""));
+
+    return new TextDecoder().decode(Uint8Array.from(binary, c => c.charCodeAt(0)));
 }
 
 function encode(str: string):string {
-    return Buffer.from(str, 'utf-8').toString('base64');
+    const bytes = new TextEncoder().encode(str);
+
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    }
+
+    return btoa(binary);
 }
