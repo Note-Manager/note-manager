@@ -10,6 +10,7 @@ const INVOKE_CHANNELS = [
     EventType.CLOSE_WITH_STATE,
     EventType.WRITE_FILE,
     EventType.SHOW_TAB_CONTEXT_MENU,
+    EventType.REVEAL_FILE,
     EventType.LOG_INFO,
     EventType.LOG_WARN,
     EventType.LOG_ERROR,

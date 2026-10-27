@@ -26,7 +26,8 @@ export enum EventType {
     WRITE_FILE = "write-file",
     SHOW_TAB_CONTEXT_MENU = "show-tab-context-menu",
     TAB_ACTION = "tab-action",
-    INIT_WITH_STATE = "initialize-with-state"
+    INIT_WITH_STATE = "initialize-with-state",
+    REVEAL_FILE = "reveal-file"
 }
 
 export enum UnsavedChangesChoice {
@@ -42,4 +43,5 @@ export enum TabAction {
     CLOSE_ALL = "close-all",
     TOGGLE_PIN = "toggle-pin",
     REOPEN_CLOSED = "reopen-closed",
+    REVEAL_IN_FOLDER = "reveal-in-folder",
 }

@@ -60,6 +60,12 @@ export function createApplicationMenu() {
                     }
                 },
                 {
+                    label: 'Open Containing Folder',
+                    click: () => {
+                        sendToFocusedWindow(EventType.TAB_ACTION, {action: TabAction.REVEAL_IN_FOLDER});
+                    }
+                },
+                {
                     label: 'Reopen Closed Tab',
                     accelerator: 'CmdOrCtrl+Shift+T',
                     click: () => {

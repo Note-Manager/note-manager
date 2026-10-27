@@ -1,9 +1,9 @@
-import electron, {BrowserWindow, ipcMain, Menu} from "electron";
+import electron, {BrowserWindow, ipcMain, Menu, shell} from "electron";
 import {EventType, TabAction, UnsavedChangesChoice} from "../enums";
 import {getFocusedWindow, openInWindow, writeEditorState} from "../utils/EditorUtils";
 import {EditorState} from "../domain/EditorState";
 import * as Environment from "../utils/EnvironmentUtils";
-import {writeFile} from "../utils/FileUtils";
+import {isFileExists, writeFile} from "../utils/FileUtils";
 import {addRecentFile} from "../utils/RecentFiles";
 import {getUnsavedChangesMessage, UNSAVED_CHANGES_BUTTONS} from "../utils/DialogUtils";
 
@@ -70,6 +70,7 @@ export default function initIpcMainListeners() {
         hasOtherTabs: boolean,
         hasUnmodifiedTabs: boolean,
         hasClosableTabs: boolean,
+        hasFile: boolean,
         canReopen: boolean
     }) => {
         const win = BrowserWindow.fromWebContents(event.sender);
@@ -85,8 +86,18 @@ export default function initIpcMainListeners() {
             {type: "separator"},
             {label: data.isPinned ? "Unpin Tab" : "Pin Tab", click: send(TabAction.TOGGLE_PIN)},
             {type: "separator"},
+            {label: "Open Containing Folder", enabled: data.hasFile, click: send(TabAction.REVEAL_IN_FOLDER)},
+            {type: "separator"},
             {label: "Reopen Closed Tab", accelerator: "CmdOrCtrl+Shift+T", enabled: data.canReopen, click: send(TabAction.REOPEN_CLOSED)},
         ]).popup({window: win});
+    });
+
+    ipcMain.handle(EventType.REVEAL_FILE, (event, data: {file: string}) => {
+        if (typeof data?.file !== "string" || !data.file || !isFileExists(data.file)) return false;
+
+        shell.showItemInFolder(data.file);
+
+        return true;
     });
 
     ipcMain.handle(EventType.SAVE_STATE, (event, data: EditorState) => {

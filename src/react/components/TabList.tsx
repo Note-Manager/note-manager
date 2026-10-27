@@ -166,6 +166,14 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         setTabs([...others.filter(t => t.isPinned), tab, ...others.filter(t => !t.isPinned)]);
     }
 
+    const revealInFolder = (tab: EditorTab | undefined) => {
+        if (!tab?.file) return;
+
+        fireEvent(EventType.REVEAL_FILE, {file: tab.file}).then(isRevealed => {
+            if (!isRevealed) console.warn("cannot reveal missing file " + tab.file);
+        }).catch(err => console.error(err));
+    }
+
     const showTabContextMenu = (event: React.MouseEvent, tab: EditorTab) => {
         event.preventDefault();
         event.stopPropagation();
@@ -176,6 +184,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
             hasOtherTabs: tabs.some(t => t !== tab && !t.isPinned),
             hasUnmodifiedTabs: tabs.some(t => !t.isPinned && !t.isChanged),
             hasClosableTabs: tabs.some(t => !t.isPinned),
+            hasFile: !!tab.file,
             canReopen: closedTabs.current.length > 0
         }).catch(err => console.error(err));
     }
@@ -252,6 +261,9 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
                     break;
                 case TabAction.REOPEN_CLOSED:
                     reopenClosedTab();
+                    break;
+                case TabAction.REVEAL_IN_FOLDER:
+                    revealInFolder(targetTab || activeTab);
                     break;
             }
         };
