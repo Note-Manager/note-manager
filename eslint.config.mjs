@@ -1,6 +1,6 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
-import react from "eslint-plugin-react";
+import eslintReact from "@eslint-react/eslint-plugin";
 import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 
@@ -11,9 +11,12 @@ export default tseslint.config(
     js.configs.recommended,
     ...tseslint.configs.recommended,
     {
+        files: ["src/**/*.{ts,tsx}"],
+        ...eslintReact.configs["recommended-typescript"],
+    },
+    {
         files: ["src/**/*.{js,ts,tsx}"],
         plugins: {
-            react,
             "react-hooks": reactHooks,
         },
         languageOptions: {
@@ -24,14 +27,11 @@ export default tseslint.config(
                 MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: "readonly",
             },
         },
-        settings: {
-            react: {version: "detect"},
-        },
         rules: {
-            ...react.configs.recommended.rules,
-            "react/react-in-jsx-scope": "off",
-            "react/prop-types": "off",
             "react-hooks/rules-of-hooks": "error",
+            "@eslint-react/exhaustive-deps": "off",
+            "@eslint-react/naming-convention-ref-name": "off",
+            "@eslint-react/no-array-index-key": "off",
             "no-empty": ["error", {allowEmptyCatch: true}],
             "@typescript-eslint/no-unused-expressions": ["error", {allowShortCircuit: true, allowTernary: true}],
             "@typescript-eslint/no-explicit-any": "off",

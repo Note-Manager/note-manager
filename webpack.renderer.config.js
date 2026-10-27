@@ -1,6 +1,4 @@
-const rules = require('./webpack.rules').filter(rule =>
-  rule.use !== 'node-loader' && rule.use?.loader !== '@vercel/webpack-asset-relocator-loader'
-);
+const rules = [...require('./webpack.rules')];
 
 rules.push({
   test: /\.css$/,
@@ -8,7 +6,6 @@ rules.push({
 });
 
 module.exports = {
-  // Put your normal webpack config below here
   module: {
     rules,
   },
