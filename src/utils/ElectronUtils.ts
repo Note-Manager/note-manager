@@ -1,6 +1,6 @@
 import electron, {app, BrowserWindow} from "electron";
 import {getFocusedWindow, openInWindow, sendToFocusedWindow} from "./EditorUtils";
-import {EventType, SystemPaths} from "../enums";
+import {EventType, SystemPaths, TabAction} from "../enums";
 import {SupportedLanguages} from "../domain/SupportedLanguage";
 import * as Environment from "./EnvironmentUtils";
 import {getBundledThemes, getUserThemePath, getUserThemes} from "./EnvironmentUtils";
@@ -52,6 +52,13 @@ export function createApplicationMenu() {
                     accelerator: 'CmdOrCtrl+S',
                     click: () => {
                         sendToFocusedWindow(EventType.SAVE_TAB);
+                    }
+                },
+                {
+                    label: 'Reopen Closed Tab',
+                    accelerator: 'CmdOrCtrl+Shift+T',
+                    click: () => {
+                        sendToFocusedWindow(EventType.TAB_ACTION, {action: TabAction.REOPEN_CLOSED});
                     }
                 },
                 {

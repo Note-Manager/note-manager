@@ -10,6 +10,7 @@ export interface EditorTab {
     content?:string,
     hash?:string,
     isChanged?:boolean,
+    isPinned?:boolean,
     state?: {
         scroll?: {
             top: number,

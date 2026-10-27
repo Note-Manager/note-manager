@@ -1,5 +1,5 @@
-import electron, {BrowserWindow, ipcMain} from "electron";
-import {EventType} from "../enums";
+import electron, {BrowserWindow, ipcMain, Menu} from "electron";
+import {EventType, TabAction} from "../enums";
 import {getFocusedWindow, openInWindow, writeEditorState} from "../utils/EditorUtils";
 import {EditorState} from "../domain/EditorState";
 import * as Environment from "../utils/EnvironmentUtils";
@@ -54,6 +54,31 @@ export default function initIpcMainListeners() {
         if (typeof data?.file !== "string" || !data.file) throw new Error("file is required");
 
         writeFile(data.file, typeof data.content === "string" ? data.content : "");
+    });
+
+    ipcMain.handle(EventType.SHOW_TAB_CONTEXT_MENU, (event, data: {
+        tabId: string,
+        isPinned: boolean,
+        hasOtherTabs: boolean,
+        hasUnmodifiedTabs: boolean,
+        hasClosableTabs: boolean,
+        canReopen: boolean
+    }) => {
+        const win = BrowserWindow.fromWebContents(event.sender);
+        if (!win || typeof data?.tabId !== "string") return;
+
+        const send = (action: TabAction) => () => event.sender.send(EventType.TAB_ACTION, {action: action, tabId: data.tabId});
+
+        Menu.buildFromTemplate([
+            {label: "Close Tab", accelerator: "CmdOrCtrl+W", click: send(TabAction.CLOSE)},
+            {label: "Close Other Tabs", enabled: data.hasOtherTabs, click: send(TabAction.CLOSE_OTHERS)},
+            {label: "Close Unmodified Tabs", enabled: data.hasUnmodifiedTabs, click: send(TabAction.CLOSE_UNMODIFIED)},
+            {label: "Close All Tabs", enabled: data.hasClosableTabs, click: send(TabAction.CLOSE_ALL)},
+            {type: "separator"},
+            {label: data.isPinned ? "Unpin Tab" : "Pin Tab", click: send(TabAction.TOGGLE_PIN)},
+            {type: "separator"},
+            {label: "Reopen Closed Tab", accelerator: "CmdOrCtrl+Shift+T", enabled: data.canReopen, click: send(TabAction.REOPEN_CLOSED)},
+        ]).popup({window: win});
     });
 
     ipcMain.handle(EventType.SAVE_STATE, (event, data: EditorState) => {
