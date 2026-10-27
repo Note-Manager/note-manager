@@ -11,6 +11,7 @@ import {clearRecentFiles, getRecentFiles, onRecentFilesChanged, removeRecentFile
 import {Theme} from "../domain/Theme";
 import {resolveAccelerator, Settings} from "../domain/Settings";
 import {getDefaultAccelerator, ShortcutId} from "./Shortcuts";
+import {getUserPluginManifests, getUserPluginPath, loadUserPluginManifests} from "./UserPlugins";
 
 
 export const appIcon = electron.nativeImage.createFromPath(path.join(getSystemPath(SystemPaths.resources), "Icons/note-manager.png"));
@@ -148,20 +149,48 @@ export function createApplicationMenu() {
         },
         {
             label: "Plugins",
-            submenu: allPlugins.filter(p => (p.applicationMenuItems?.length || 0) > 0).flatMap(plugin => plugin.applicationMenuItems).filter(el => el !== undefined).map(menuItem => {
-                return {
-                    label: menuItem.label,
-                    submenu: menuItem.actions.map(action => {
-                        return {
-                            label: action.label,
-                            click: () => {
-                                sendToFocusedWindow(action.code)
-                            },
-                            accelerator: shortcut(action.code)
-                        }
-                    })
+            submenu: [
+                ...allPlugins.filter(p => (p.applicationMenuItems?.length || 0) > 0).flatMap(plugin => plugin.applicationMenuItems).filter(el => el !== undefined).map(menuItem => {
+                    return {
+                        label: menuItem.label,
+                        submenu: menuItem.actions.map(action => {
+                            return {
+                                label: action.label,
+                                click: () => {
+                                    sendToFocusedWindow(action.code)
+                                },
+                                accelerator: shortcut(action.code)
+                            }
+                        })
+                    }
+                }),
+                ...getUserPluginManifests().map(plugin => ({
+                    label: plugin.name,
+                    sublabel: "User Plugin",
+                    submenu: plugin.actions.map(action => ({
+                        label: action.label,
+                        click: () => {
+                            sendToFocusedWindow(action.code);
+                        },
+                        accelerator: shortcut(action.code)
+                    }))
+                })),
+                {
+                    type: "separator"
+                },
+                {
+                    label: "Reload User Plugins",
+                    click: () => {
+                        reloadUserPlugins();
+                    }
+                },
+                {
+                    label: "Open Plugins Folder",
+                    click: () => {
+                        electron.shell.openPath(getUserPluginPath()).catch(err => console.error(err));
+                    }
                 }
-            })
+            ]
         }
     ]);
 
@@ -287,7 +316,14 @@ export function applySettingsToWindows(settings: Settings) {
 }
 
 function shortcut(id: string) {
-    return resolveAccelerator(Environment.getSettings(), id, getDefaultAccelerator(id));
+    return resolveAccelerator(Environment.getSettings(), id, getDefaultAccelerator(id, getUserPluginManifests()));
+}
+
+export function reloadUserPlugins() {
+    loadUserPluginManifests();
+    rebuildMenus();
+
+    BrowserWindow.getAllWindows().forEach(win => win.webContents.send(EventType.USER_PLUGINS_CHANGED));
 }
 
 export function initApplicationMenu() {

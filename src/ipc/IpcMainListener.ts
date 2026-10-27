@@ -9,7 +9,8 @@ import {getUnsavedChangesMessage, UNSAVED_CHANGES_BUTTONS} from "../utils/Dialog
 import {applySettingsToWindows} from "../utils/ElectronUtils";
 import {Theme} from "../domain/Theme";
 import {resolveAccelerator, Settings} from "../domain/Settings";
-import {ShortcutId} from "../utils/Shortcuts";
+import {getShortcutDefinitions, ShortcutId} from "../utils/Shortcuts";
+import {getUserPluginInfos, getUserPluginManifests} from "../utils/UserPlugins";
 
 const closingWindows = new Set<number>();
 const recordingShortcuts = new Set<number>();
@@ -111,6 +112,7 @@ export default function initIpcMainListeners() {
             settings: Environment.getSettings(),
             themes: Environment.getAllThemes(),
             themeFile: Environment.getPreferences().theme.file,
+            shortcuts: getShortcutDefinitions(getUserPluginManifests()),
         };
     });
 
@@ -158,6 +160,8 @@ export default function initIpcMainListeners() {
             });
         });
     });
+
+    ipcMain.handle(EventType.GET_USER_PLUGINS, () => getUserPluginInfos());
 
     ipcMain.handle(EventType.GET_THEME_VARIABLES, (event, data: {file: string}) => {
         return Environment.readThemeVariables(data?.file);

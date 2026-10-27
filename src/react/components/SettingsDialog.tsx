@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {fireEvent, off, on} from "../ApplicationEvents";
 import {EventType} from "../../enums";
 import {
@@ -14,7 +14,7 @@ import {
     TAB_SIZE_RANGE,
     TabLayout
 } from "../../domain/Settings";
-import {getShortcutDefinitions} from "../../utils/Shortcuts";
+import {getShortcutDefinitions, ShortcutDefinition} from "../../utils/Shortcuts";
 import {isValidThemeName, isValidVariableValue, ThemeVariable} from "../../utils/ThemeVariables";
 
 interface ThemeInfo {
@@ -43,7 +43,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
     const [recordingId, setRecordingId] = useState<string>();
     const [error, setError] = useState<string>();
 
-    const shortcuts = useMemo(getShortcutDefinitions, []);
+    const [shortcuts, setShortcuts] = useState<Array<ShortcutDefinition>>(() => getShortcutDefinitions());
     const selectedTheme = themes.find(t => t.file === themeFile);
 
     useEffect(() => {
@@ -51,6 +51,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
             setDraft(normalizeSettings(result?.settings));
             setThemes(result?.themes || []);
             setThemeFile(result?.themeFile);
+            if (Array.isArray(result?.shortcuts)) setShortcuts(result.shortcuts);
         }).catch(err => setError("Cannot load settings: " + err));
     }, []);
 
