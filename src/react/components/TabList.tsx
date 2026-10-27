@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useEffect, useRef} from "react";
+import {useEffect, useRef, useState} from "react";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faFileText} from "@fortawesome/free-regular-svg-icons";
 import {faRectangleTimes} from "@fortawesome/free-regular-svg-icons/faRectangleTimes";
@@ -14,11 +14,13 @@ import {findLanguageByFileName} from "../../domain/SupportedLanguage";
 import {EditorState} from "../../domain/EditorState";
 import {getStateRevision, markStateChanged} from "../StateChangeTracker";
 import {resolveUnsavedChanges} from "../TabSaver";
+import {moveTab, orderByPinned} from "../../utils/TabUtils";
 import IpcRendererEvent = Electron.IpcRendererEvent;
 
 const DEFAULT_TAB_NAME = "New Document.txt";
 const AUTOSAVE_INTERVAL = 5000;
 const MAX_CLOSED_TABS = 20;
+const TAB_DRAG_TYPE = "application/x-note-manager-tab";
 
 export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
     onTabSelect: (tab: EditorTab) => void,
@@ -33,6 +35,9 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
     latestState.current = {tabs: tabs, activeTabId: activeTab?.id};
 
     const lastSavedRevision = useRef(-1);
+
+    const [draggedTabId, setDraggedTabId] = useState<string>();
+    const [dropTarget, setDropTarget] = useState<{id: string, placeAfter: boolean}>();
 
     useEffect(() => {
         markStateChanged();
@@ -306,12 +311,68 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         }
     }
 
+    const isTabDrag = (event: React.DragEvent) => event.dataTransfer.types.includes(TAB_DRAG_TYPE);
+
+    const handleTabDragStart = (event: React.DragEvent<HTMLDivElement>, tab: EditorTab) => {
+        if (!tab.id) return;
+
+        event.dataTransfer.setData(TAB_DRAG_TYPE, tab.id);
+        event.dataTransfer.effectAllowed = "move";
+
+        setDraggedTabId(tab.id);
+    }
+
+    const handleTabDragOver = (event: React.DragEvent<HTMLDivElement>, tab: EditorTab) => {
+        if (!isTabDrag(event) || !tab.id) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = "move";
+
+        const rect = event.currentTarget.getBoundingClientRect();
+        const placeAfter = event.clientX > rect.left + rect.width / 2;
+
+        if (dropTarget?.id !== tab.id || dropTarget.placeAfter !== placeAfter) setDropTarget({id: tab.id, placeAfter: placeAfter});
+    }
+
+    const handleTabDrop = (event: React.DragEvent<HTMLDivElement>, tab: EditorTab) => {
+        if (!isTabDrag(event)) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const movedTabId = event.dataTransfer.getData(TAB_DRAG_TYPE);
+        const rect = event.currentTarget.getBoundingClientRect();
+        const reordered = tab.id ? moveTab(tabs, movedTabId, tab.id, event.clientX > rect.left + rect.width / 2) : tabs;
+
+        if (reordered !== tabs) setTabs(reordered);
+
+        handleTabDragEnd();
+    }
+
+    const handleTabDragEnd = () => {
+        setDraggedTabId(undefined);
+        setDropTarget(undefined);
+    }
+
+    const getDropClass = (tab: EditorTab) => {
+        if (!dropTarget || dropTarget.id !== tab.id || draggedTabId === tab.id) return "";
+
+        return dropTarget.placeAfter ? " dropAfter" : " dropBefore";
+    }
+
     return (
         <div id={"tabListWrapper"}>
             <div id={"tabList"}>
                 {tabs && tabs.length > 0 &&
                     tabs.map((tab, idx) => (
-                        <div id={tab.id} key={tab.id} className={"editorTabHeader" + getOrEmptyString(tab.id === activeTab?.id, " selected") + getOrEmptyString(tab.isChanged || false, " changed") + getOrEmptyString(!!tab.isPinned, " pinned")} onMouseUp={(event) => handleTabClick(event, idx)} onContextMenu={(event) => showTabContextMenu(event, tab)}>
+                        <div id={tab.id} key={tab.id} className={"editorTabHeader" + getOrEmptyString(tab.id === activeTab?.id, " selected") + getOrEmptyString(tab.isChanged || false, " changed") + getOrEmptyString(!!tab.isPinned, " pinned") + getOrEmptyString(draggedTabId === tab.id, " dragging") + getDropClass(tab)}
+                             draggable={true}
+                             onDragStart={(event) => handleTabDragStart(event, tab)}
+                             onDragOver={(event) => handleTabDragOver(event, tab)}
+                             onDrop={(event) => handleTabDrop(event, tab)}
+                             onDragEnd={handleTabDragEnd}
+                             onMouseUp={(event) => handleTabClick(event, idx)} onContextMenu={(event) => showTabContextMenu(event, tab)}>
                             <div>
                                 <FontAwesomeIcon icon={faFileText}/>
                                 <span className={"tabHeaderName"} style={{marginLeft: "5px"}} title={tab.file || tab.name}>{countByName(tabs, tab.name || DEFAULT_TAB_NAME) > 1 ? (tab.file || tab.displayName) : tab.displayName}</span>
@@ -333,10 +394,6 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
             </div>
         </div>
     );
-}
-
-function orderByPinned(tabs: Array<EditorTab>) {
-    return [...tabs.filter(t => t.isPinned), ...tabs.filter(t => !t.isPinned)];
 }
 
 function getOrEmptyString(condition: boolean, value: string) {

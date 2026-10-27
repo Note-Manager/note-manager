@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {applySavedFile} from "../TabUtils";
+import {applySavedFile, moveTab} from "../TabUtils";
 import {LanguageName, SupportedLanguages} from "../../domain/SupportedLanguage";
 import {EditorTab} from "../../domain/EditorTab";
 
@@ -46,5 +46,33 @@ describe("applySavedFile", () => {
         applySavedFile(tab, "/home/me/" + "a".repeat(40) + ".md");
 
         expect(tab.displayName).toBe("a".repeat(25) + "...");
+    });
+});
+
+describe("moveTab", () => {
+    const tabs = (...ids: Array<string>): Array<EditorTab> => ids.map(id => ({id: id, isPinned: id.startsWith("p")}));
+    const ids = (list: Array<EditorTab>) => list.map(t => t.id);
+
+    it("moves a tab before the target", () => {
+        expect(ids(moveTab(tabs("a", "b", "c"), "c", "a", false))).toEqual(["c", "a", "b"]);
+    });
+
+    it("moves a tab after the target", () => {
+        expect(ids(moveTab(tabs("a", "b", "c"), "a", "b", true))).toEqual(["b", "a", "c"]);
+        expect(ids(moveTab(tabs("a", "b", "c"), "a", "c", true))).toEqual(["b", "c", "a"]);
+    });
+
+    it("returns the same list when nothing moves", () => {
+        const list = tabs("a", "b");
+
+        expect(moveTab(list, "a", "a", true)).toBe(list);
+        expect(moveTab(list, "x", "a", true)).toBe(list);
+        expect(moveTab(list, "a", "x", true)).toBe(list);
+    });
+
+    it("keeps pinned tabs before unpinned tabs", () => {
+        expect(ids(moveTab(tabs("p1", "p2", "a", "b"), "b", "p1", false))).toEqual(["p1", "p2", "b", "a"]);
+        expect(ids(moveTab(tabs("p1", "p2", "a", "b"), "p1", "b", true))).toEqual(["p2", "p1", "a", "b"]);
+        expect(ids(moveTab(tabs("p1", "p2", "a"), "p2", "p1", false))).toEqual(["p2", "p1", "a"]);
     });
 });

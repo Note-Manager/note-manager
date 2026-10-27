@@ -169,6 +169,18 @@ body, html {
     box-shadow: inset 0 2px 0 var(--positive-color);
 }
 
+#tabList .editorTabHeader.dragging {
+    opacity: 0.5;
+}
+
+#tabList .editorTabHeader.dropBefore {
+    border-left: 2px solid var(--positive-color);
+}
+
+#tabList .editorTabHeader.dropAfter {
+    border-right: 2px solid var(--positive-color);
+}
+
 .closeTabButton {
     cursor: pointer;
     color: unset !important;
