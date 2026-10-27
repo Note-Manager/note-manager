@@ -15,6 +15,7 @@ import {EditorState} from "../../domain/EditorState";
 import {getStateRevision, markStateChanged} from "../StateChangeTracker";
 import {resolveUnsavedChanges} from "../TabSaver";
 import {moveTab, orderByPinned} from "../../utils/TabUtils";
+import {TabLayout} from "../../domain/Settings";
 import IpcRendererEvent = Electron.IpcRendererEvent;
 
 const DEFAULT_TAB_NAME = "New Document.txt";
@@ -27,7 +28,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
     onTabAdd: (tab: EditorTab) => void,
     onTabRemove: (tab: EditorTab) => void
 }) {
-    const {tabs, setTabs, activeTab, setActiveTab} = useEditorContext();
+    const {tabs, setTabs, activeTab, setActiveTab, settings} = useEditorContext();
 
     const isStateInitialized = useRef(false);
     const closedTabs = useRef<Array<EditorTab>>([]);
@@ -313,6 +314,14 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
 
     const isTabDrag = (event: React.DragEvent) => event.dataTransfer.types.includes(TAB_DRAG_TYPE);
 
+    const isDropAfter = (event: React.DragEvent<HTMLDivElement>) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+
+        return settings.ui.tabLayout === TabLayout.VERTICAL
+            ? event.clientY > rect.top + rect.height / 2
+            : event.clientX > rect.left + rect.width / 2;
+    }
+
     const handleTabDragStart = (event: React.DragEvent<HTMLDivElement>, tab: EditorTab) => {
         if (!tab.id) return;
 
@@ -329,8 +338,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         event.stopPropagation();
         event.dataTransfer.dropEffect = "move";
 
-        const rect = event.currentTarget.getBoundingClientRect();
-        const placeAfter = event.clientX > rect.left + rect.width / 2;
+        const placeAfter = isDropAfter(event);
 
         if (dropTarget?.id !== tab.id || dropTarget.placeAfter !== placeAfter) setDropTarget({id: tab.id, placeAfter: placeAfter});
     }
@@ -342,8 +350,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         event.stopPropagation();
 
         const movedTabId = event.dataTransfer.getData(TAB_DRAG_TYPE);
-        const rect = event.currentTarget.getBoundingClientRect();
-        const reordered = tab.id ? moveTab(tabs, movedTabId, tab.id, event.clientX > rect.left + rect.width / 2) : tabs;
+        const reordered = tab.id ? moveTab(tabs, movedTabId, tab.id, isDropAfter(event)) : tabs;
 
         if (reordered !== tabs) setTabs(reordered);
 

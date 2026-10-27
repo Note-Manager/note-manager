@@ -9,6 +9,7 @@ import {fireEvent, off, on} from "../../ApplicationEvents";
 import {EventType} from "../../../enums";
 import {allPlugins} from "../../../utils/PluginLoader";
 import {AceEditorWrapper} from "../../../domain/AceEditorWrapper";
+import {useEditorContext} from "./EditorContext";
 
 const LARGE_CONTENT_LENGTH = 2 * 1024 * 1024;
 
@@ -25,6 +26,10 @@ export default function Editor({content, language, onEditorLoad, changeListener,
     }) => void
 }) {
     const editorRef = useRef<Ace.Editor>();
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const {settings} = useEditorContext();
+    const editorSettings = settings.editor;
 
     const [mode, setMode] = useState<string>();
 
@@ -62,7 +67,21 @@ export default function Editor({content, language, onEditorLoad, changeListener,
         }
     }, [language]);
 
+    useEffect(() => {
+        const container = containerRef.current;
+
+        if (!container) return;
+
+        const observer = new ResizeObserver(() => editorRef.current?.resize());
+
+        observer.observe(container);
+
+        return () => observer.disconnect();
+    }, []);
+
     const handleLoad = (editor: Ace.Editor) => {
+        editorRef.current = editor;
+
         try {
             const editorWrapper = new AceEditorWrapper(editor);
 
@@ -101,7 +120,7 @@ export default function Editor({content, language, onEditorLoad, changeListener,
     }
 
     return (
-        <div style={{height: '100%', width: '100%'}}>
+        <div ref={containerRef} style={{height: '100%', width: '100%'}}>
             <AceEditor
                 mode={mode ?? undefined}
                 theme={""}
@@ -114,10 +133,13 @@ export default function Editor({content, language, onEditorLoad, changeListener,
                 placeholder={"Empty document.."}
                 enableLiveAutocompletion={!isLargeContent}
                 enableBasicAutocompletion={!isLargeContent}
-                tabSize={4}
-                fontSize={"1rem"}
+                tabSize={editorSettings.tabSize}
+                fontSize={editorSettings.fontSize}
+                wrapEnabled={editorSettings.wrap}
+                showGutter={editorSettings.showLineNumbers}
                 setOptions={{
-                    fontFamily: "Courier New",
+                    fontFamily: editorSettings.fontFamily,
+                    showInvisibles: editorSettings.showInvisibles,
                     animatedScroll: !isLargeContent,
                     highlightActiveLine: true,
                     highlightGutterLine: true,
@@ -128,7 +150,7 @@ export default function Editor({content, language, onEditorLoad, changeListener,
                     enableSnippets: !isLargeContent,
                     cursorStyle: "ace",
                     scrollPastEnd: false,
-                    useSoftTabs: false,
+                    useSoftTabs: editorSettings.useSoftTabs,
                     navigateWithinSoftTabs: false,
                 }}
                 width={"100%"}
