@@ -1,10 +1,11 @@
-import electron, {BrowserWindow, ipcMain, Menu} from "electron";
-import {EventType, TabAction} from "../enums";
+import electron, {BrowserWindow, ipcMain, Menu, shell} from "electron";
+import {EventType, TabAction, UnsavedChangesChoice} from "../enums";
 import {getFocusedWindow, openInWindow, writeEditorState} from "../utils/EditorUtils";
 import {EditorState} from "../domain/EditorState";
 import * as Environment from "../utils/EnvironmentUtils";
-import {writeFile} from "../utils/FileUtils";
+import {isFileExists, writeFile} from "../utils/FileUtils";
 import {addRecentFile} from "../utils/RecentFiles";
+import {getUnsavedChangesMessage, UNSAVED_CHANGES_BUTTONS} from "../utils/DialogUtils";
 
 const closingWindows = new Set<number>();
 
@@ -35,20 +36,24 @@ export default function initIpcMainListeners() {
         });
     });
 
-    ipcMain.handle(EventType.SHOW_CONFIRMATION, async (event, opts) => {
+    ipcMain.handle(EventType.SHOW_UNSAVED_CHANGES_DIALOG, (event, opts: {names?: Array<string>}) => {
         const focusedWindow = getFocusedWindow();
-        if (!focusedWindow) return;
+        if (!focusedWindow) return UnsavedChangesChoice.CANCEL;
+
+        const {message, detail} = getUnsavedChangesMessage(Array.isArray(opts?.names) ? opts.names : []);
 
         const result = electron.dialog.showMessageBoxSync(focusedWindow, {
-            type: 'question',
-            buttons: ['Cancel', 'Yes'],
-            defaultId: 1, // Default selected button index
-            cancelId: 0, // Button index for cancel action
-            title: opts.title || 'Confirmation',
-            message: opts.message,
+            type: "warning",
+            buttons: UNSAVED_CHANGES_BUTTONS.map(b => b.label),
+            defaultId: 0,
+            cancelId: UNSAVED_CHANGES_BUTTONS.length - 1,
+            noLink: true,
+            title: "Unsaved changes",
+            message: message,
+            detail: detail,
         });
 
-        return result === 1; // Return true if "Yes" was clicked
+        return UNSAVED_CHANGES_BUTTONS[result]?.choice ?? UnsavedChangesChoice.CANCEL;
     });
 
     ipcMain.handle(EventType.WRITE_FILE, (event, data: {file: string, content: string}) => {
@@ -65,6 +70,7 @@ export default function initIpcMainListeners() {
         hasOtherTabs: boolean,
         hasUnmodifiedTabs: boolean,
         hasClosableTabs: boolean,
+        hasFile: boolean,
         canReopen: boolean
     }) => {
         const win = BrowserWindow.fromWebContents(event.sender);
@@ -80,8 +86,18 @@ export default function initIpcMainListeners() {
             {type: "separator"},
             {label: data.isPinned ? "Unpin Tab" : "Pin Tab", click: send(TabAction.TOGGLE_PIN)},
             {type: "separator"},
+            {label: "Open Containing Folder", enabled: data.hasFile, click: send(TabAction.REVEAL_IN_FOLDER)},
+            {type: "separator"},
             {label: "Reopen Closed Tab", accelerator: "CmdOrCtrl+Shift+T", enabled: data.canReopen, click: send(TabAction.REOPEN_CLOSED)},
         ]).popup({window: win});
+    });
+
+    ipcMain.handle(EventType.REVEAL_FILE, (event, data: {file: string}) => {
+        if (typeof data?.file !== "string" || !data.file || !isFileExists(data.file)) return false;
+
+        shell.showItemInFolder(data.file);
+
+        return true;
     });
 
     ipcMain.handle(EventType.SAVE_STATE, (event, data: EditorState) => {
@@ -112,4 +128,4 @@ export default function initIpcMainListeners() {
             sender.close();
         }
     });
-}
+}
