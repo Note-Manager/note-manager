@@ -4,8 +4,10 @@ import {
     detectEol,
     EolType,
     getEditorNewLineMode,
+    getCharacterSet,
     getEncodingLabel,
     getEolLabel,
+    getShortEncodingLabel,
     isKnownEncoding,
     toEditorText,
     toFileText
@@ -13,16 +15,24 @@ import {
 import iconv from "iconv-lite";
 
 describe("Encoding", () => {
-    it("uses the Notepad++ labels", () => {
+    it("labels encodings and line endings", () => {
         expect(getEncodingLabel("utf-8")).toBe("UTF-8");
-        expect(getEncodingLabel("utf-8-bom")).toBe("UTF-8-BOM");
-        expect(getEncodingLabel("utf-16le")).toBe("UTF-16 LE BOM");
+        expect(getEncodingLabel("utf-8-bom")).toBe("UTF-8 with BOM");
+        expect(getEncodingLabel("utf-16le")).toBe("UTF-16 LE");
         expect(getEncodingLabel("ansi")).toBe("ANSI");
-        expect(getEncodingLabel("windows-1254")).toBe("Windows-1254");
+        expect(getEncodingLabel("iso-8859-9")).toBe("ISO-8859-9 (Latin-5)");
+        expect(getShortEncodingLabel("iso-8859-9")).toBe("ISO-8859-9");
         expect(getEncodingLabel(undefined)).toBe("UTF-8");
-        expect(getEolLabel(EolType.CRLF)).toBe("Windows (CR LF)");
-        expect(getEolLabel(EolType.CR)).toBe("Macintosh (CR)");
-        expect(getEolLabel(undefined)).toBe("Unix (LF)");
+        expect(getEolLabel(EolType.CRLF)).toBe("CRLF");
+        expect(getEolLabel(EolType.CR)).toBe("CR");
+        expect(getEolLabel(undefined)).toBe("LF");
+        expect(getCharacterSet("cp857")).toEqual({id: "cp857", label: "DOS 857", group: "Turkish"});
+    });
+
+    it("lists every character set once", () => {
+        const ids = CHARACTER_SET_GROUPS.flatMap(g => g.sets.map(s => s.id));
+
+        expect(new Set(ids).size).toBe(ids.length);
     });
 
     it("knows only the listed encodings", () => {

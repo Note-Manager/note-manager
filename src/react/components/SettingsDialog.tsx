@@ -17,7 +17,7 @@ import {
 } from "../../domain/Settings";
 import {getShortcutDefinitions, ShortcutDefinition} from "../../utils/Shortcuts";
 import {isValidThemeName, isValidVariableValue, ThemeVariable} from "../../utils/ThemeVariables";
-import {CHARACTER_SET_GROUPS, DEFAULT_ENCODING, EOL_TYPES, EolType, UNICODE_ENCODINGS} from "../../domain/Encoding";
+import {CHARACTER_SET_GROUPS, EOL_TYPES, EolType, UNICODE_ENCODINGS} from "../../domain/Encoding";
 
 interface ThemeInfo {
     name: string,
@@ -29,7 +29,7 @@ enum Section {
     APPEARANCE = "Appearance",
     EDITOR = "Editor",
     INTERFACE = "Interface",
-    NEW_DOCUMENT = "New Document",
+    FILES = "Files",
     SHORTCUTS = "Shortcuts",
 }
 
@@ -286,19 +286,17 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                             </>
                         }
 
-                        {section === Section.NEW_DOCUMENT &&
+                        {section === Section.FILES &&
                             <>
-                                <h3>Format (Line ending)</h3>
-                                {EOL_TYPES.map(eol => (
-                                    <label key={eol.id} className={"settingsRow"}>
-                                        <span>{eol.label}</span>
-                                        <input type={"radio"} name={"defaultEol"} checked={draft.files.defaultEol === eol.id}
-                                               onChange={() => setFiles({defaultEol: eol.id as EolType})}/>
-                                    </label>
-                                ))}
-                                <h3>Encoding</h3>
+                                <h3>New files</h3>
                                 <label className={"settingsRow"}>
-                                    <span>Encoding of new documents</span>
+                                    <span>Line endings</span>
+                                    <select value={draft.files.defaultEol} onChange={e => setFiles({defaultEol: e.target.value as EolType})}>
+                                        {EOL_TYPES.map(eol => <option key={eol.id} value={eol.id}>{`${eol.label} (${eol.description})`}</option>)}
+                                    </select>
+                                </label>
+                                <label className={"settingsRow"}>
+                                    <span>Encoding</span>
                                     <select value={draft.files.defaultEncoding} onChange={e => setFiles({defaultEncoding: e.target.value})}>
                                         {UNICODE_ENCODINGS.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
                                         {CHARACTER_SET_GROUPS.map(group => (
@@ -308,18 +306,19 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                         ))}
                                     </select>
                                 </label>
+                                <h3>Opening files</h3>
                                 <label className={"settingsRow"}>
-                                    <span>Apply to opened ANSI files</span>
-                                    <input type={"checkbox"} disabled={draft.files.defaultEncoding !== DEFAULT_ENCODING} checked={draft.files.applyToAnsiFiles}
-                                           onChange={e => setFiles({applyToAnsiFiles: e.target.checked})}/>
-                                </label>
-                                <div className={"settingsHint"}>Files that contain only ASCII characters are opened as UTF-8 instead of ANSI. Available when new documents use UTF-8.</div>
-                                <label className={"settingsRow"}>
-                                    <span>Autodetect character encoding</span>
+                                    <span>Guess the encoding of files without a BOM</span>
                                     <input type={"checkbox"} checked={draft.files.autodetectEncoding}
                                            onChange={e => setFiles({autodetectEncoding: e.target.checked})}/>
                                 </label>
-                                <div className={"settingsHint"}>Files that are not valid UTF-8 and have no BOM are opened with the detected character set. When it is off, or detection is not sure, they are opened as ANSI.</div>
+                                <div className={"settingsHint"}>Files that are not valid UTF-8 are matched against the known character sets. When this is off, or the guess is unsure, the system code page (ANSI) is used.</div>
+                                <label className={"settingsRow"}>
+                                    <span>Treat plain ASCII files as UTF-8</span>
+                                    <input type={"checkbox"} checked={draft.files.asciiAsUtf8}
+                                           onChange={e => setFiles({asciiAsUtf8: e.target.checked})}/>
+                                </label>
+                                <div className={"settingsHint"}>When this is off, files with only ASCII characters are shown as ANSI. The bytes are the same either way; it only changes the encoding used once you type other characters.</div>
                             </>
                         }
 

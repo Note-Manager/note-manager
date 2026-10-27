@@ -43,12 +43,15 @@ export enum EventType {
     CONFIRM_CONVERSION = "confirm-conversion",
     SHOW_STATUS_MENU = "show-status-menu",
     ENCODING_ACTION = "encoding-action",
-    EOL_ACTION = "eol-action"
+    EOL_ACTION = "eol-action",
+    OPEN_ENCODING_PICKER = "open-encoding-picker",
+    GET_ENCODING_INFO = "get-encoding-info"
 }
 
 export enum EncodingAction {
     REINTERPRET = "reinterpret",
     CONVERT = "convert",
+    REDETECT = "redetect",
 }
 
 export enum UnencodableChoice {

@@ -12,7 +12,7 @@ import {Theme} from "../domain/Theme";
 import {resolveAccelerator, Settings} from "../domain/Settings";
 import {getDefaultAccelerator, ShortcutId} from "./Shortcuts";
 import {getUserPluginManifests, getUserPluginPath, loadUserPluginManifests} from "./UserPlugins";
-import {createEncodingMenu, createEolMenu} from "./EncodingMenu";
+import {createEncodingMenu} from "./EncodingMenu";
 
 
 export const appIcon = electron.nativeImage.createFromPath(path.join(getSystemPath(SystemPaths.resources), "Icons/note-manager.png"));
@@ -96,12 +96,7 @@ export function createApplicationMenu() {
                 {role: 'paste'},
                 {role: 'pasteAndMatchStyle'},
                 {role: 'delete'},
-                {role: 'selectAll'},
-                {type: 'separator'},
-                {
-                    label: 'EOL Conversion',
-                    submenu: createEolMenu(sendToFocusedWindow)
-                }
+                {role: 'selectAll'}
             ]
         },
         {

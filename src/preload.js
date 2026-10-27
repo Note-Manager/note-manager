@@ -21,6 +21,7 @@ const INVOKE_CHANNELS = [
     EventType.CONFIRM_REINTERPRET,
     EventType.CONFIRM_CONVERSION,
     EventType.SHOW_STATUS_MENU,
+    EventType.GET_ENCODING_INFO,
     EventType.LOG_INFO,
     EventType.LOG_WARN,
     EventType.LOG_ERROR,

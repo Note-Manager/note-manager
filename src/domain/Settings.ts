@@ -24,7 +24,7 @@ export interface InterfaceSettings {
 export interface FileSettings {
     defaultEncoding: string,
     defaultEol: EolType,
-    applyToAnsiFiles: boolean,
+    asciiAsUtf8: boolean,
     autodetectEncoding: boolean,
 }
 
@@ -55,7 +55,7 @@ export const DEFAULT_SETTINGS: Settings = {
     files: {
         defaultEncoding: DEFAULT_ENCODING,
         defaultEol: getSystemDefaultEol(),
-        applyToAnsiFiles: true,
+        asciiAsUtf8: true,
         autodetectEncoding: true,
     },
     keyBindings: {},
@@ -119,7 +119,7 @@ export function getDetectionOptions(settings: Settings | undefined) {
     const files = settings?.files || DEFAULT_SETTINGS.files;
 
     return {
-        asciiAsUtf8: files.defaultEncoding === DEFAULT_ENCODING && files.applyToAnsiFiles,
+        asciiAsUtf8: files.asciiAsUtf8,
         autodetect: files.autodetectEncoding,
     };
 }
@@ -169,7 +169,7 @@ export function normalizeSettings(raw: any): Settings {
         files: {
             defaultEncoding: isKnownEncoding(files.defaultEncoding) ? files.defaultEncoding : defaults.files.defaultEncoding,
             defaultEol: isKnownEol(files.defaultEol) ? files.defaultEol : defaults.files.defaultEol,
-            applyToAnsiFiles: toBoolean(files.applyToAnsiFiles, defaults.files.applyToAnsiFiles),
+            asciiAsUtf8: toBoolean(files.asciiAsUtf8, defaults.files.asciiAsUtf8),
             autodetectEncoding: toBoolean(files.autodetectEncoding, defaults.files.autodetectEncoding),
         },
         keyBindings: keyBindings,

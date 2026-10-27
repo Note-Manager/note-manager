@@ -130,19 +130,157 @@ body, html {
     align-items: center;
 }
 
-#footer .statusButton {
+#footer .statusChip {
     font: inherit;
+    font-size: 0.75rem;
     color: inherit;
-    background: none;
-    border: none;
-    border-left: 1px solid;
-    padding: 0 0 0 10px;
+    background: var(--action-bg);
+    border: 1px solid;
+    border-radius: 10px;
+    padding: 1px 9px;
+    margin-left: 6px;
     cursor: pointer;
     white-space: nowrap;
 }
 
-#footer .statusButton:hover {
-    text-decoration: underline;
+#footer .statusChip:hover {
+    box-shadow: inset 0 0 0 1px var(--positive-color);
+}
+
+#encodingPickerOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 12vh;
+
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+#encodingPicker {
+    display: flex;
+    flex-direction: column;
+
+    width: min(480px, 92vw);
+    max-height: 70vh;
+
+    border: 1px solid;
+    border-radius: 8px;
+
+    overflow: hidden;
+
+    background-color: var(--primary-bg);
+    color: var(--color);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+#encodingPickerModes {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    padding: 8px 10px 0 10px;
+}
+
+#encodingPickerModes button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 2px 12px;
+    cursor: pointer;
+}
+
+#encodingPickerModes button.selected {
+    background-color: var(--action-bg);
+    box-shadow: inset 0 0 0 1px var(--positive-color);
+}
+
+#encodingPickerHint {
+    flex: 1;
+    margin-left: 8px;
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+#encodingPickerSearch {
+    margin: 8px 10px;
+    padding: 6px 8px;
+
+    font: inherit;
+    color: inherit;
+    background-color: var(--secondary-bg);
+    border: 1px solid;
+    border-radius: 4px;
+    outline: none;
+}
+
+#encodingPickerList {
+    overflow-y: auto;
+    padding-bottom: 6px;
+}
+
+#encodingPicker .encodingGroup {
+    padding: 8px 14px 2px 14px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.6;
+}
+
+#encodingPicker .encodingChoice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 4px 14px;
+    cursor: pointer;
+}
+
+#encodingPicker .encodingChoice.highlighted {
+    background-color: var(--action-bg);
+    box-shadow: inset 3px 0 0 var(--positive-color);
+}
+
+#encodingPicker .encodingChoiceLabel {
+    white-space: nowrap;
+}
+
+#encodingPicker .encodingChoiceCurrent {
+    font-size: 0.7rem;
+    padding: 0 6px;
+    border-radius: 8px;
+    color: var(--primary-bg);
+    background-color: var(--positive-color);
+}
+
+#encodingPicker .encodingChoiceDescription {
+    flex: 1;
+    text-align: right;
+    font-size: 0.75rem;
+    opacity: 0.6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#encodingPicker .encodingPickerEmpty {
+    padding: 10px 14px;
+    opacity: 0.6;
+}
+
+body .cet-menubar-menu-container .cet-action-menu-item {
+    height: 1.9em;
+    margin: 1px 3px;
+}
+
+.cet-menubar-menu-container.fitted {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
 }
 
 #tabListWrapper {

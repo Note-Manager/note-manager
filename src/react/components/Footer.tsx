@@ -1,28 +1,38 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import {useEditorContext} from "./editor/EditorContext";
 import {SupportedLanguages} from "../../domain/SupportedLanguage";
-import {getEncodingLabel, getEolLabel} from "../../domain/Encoding";
+import {EncodingId, getEolLabel, getShortEncodingLabel} from "../../domain/Encoding";
 import {fireEvent} from "../ApplicationEvents";
-import {EventType} from "../../enums";
+import {EncodingAction, EventType} from "../../enums";
+import {getAnsiCodePage} from "../EncodingInfo";
 
 export default function Footer() {
-    const {data, activeTab} = useEditorContext();
+    const {data, activeTab, setEncodingPicker} = useEditorContext();
+    const [ansiCodePage, setAnsiCodePage] = useState<string>();
 
-    const showStatusMenu = (event: React.MouseEvent<HTMLElement>, kind: "encoding" | "eol") => {
+    useEffect(() => {
+        getAnsiCodePage().then(setAnsiCodePage).catch(err => console.error(err));
+    }, []);
+
+    const showEolMenu = (event: React.MouseEvent<HTMLElement>) => {
         event.preventDefault();
 
         if (!activeTab) return;
 
         const rect = event.currentTarget.getBoundingClientRect();
 
-        fireEvent(EventType.SHOW_STATUS_MENU, {
-            kind: kind,
-            encoding: activeTab.encoding,
-            eol: activeTab.eol,
-            x: rect.left,
-            y: rect.top,
-        }).catch(err => console.error(err));
+        fireEvent(EventType.SHOW_STATUS_MENU, {eol: activeTab.eol, x: rect.left, y: rect.top}).catch(err => console.error(err));
     }
+
+    const openEncodingPicker = (event: React.MouseEvent<HTMLElement>) => {
+        event.preventDefault();
+
+        setEncodingPicker(EncodingAction.REINTERPRET);
+    }
+
+    const encodingLabel = activeTab?.encoding === EncodingId.ANSI && ansiCodePage
+        ? `ANSI (${getShortEncodingLabel(ansiCodePage)})`
+        : getShortEncodingLabel(activeTab?.encoding);
 
     return (
         <div id={"footer"}>
@@ -48,13 +58,13 @@ export default function Footer() {
                 }
                 {activeTab &&
                     <>
-                        <button id={"footerEol"} className={"editorDataLabel statusButton"} title={"Line endings"}
-                                onClick={event => showStatusMenu(event, "eol")} onContextMenu={event => showStatusMenu(event, "eol")}>
+                        <button id={"footerEol"} className={"statusChip"} title={"Line endings: click to change"}
+                                onClick={showEolMenu} onContextMenu={showEolMenu}>
                             {getEolLabel(activeTab.eol)}
                         </button>
-                        <button id={"footerEncoding"} className={"editorDataLabel statusButton"} title={"Encoding"}
-                                onClick={event => showStatusMenu(event, "encoding")} onContextMenu={event => showStatusMenu(event, "encoding")}>
-                            {getEncodingLabel(activeTab.encoding)}
+                        <button id={"footerEncoding"} className={"statusChip"} title={"Encoding: click to reopen or convert"}
+                                onClick={openEncodingPicker} onContextMenu={openEncodingPicker}>
+                            {encodingLabel}
                         </button>
                     </>
                 }

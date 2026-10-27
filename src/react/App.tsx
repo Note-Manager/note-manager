@@ -4,8 +4,10 @@ import TabManager from "./components/TabManager";
 import {installUserPluginApi, loadUserPlugins} from "./UserPluginRegistry";
 import {on} from "./ApplicationEvents";
 import {EventType} from "../enums";
+import {installMenuFit} from "./MenuFit";
 
 installUserPluginApi();
+installMenuFit();
 
 const reloadUserPlugins = () => loadUserPlugins().catch(err => console.error("cannot load user plugins: " + err));
 

@@ -1,6 +1,6 @@
 import electron, {BrowserWindow, ipcMain, Menu, shell} from "electron";
 import {EventType, TabAction, UnencodableChoice, UnsavedChangesChoice} from "../enums";
-import {getFocusedWindow, openInWindow, writeEditorState} from "../utils/EditorUtils";
+import {getFocusedWindow, openInWindow, readTextFile, writeEditorState} from "../utils/EditorUtils";
 import {EditorState} from "../domain/EditorState";
 import * as Environment from "../utils/EnvironmentUtils";
 import {isFileExists, readFileBytes, writeFile} from "../utils/FileUtils";
@@ -11,9 +11,9 @@ import {Theme} from "../domain/Theme";
 import {resolveAccelerator, Settings} from "../domain/Settings";
 import {getShortcutDefinitions, ShortcutId} from "../utils/Shortcuts";
 import {getUserPluginInfos, getUserPluginManifests} from "../utils/UserPlugins";
-import {decodeBuffer, encodeText, findUnencodableCharacters} from "../utils/EncodingUtils";
+import {decodeBuffer, encodeText, findUnencodableCharacters, getAnsiCodePage} from "../utils/EncodingUtils";
 import {DEFAULT_ENCODING, detectEol, EncodingId, EolType, getEncodingLabel, isKnownEncoding, isKnownEol, toEditorText} from "../domain/Encoding";
-import {createEncodingMenu, createEolMenu, CurrentDocument} from "../utils/EncodingMenu";
+import {createEolMenu} from "../utils/EncodingMenu";
 
 const closingWindows = new Set<number>();
 const recordingShortcuts = new Set<number>();
@@ -100,8 +100,10 @@ export default function initIpcMainListeners() {
         return {saved: true, encoding: encoding};
     });
 
-    ipcMain.handle(EventType.READ_FILE_AS, async (event, data: {file: string, encoding: string, fallbackEol?: EolType}) => {
-        if (typeof data?.file !== "string" || !data.file || !isKnownEncoding(data.encoding)) throw new Error("file and encoding are required");
+    ipcMain.handle(EventType.READ_FILE_AS, async (event, data: {file: string, encoding?: string, fallbackEol?: EolType}) => {
+        if (typeof data?.file !== "string" || !data.file) throw new Error("file is required");
+
+        if (!isKnownEncoding(data.encoding)) return readTextFile(data.file);
 
         const text = decodeBuffer(await readFileBytes(data.file), data.encoding);
         const eol = detectEol(text, isKnownEol(data.fallbackEol) ? data.fallbackEol : EolType.LF);
@@ -109,17 +111,20 @@ export default function initIpcMainListeners() {
         return {content: toEditorText(text, eol), encoding: data.encoding, eol: eol};
     });
 
-    ipcMain.handle(EventType.CONFIRM_REINTERPRET, (event, data: {name?: string}) => {
+    ipcMain.handle(EventType.GET_ENCODING_INFO, () => ({ansiCodePage: getAnsiCodePage()}));
+
+    ipcMain.handle(EventType.CONFIRM_REINTERPRET, (event, data: {name?: string, encoding?: string}) => {
         const win = BrowserWindow.fromWebContents(event.sender);
+        const target = isKnownEncoding(data?.encoding) ? getEncodingLabel(data.encoding) : "the detected encoding";
         const options: Electron.MessageBoxSyncOptions = {
-            type: "warning",
-            buttons: ["Yes", "No"],
+            type: "question",
+            buttons: ["Reopen", "Cancel"],
             defaultId: 1,
             cancelId: 1,
             noLink: true,
-            title: "Encoding",
-            message: "You should save the current modification.\nAll the saved modifications can not be undone.\n\nContinue?",
-            detail: data?.name || "",
+            title: "Reopen with Encoding",
+            message: `Reopen ${data?.name || "this file"} with ${target}?`,
+            detail: "The file is read again from disk. Your unsaved changes in this tab will be lost.",
         };
 
         return (win ? electron.dialog.showMessageBoxSync(win, options) : electron.dialog.showMessageBoxSync(options)) === 0;
@@ -147,15 +152,13 @@ export default function initIpcMainListeners() {
         return (win ? electron.dialog.showMessageBoxSync(win, options) : electron.dialog.showMessageBoxSync(options)) === 0;
     });
 
-    ipcMain.handle(EventType.SHOW_STATUS_MENU, (event, data: {kind: "encoding" | "eol", x?: number, y?: number} & CurrentDocument) => {
+    ipcMain.handle(EventType.SHOW_STATUS_MENU, (event, data: {eol?: EolType, x?: number, y?: number}) => {
         const win = BrowserWindow.fromWebContents(event.sender);
         if (!win) return;
 
         const send = (channel: string, payload: any) => event.sender.send(channel, payload);
-        const current = {encoding: data?.encoding, eol: data?.eol};
-        const template = data?.kind === "eol" ? createEolMenu(send, current) : createEncodingMenu(send, current);
 
-        Menu.buildFromTemplate(template).popup({
+        Menu.buildFromTemplate(createEolMenu(send, isKnownEol(data?.eol) ? data.eol : undefined)).popup({
             window: win,
             x: Number.isFinite(data?.x) ? Math.round(data.x as number) : undefined,
             y: Number.isFinite(data?.y) ? Math.round(data.y as number) : undefined,

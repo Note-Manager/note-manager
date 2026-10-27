@@ -21,15 +21,16 @@ describe("Settings", () => {
     });
 
     it("keeps valid new document settings and drops invalid ones", () => {
-        expect(normalizeSettings({files: {defaultEncoding: "windows-1254", defaultEol: "CR", applyToAnsiFiles: false, autodetectEncoding: false}}).files)
-            .toEqual({defaultEncoding: "windows-1254", defaultEol: "CR", applyToAnsiFiles: false, autodetectEncoding: false});
-        expect(normalizeSettings({files: {defaultEncoding: "utf-7", defaultEol: "LS", applyToAnsiFiles: "no"}}).files).toEqual(DEFAULT_SETTINGS.files);
+        expect(normalizeSettings({files: {defaultEncoding: "windows-1254", defaultEol: "CR", asciiAsUtf8: false, autodetectEncoding: false}}).files)
+            .toEqual({defaultEncoding: "windows-1254", defaultEol: "CR", asciiAsUtf8: false, autodetectEncoding: false});
+        expect(normalizeSettings({files: {defaultEncoding: "utf-7", defaultEol: "LS", asciiAsUtf8: "no"}}).files).toEqual(DEFAULT_SETTINGS.files);
     });
 
-    it("applies the ANSI option only when new documents use UTF-8", () => {
+    it("passes the file options to detection", () => {
         expect(getDetectionOptions(DEFAULT_SETTINGS)).toEqual({asciiAsUtf8: true, autodetect: true});
-        expect(getDetectionOptions({...DEFAULT_SETTINGS, files: {...DEFAULT_SETTINGS.files, defaultEncoding: "utf-8-bom"}}).asciiAsUtf8).toBe(false);
-        expect(getDetectionOptions({...DEFAULT_SETTINGS, files: {...DEFAULT_SETTINGS.files, applyToAnsiFiles: false, autodetectEncoding: false}})).toEqual({asciiAsUtf8: false, autodetect: false});
+        expect(getDetectionOptions({...DEFAULT_SETTINGS, files: {...DEFAULT_SETTINGS.files, defaultEncoding: "utf-8-bom"}}).asciiAsUtf8).toBe(true);
+        expect(getDetectionOptions({...DEFAULT_SETTINGS, files: {...DEFAULT_SETTINGS.files, asciiAsUtf8: false, autodetectEncoding: false}})).toEqual({asciiAsUtf8: false, autodetect: false});
+        expect(getDetectionOptions(undefined)).toEqual({asciiAsUtf8: true, autodetect: true});
     });
 
     it("clamps numbers and keeps valid values", () => {
