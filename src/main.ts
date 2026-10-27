@@ -93,7 +93,7 @@ async function getEditorState() {
         activeTabId: tempTabId
     }
 
-    const persistentState = readEditorState();
+        const persistentState = await readEditorState();
 
     if (persistentState) { // restore the state
         initialState = persistentState;

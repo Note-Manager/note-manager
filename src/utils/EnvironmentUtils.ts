@@ -1,6 +1,6 @@
 import * as path from "node:path";
 import * as fs from "node:fs";
-import {ensureExists, getSystemPath, writeFile} from "./FileUtils";
+import {ensureExists, getSystemPath, writeFileAtomic} from "./FileUtils";
 import * as Preferences from "../domain/Preferences";
 import * as electron from "electron";
 import * as Theme from "../domain/Theme";
@@ -48,7 +48,7 @@ export function getStateFilePath() {
 }
 
 export function savePreferences() {
-    writeFile(getPreferencesFilePath(), JSON.stringify(_ENV.preferences, null, 2));
+    writeFileAtomic(getPreferencesFilePath(), JSON.stringify(_ENV.preferences, null, 2));
 }
 
 export function loadPreferences() {

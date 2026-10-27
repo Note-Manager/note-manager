@@ -22,5 +22,6 @@ export enum EventType {
     FILES_DROPPED = "files-dropped",
     CLOSE_WINDOW = "close",
     CLOSE_WITH_STATE = "close-with-state",
+    SAVE_STATE = "save-state",
     INIT_WITH_STATE = "initialize-with-state"
 }

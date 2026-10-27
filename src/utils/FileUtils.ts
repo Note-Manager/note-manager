@@ -2,7 +2,7 @@ import * as electron from "electron";
 import {app} from "electron";
 import * as path from "node:path";
 import fs from "node:fs";
-import os from "os";
+import os from "node:os";
 import {SystemPaths} from "../enums";
 
 export function readFile(path:string) {
@@ -11,6 +11,31 @@ export function readFile(path:string) {
 
 export function writeFile(path:string, content:string) {
     fs.writeFileSync(path, content, {});
+}
+
+export function writeFileAtomic(filePath: string, content: string) {
+    const tempFile = `${filePath}.${process.pid}.tmp`;
+
+    const fd = fs.openSync(tempFile, "w");
+    try {
+        fs.writeFileSync(fd, content);
+        fs.fsyncSync(fd);
+    } finally {
+        fs.closeSync(fd);
+    }
+
+    try {
+        fs.renameSync(tempFile, filePath);
+    } catch (err) {
+        fs.writeFileSync(filePath, content);
+        fs.rmSync(tempFile, {force: true});
+    }
+}
+
+export function backupFile(filePath: string, suffix: string) {
+    if (!fs.existsSync(filePath)) return;
+
+    fs.copyFileSync(filePath, `${filePath}.${suffix}`);
 }
 
 export function readSync(path:string) {
