@@ -83,7 +83,7 @@ export default function EditorContainer() {
 
             if(activeTool?.onContentMount) activeTool?.onContentMount(shadow);
         }
-    }, [activeTool]);
+    }, [activeTool, activeTab?.id]);
 
     if(!activeTab) return null;
 
@@ -188,7 +188,7 @@ export default function EditorContainer() {
                                 <span>{activeTool.label}</span>
                             </div>
                         </div>
-                        <div id={"toolWindowContent"}>
+                        <div id={"toolWindowContent"} key={(activeTab?.id || "") + activeTool.label}>
                         </div>
                     </div>
                 }
