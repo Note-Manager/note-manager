@@ -10,6 +10,7 @@ import {EditorState} from "./domain/EditorState";
 import {SupportedLanguages} from './domain/SupportedLanguage';
 import {hash} from "./utils/TextUtils";
 import {isFileExists} from "./utils/FileUtils";
+import {getSettings} from "./utils/EnvironmentUtils";
 
 
 setupTitlebar();
@@ -63,6 +64,8 @@ const createWindow = () => {
         event.preventDefault();
         openExternalUrl(url);
     });
+
+    if (getSettings().ui.startMaximized) mainWindow.maximize();
 
     initApplicationMenu();
 
