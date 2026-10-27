@@ -1,8 +1,7 @@
 import {EditorAction, EditorMenuItem, EditorPlugin} from "./index";
 import {LanguageName} from "../../../../domain/SupportedLanguage";
-import xmlFormat from "xml-formatter";
-import { format as sqlFormat } from 'sql-formatter';
 import {EditorWrapper} from "../../../../domain/EditorWrapper";
+import {formatCode, isFormattable} from "../../../../utils/Formatter";
 
 enum Keys {
     FORMAT = "beautify.format",
@@ -32,6 +31,8 @@ export default class BeautifyPlugin implements EditorPlugin{
 
     actionMap?: Map<string, EditorAction>;
 
+    pendingFormat?: Promise<void>;
+
     doAction(code: string): void {
         if(!this.editor || !this.actionMap) throw Error("Plugin not initialized !");
         if(!code) return;
@@ -59,54 +60,35 @@ export default class BeautifyPlugin implements EditorPlugin{
         this.actionMap.set(Keys.FORMAT, {
             label: "Format",
             code: Keys.FORMAT,
-            perform: () => {
-                const langName = this.editor?.getLanguage() || LanguageName.TEXT;
-
-                const selectionRanges = this.editor?.getAllSelectionRanges();
-                if(selectionRanges && selectionRanges.length > 0 && (this.editor?.getSelectedText() || "").length > 0) {
-                    for(const range of selectionRanges) {
-                        const target = this.editor?.getTextRange(range) || "";
-
-                        this.editor?.replaceRange(range, format(langName, target));
-                    }
-
-                    return;
-                }
+            perform: (editor: EditorWrapper) => {
+                this.pendingFormat = formatEditor(editor).catch(err => console.error("cannot format: " + err));
             }
         });
     }
 }
 
-function format(lang: string, content: string) {
-    if(lang === LanguageName.TEXT) return content;
+async function formatEditor(editor: EditorWrapper) {
+    const language = editor.getLanguage() || LanguageName.TEXT;
 
-    try {
-        if([LanguageName.XML, LanguageName.HTML].includes(lang as LanguageName)) {
-            return handleXML(content);
-        } else if(lang === LanguageName.JSON) {
-            return JSON.stringify(JSON.parse(content), null, 4);
-        } else if(lang === LanguageName.SQL || lang === LanguageName.PLSQL) {
-            return sqlFormat(
-                content,
-                {
-                    dataTypeCase: "preserve",
-                    keywordCase: "preserve",
-                    functionCase: "preserve",
-                    identifierCase: "preserve",
-                    language: lang === LanguageName.PLSQL ? "plsql" : "sql",
-                    useTabs: false,
-                    tabWidth: 4
-                }
-            );
-        }
-    } catch (ignored) {
-        console.warn("cannot format content: " + ignored);
-        return content;
+    if (!isFormattable(language)) return;
+
+    const ranges = (editor.getAllSelectionRanges() || []).filter(r => editor.getTextRange(r).length > 0);
+
+    if (ranges.length === 0) {
+        const value = editor.getValue();
+        const result = await formatCode(language, value);
+
+        if (result !== value && editor.getValue() === value) editor.replaceRange(editor.getFullRange(), result);
+
+        return;
     }
 
-    return content;
-}
+    const targets = ranges.map(range => ({range: range, text: editor.getTextRange(range)}));
+    const results = await Promise.all(targets.map(t => formatCode(language, t.text)));
 
-function handleXML(content: string) {
-    return xmlFormat(content, {lineSeparator: "\n", strictMode: false, collapseContent: true, indentation: "    "});
-}
+    for (let i = targets.length - 1; i >= 0; i--) {
+        const {range, text} = targets[i];
+
+        if (results[i] !== text && editor.getTextRange(range) === text) editor.replaceRange(range, results[i]);
+    }
+}

@@ -1,12 +1,15 @@
 import {EditorData} from "../../../domain/EditorData";
 import React, {createContext, ReactNode, useContext, useState} from "react";
 import {EditorTab} from "../../../domain/EditorTab";
+import {DEFAULT_SETTINGS, Settings} from "../../../domain/Settings";
 
 interface IEditorContext {
     data: EditorData;
     tabs: Array<EditorTab>;
     activeTab: EditorTab;
+    settings: Settings;
 
+    setSettings: (settings: Settings) => void;
     setData: (data: EditorData) => void;
     setActiveTab: (activeTab: EditorTab) => void;
     setTabs: (activeTabs: EditorTab[]) => void;
@@ -30,6 +33,9 @@ export const initial = {
 export const EditorContext = createContext<IEditorContext>({
     ...initial,
     activeTab: initial.tabs[0],
+    settings: DEFAULT_SETTINGS,
+    setSettings: () => {
+    },
     setData: () => {
     },
     setActiveTab: () => {
@@ -43,9 +49,10 @@ export const EditorContextProvider: React.FC<{ children: ReactNode }> = ({childr
     const [data, setData] = useState<EditorData>(initial.data);
     const [activeTab, setActiveTab] = useState<EditorTab>(initial.tabs[0]);
     const [tabs, setTabs] = useState<Array<EditorTab>>(initial.tabs);
+    const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
     return (
-        <EditorContext.Provider value={{data, tabs, activeTab, setData, setTabs, setActiveTab}}>
+        <EditorContext.Provider value={{data, tabs, activeTab, settings, setData, setTabs, setActiveTab, setSettings}}>
             {children}
         </EditorContext.Provider>
     );

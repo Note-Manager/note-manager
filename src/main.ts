@@ -10,9 +10,12 @@ import {EditorState} from "./domain/EditorState";
 import {SupportedLanguages} from './domain/SupportedLanguage';
 import {hash} from "./utils/TextUtils";
 import {isFileExists} from "./utils/FileUtils";
+import {getSettings} from "./utils/EnvironmentUtils";
+import {loadUserPluginManifests, registerUserPluginProtocol, registerUserPluginScheme} from "./utils/UserPlugins";
 
 
 setupTitlebar();
+registerUserPluginScheme();
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -63,6 +66,8 @@ const createWindow = () => {
         event.preventDefault();
         openExternalUrl(url);
     });
+
+    if (getSettings().ui.startMaximized) mainWindow.maximize();
 
     initApplicationMenu();
 
@@ -144,6 +149,9 @@ if (!app.requestSingleInstanceLock()) {
     // initialization and is ready to create browser windows.
     // Some APIs can only be used after this event occurs.
     app.whenReady().then(() => {
+        registerUserPluginProtocol();
+        loadUserPluginManifests();
+
         const arg = getFileArgument(); // open with...
 
         if(arg && mainWindow) {

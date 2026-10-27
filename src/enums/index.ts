@@ -27,7 +27,17 @@ export enum EventType {
     SHOW_TAB_CONTEXT_MENU = "show-tab-context-menu",
     TAB_ACTION = "tab-action",
     INIT_WITH_STATE = "initialize-with-state",
-    REVEAL_FILE = "reveal-file"
+    REVEAL_FILE = "reveal-file",
+    GET_SETTINGS = "get-settings",
+    SAVE_SETTINGS = "save-settings",
+    SETTINGS_CHANGED = "settings-changed",
+    OPEN_SETTINGS = "open-settings",
+    GET_THEME_VARIABLES = "get-theme-variables",
+    CREATE_THEME = "create-theme",
+    RECORD_SHORTCUT = "record-shortcut",
+    SHORTCUT_KEY = "shortcut-key",
+    GET_USER_PLUGINS = "get-user-plugins",
+    USER_PLUGINS_CHANGED = "user-plugins-changed"
 }
 
 export enum UnsavedChangesChoice {

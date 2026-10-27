@@ -10,6 +10,9 @@ module.exports = {
     rules,
   },
   resolve: {
-    extensions: [".js", ".json", ".ts", ".tsx"]
+    extensions: [".js", ".json", ".ts", ".tsx"],
+    alias: {
+      prettier$: "prettier/standalone"
+    }
   }
 };

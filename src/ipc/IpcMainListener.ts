@@ -6,8 +6,15 @@ import * as Environment from "../utils/EnvironmentUtils";
 import {isFileExists, writeFile} from "../utils/FileUtils";
 import {addRecentFile} from "../utils/RecentFiles";
 import {getUnsavedChangesMessage, UNSAVED_CHANGES_BUTTONS} from "../utils/DialogUtils";
+import {applySettingsToWindows} from "../utils/ElectronUtils";
+import {Theme} from "../domain/Theme";
+import {resolveAccelerator, Settings} from "../domain/Settings";
+import {getShortcutDefinitions, ShortcutId} from "../utils/Shortcuts";
+import {getUserPluginInfos, getUserPluginManifests} from "../utils/UserPlugins";
 
 const closingWindows = new Set<number>();
+const recordingShortcuts = new Set<number>();
+const shortcutListeners = new WeakSet<electron.WebContents>();
 
 export default function initIpcMainListeners() {
     ipcMain.handle(EventType.FILES_DROPPED, (event, data: any) => {
@@ -79,7 +86,7 @@ export default function initIpcMainListeners() {
         const send = (action: TabAction) => () => event.sender.send(EventType.TAB_ACTION, {action: action, tabId: data.tabId});
 
         Menu.buildFromTemplate([
-            {label: "Close Tab", accelerator: "CmdOrCtrl+W", click: send(TabAction.CLOSE)},
+            {label: "Close Tab", accelerator: resolveAccelerator(Environment.getSettings(), ShortcutId.CLOSE, "CmdOrCtrl+W"), click: send(TabAction.CLOSE)},
             {label: "Close Other Tabs", enabled: data.hasOtherTabs, click: send(TabAction.CLOSE_OTHERS)},
             {label: "Close Unmodified Tabs", enabled: data.hasUnmodifiedTabs, click: send(TabAction.CLOSE_UNMODIFIED)},
             {label: "Close All Tabs", enabled: data.hasClosableTabs, click: send(TabAction.CLOSE_ALL)},
@@ -88,7 +95,7 @@ export default function initIpcMainListeners() {
             {type: "separator"},
             {label: "Open Containing Folder", enabled: data.hasFile, click: send(TabAction.REVEAL_IN_FOLDER)},
             {type: "separator"},
-            {label: "Reopen Closed Tab", accelerator: "CmdOrCtrl+Shift+T", enabled: data.canReopen, click: send(TabAction.REOPEN_CLOSED)},
+            {label: "Reopen Closed Tab", accelerator: resolveAccelerator(Environment.getSettings(), ShortcutId.REOPEN_CLOSED, "CmdOrCtrl+Shift+T"), enabled: data.canReopen, click: send(TabAction.REOPEN_CLOSED)},
         ]).popup({window: win});
     });
 
@@ -98,6 +105,72 @@ export default function initIpcMainListeners() {
         shell.showItemInFolder(data.file);
 
         return true;
+    });
+
+    ipcMain.handle(EventType.GET_SETTINGS, () => {
+        return {
+            settings: Environment.getSettings(),
+            themes: Environment.getAllThemes(),
+            themeFile: Environment.getPreferences().theme.file,
+            shortcuts: getShortcutDefinitions(getUserPluginManifests()),
+        };
+    });
+
+    ipcMain.handle(EventType.SAVE_SETTINGS, (event, data: {settings: Settings, themeFile?: string, themeVariables?: {file: string, values: Record<string, string>}}) => {
+        if (data?.themeVariables?.file && data.themeVariables.values) {
+            Environment.writeThemeVariables(data.themeVariables.file, data.themeVariables.values);
+        }
+
+        if (data?.themeFile && Environment.findTheme(data.themeFile)) {
+            Environment.getPreferences().theme = new Theme(data.themeFile);
+        }
+
+        const settings = Environment.saveSettings(data?.settings);
+
+        applySettingsToWindows(settings);
+
+        return settings;
+    });
+
+    ipcMain.handle(EventType.RECORD_SHORTCUT, (event, data: {active: boolean}) => {
+        const contents = event.sender;
+
+        if (!data?.active) {
+            recordingShortcuts.delete(contents.id);
+            return;
+        }
+
+        recordingShortcuts.add(contents.id);
+
+        if (shortcutListeners.has(contents)) return;
+
+        shortcutListeners.add(contents);
+
+        contents.on("before-input-event", (inputEvent, input) => {
+            if (!recordingShortcuts.has(contents.id) || input.type !== "keyDown") return;
+
+            inputEvent.preventDefault();
+
+            contents.send(EventType.SHORTCUT_KEY, {
+                code: input.code,
+                ctrlKey: input.control,
+                metaKey: input.meta,
+                altKey: input.alt,
+                shiftKey: input.shift,
+            });
+        });
+    });
+
+    ipcMain.handle(EventType.GET_USER_PLUGINS, () => getUserPluginInfos());
+
+    ipcMain.handle(EventType.GET_THEME_VARIABLES, (event, data: {file: string}) => {
+        return Environment.readThemeVariables(data?.file);
+    });
+
+    ipcMain.handle(EventType.CREATE_THEME, (event, data: {name: string, baseFile: string}) => {
+        const file = Environment.createUserTheme(data?.name, data?.baseFile);
+
+        return {file: file, themes: Environment.getAllThemes()};
     });
 
     ipcMain.handle(EventType.SAVE_STATE, (event, data: EditorState) => {

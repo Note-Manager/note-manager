@@ -9,6 +9,9 @@ import path from "node:path";
 import {getSystemPath, isFileExists} from "./FileUtils";
 import {clearRecentFiles, getRecentFiles, onRecentFilesChanged, removeRecentFile} from "./RecentFiles";
 import {Theme} from "../domain/Theme";
+import {resolveAccelerator, Settings} from "../domain/Settings";
+import {getDefaultAccelerator, ShortcutId} from "./Shortcuts";
+import {getUserPluginManifests, getUserPluginPath, loadUserPluginManifests} from "./UserPlugins";
 
 
 export const appIcon = electron.nativeImage.createFromPath(path.join(getSystemPath(SystemPaths.resources), "Icons/note-manager.png"));
@@ -20,14 +23,14 @@ export function createApplicationMenu() {
             submenu: [
                 {
                     label: 'New',
-                    accelerator: 'CmdOrCtrl+N',
+                    accelerator: shortcut(ShortcutId.NEW),
                     click: () => {
                         sendToFocusedWindow(EventType.NEW_TAB);
                     }
                 },
                 {
                     label: 'Open',
-                    accelerator: 'CmdOrCtrl+T',
+                    accelerator: shortcut(ShortcutId.OPEN),
                     click: () => {
                         const focusedWindow = getFocusedWindow();
 
@@ -54,7 +57,7 @@ export function createApplicationMenu() {
                 },
                 {
                     label: 'Save',
-                    accelerator: 'CmdOrCtrl+S',
+                    accelerator: shortcut(ShortcutId.SAVE),
                     click: () => {
                         sendToFocusedWindow(EventType.SAVE_TAB);
                     }
@@ -67,14 +70,14 @@ export function createApplicationMenu() {
                 },
                 {
                     label: 'Reopen Closed Tab',
-                    accelerator: 'CmdOrCtrl+Shift+T',
+                    accelerator: shortcut(ShortcutId.REOPEN_CLOSED),
                     click: () => {
                         sendToFocusedWindow(EventType.TAB_ACTION, {action: TabAction.REOPEN_CLOSED});
                     }
                 },
                 {
                     label: 'Close',
-                    accelerator: 'CmdOrCtrl+W',
+                    accelerator: shortcut(ShortcutId.CLOSE),
                     click: () => {
                         sendToFocusedWindow(EventType.CLOSE_TAB);
                     }
@@ -110,6 +113,16 @@ export function createApplicationMenu() {
             label: 'Preferences',
             submenu: [
                 {
+                    label: 'Settings...',
+                    accelerator: shortcut(ShortcutId.SETTINGS),
+                    click: () => {
+                        sendToFocusedWindow(EventType.OPEN_SETTINGS);
+                    }
+                },
+                {
+                    type: 'separator'
+                },
+                {
                     label: 'Theme',
                     submenu: [
                         ...getBundledThemes().map(css => cssFileToMenuItem(css, false)), // bundled themes
@@ -136,20 +149,48 @@ export function createApplicationMenu() {
         },
         {
             label: "Plugins",
-            submenu: allPlugins.filter(p => (p.applicationMenuItems?.length || 0) > 0).flatMap(plugin => plugin.applicationMenuItems).filter(el => el !== undefined).map(menuItem => {
-                return {
-                    label: menuItem.label,
-                    submenu: menuItem.actions.map(action => {
-                        return {
-                            label: action.label,
-                            click: () => {
-                                sendToFocusedWindow(action.code)
-                            },
-                            accelerator: action.accelerator
-                        }
-                    })
+            submenu: [
+                ...allPlugins.filter(p => (p.applicationMenuItems?.length || 0) > 0).flatMap(plugin => plugin.applicationMenuItems).filter(el => el !== undefined).map(menuItem => {
+                    return {
+                        label: menuItem.label,
+                        submenu: menuItem.actions.map(action => {
+                            return {
+                                label: action.label,
+                                click: () => {
+                                    sendToFocusedWindow(action.code)
+                                },
+                                accelerator: shortcut(action.code)
+                            }
+                        })
+                    }
+                }),
+                ...getUserPluginManifests().map(plugin => ({
+                    label: plugin.name,
+                    sublabel: "User Plugin",
+                    submenu: plugin.actions.map(action => ({
+                        label: action.label,
+                        click: () => {
+                            sendToFocusedWindow(action.code);
+                        },
+                        accelerator: shortcut(action.code)
+                    }))
+                })),
+                {
+                    type: "separator"
+                },
+                {
+                    label: "Reload User Plugins",
+                    click: () => {
+                        reloadUserPlugins();
+                    }
+                },
+                {
+                    label: "Open Plugins Folder",
+                    click: () => {
+                        electron.shell.openPath(getUserPluginPath()).catch(err => console.error(err));
+                    }
                 }
-            })
+            ]
         }
     ]);
 
@@ -265,6 +306,24 @@ export function loadThemeToWindow(win: BrowserWindow) {
             if (previousKey) return contents.removeInsertedCSS(previousKey);
         })
         .catch(err => console.error("cannot load theme: " + err));
+}
+
+export function applySettingsToWindows(settings: Settings) {
+    initApplicationMenu();
+    refreshTitlebar();
+
+    BrowserWindow.getAllWindows().forEach(win => win.webContents.send(EventType.SETTINGS_CHANGED, settings));
+}
+
+function shortcut(id: string) {
+    return resolveAccelerator(Environment.getSettings(), id, getDefaultAccelerator(id, getUserPluginManifests()));
+}
+
+export function reloadUserPlugins() {
+    loadUserPluginManifests();
+    rebuildMenus();
+
+    BrowserWindow.getAllWindows().forEach(win => win.webContents.send(EventType.USER_PLUGINS_CHANGED));
 }
 
 export function initApplicationMenu() {
