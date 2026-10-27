@@ -13,6 +13,7 @@ import {useEditorContext} from "./editor/EditorContext";
 import {findLanguageByFileName} from "../../domain/SupportedLanguage";
 import {EditorState} from "../../domain/EditorState";
 import {getStateRevision, markStateChanged} from "../StateChangeTracker";
+import {resolveUnsavedChanges} from "../TabSaver";
 import IpcRendererEvent = Electron.IpcRendererEvent;
 
 const DEFAULT_TAB_NAME = "New Document.txt";
@@ -122,15 +123,11 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
     const closeTabs = async (tabsToClose: Array<EditorTab>) => {
         if (tabsToClose.length === 0) return;
 
-        const changedTabs = tabsToClose.filter(t => t.isChanged);
+        const approved = await resolveUnsavedChanges(tabsToClose.filter(t => t.isChanged));
 
-        if (changedTabs.length > 0) {
-            const approved = await fireEvent(EventType.SHOW_CONFIRMATION, {
-                title: "Unsaved changes",
-                message: "All unsaved changes will be lost in following tabs:\n\n" + changedTabs.map(t => t.name).join("\n") + "\n\nDo you want to proceed?"
-            });
-
-            if (!approved) return;
+        if (!approved) {
+            setTabs([...tabs]);
+            return;
         }
 
         removeTabsFromList(tabsToClose);
@@ -188,16 +185,14 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
             return;
         }
         if (tabToRemove.isChanged) {
-            fireEvent(EventType.SHOW_CONFIRMATION, {
-                title: "Unsaved changes",
-                message: "All unsaved changes will be lost in " + tabToRemove.name + ". Do you want to proceed?"
-            }).then((approved) => {
+            resolveUnsavedChanges([tabToRemove]).then((approved) => {
                 if (approved) {
                     removeTabFromList(tabToRemove);
                 } else {
+                    setTabs([...tabs]);
                     tabSelect(tabToRemove);
                 }
-            });
+            }).catch(err => console.error(err));
         } else {
             removeTabFromList(tabToRemove);
         }
@@ -221,14 +216,11 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         };
 
         const onCloseWindow = async () => {
-            const unsavedTabs = tabs.filter(t => !t.isTemp && t.file && t.isChanged);
-            if(unsavedTabs && unsavedTabs.length > 0) {
-                const approved = await fireEvent(EventType.SHOW_CONFIRMATION, {
-                    title: "Unsaved changes",
-                    message: "All unsaved changes will be lost in following tabs:\n\n" + unsavedTabs.map(t => t.name).join("\n") + "\n\nDo you want to proceed?"
-                });
+            const approved = await resolveUnsavedChanges(tabs.filter(t => !t.isTemp && t.file && t.isChanged));
 
-                if(!approved) return;
+            if(!approved) {
+                setTabs([...tabs]);
+                return;
             }
 
             const data: EditorState = {

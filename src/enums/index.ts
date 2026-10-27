@@ -15,7 +15,7 @@ export enum EventType {
     REDO_TAB = "redoTab",
     BUILD_MENU = "buildMenu",
     SHOW_SAVE_DIALOG = "showSaveDialog",
-    SHOW_CONFIRMATION = "showConfirmation",
+    SHOW_UNSAVED_CHANGES_DIALOG = "showUnsavedChangesDialog",
     LOG_INFO = "log-info",
     LOG_ERROR = "log-error",
     LOG_WARN = "log-warning",
@@ -27,6 +27,12 @@ export enum EventType {
     SHOW_TAB_CONTEXT_MENU = "show-tab-context-menu",
     TAB_ACTION = "tab-action",
     INIT_WITH_STATE = "initialize-with-state"
+}
+
+export enum UnsavedChangesChoice {
+    SAVE = "save",
+    DISCARD = "discard",
+    CANCEL = "cancel",
 }
 
 export enum TabAction {

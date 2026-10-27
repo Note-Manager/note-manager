@@ -5,7 +5,7 @@ import {EventType} from "./enums";
 const INVOKE_CHANNELS = [
     EventType.FILES_DROPPED,
     EventType.SHOW_SAVE_DIALOG,
-    EventType.SHOW_CONFIRMATION,
+    EventType.SHOW_UNSAVED_CHANGES_DIALOG,
     EventType.SAVE_STATE,
     EventType.CLOSE_WITH_STATE,
     EventType.WRITE_FILE,

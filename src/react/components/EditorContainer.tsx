@@ -3,7 +3,7 @@ import Editor from "./editor/Editor";
 import React, {useEffect, useRef, useState} from "react";
 import * as TextUtils from "../../utils/TextUtils";
 import {shortenTabName} from "../../utils/TextUtils";
-import {fireEvent, off, on} from "../ApplicationEvents";
+import {off, on} from "../ApplicationEvents";
 import {EventType} from "../../enums";
 import {Ace} from "ace-builds";
 import {SupportedLanguage, SupportedLanguages} from "../../domain/SupportedLanguage";
@@ -14,7 +14,7 @@ import {ToolbarMenuItem} from "./editor/plugins";
 import DOMPurify from "dompurify";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTimesRectangle} from "@fortawesome/free-regular-svg-icons/faTimesRectangle";
-import {applySavedFile} from "../../utils/TabUtils";
+import {saveTab} from "../TabSaver";
 
 const debounceDelay = 200; // Delay in milliseconds
 let changeDebounceTimer: NodeJS.Timeout; // Timer for change event
@@ -48,19 +48,8 @@ export default function EditorContainer() {
         const onTabSave = () => {
             if(!activeTab.isChanged) return;
 
-            saveTab(activeTab).then(result => {
-                if(result.isSaved) {
-                    console.info("saved to " + result.savedFile);
-
-                    TextUtils.hash(activeTab.content || "").then(result => {
-                        activeTab.hash = result;
-                    });
-
-                    activeTab.isChanged = false;
-
-                    markStateChanged();
-                    setData(getEditorData());
-                }
+            saveTab(activeTab).then(isSaved => {
+                if(isSaved) setData(getEditorData());
             }).catch(err => console.error("cannot save " + activeTab.name + ": " + err));
         }
 
@@ -212,31 +201,6 @@ export default function EditorContainer() {
             </div>
         </div>
     );
-}
-
-async function saveTab(tab: EditorTab) {
-    console.info("saving " + tab.name);
-
-    let isSaved = false;
-    let targetFile = tab.file;
-
-    if (targetFile) {
-        await fireEvent(EventType.WRITE_FILE, {file: targetFile, content: tab.content || ""});
-        isSaved = true;
-    } else {
-        targetFile = await fireEvent(EventType.SHOW_SAVE_DIALOG, {
-            title: "Save " + tab.name,
-            defaultName: tab.name,
-        }) as string;
-
-        if (targetFile) {
-            await fireEvent(EventType.WRITE_FILE, {file: targetFile, content: tab.content || ""});
-            isSaved = true;
-            applySavedFile(tab, targetFile);
-        }
-    }
-
-    return {isSaved: isSaved, savedFile: targetFile, tab: tab};
 }
 
 function initializeEditor(editor: Ace.Editor, activeTab: EditorTab) {
