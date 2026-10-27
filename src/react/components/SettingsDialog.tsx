@@ -4,6 +4,7 @@ import {EventType} from "../../enums";
 import {
     DEFAULT_SETTINGS,
     EditorSettings,
+    FileSettings,
     findShortcutConflicts,
     FONT_SIZE_RANGE,
     InterfaceSettings,
@@ -16,6 +17,7 @@ import {
 } from "../../domain/Settings";
 import {getShortcutDefinitions, ShortcutDefinition} from "../../utils/Shortcuts";
 import {isValidThemeName, isValidVariableValue, ThemeVariable} from "../../utils/ThemeVariables";
+import {CHARACTER_SET_GROUPS, EOL_TYPES, EolType, UNICODE_ENCODINGS} from "../../domain/Encoding";
 
 interface ThemeInfo {
     name: string,
@@ -27,6 +29,7 @@ enum Section {
     APPEARANCE = "Appearance",
     EDITOR = "Editor",
     INTERFACE = "Interface",
+    FILES = "Files",
     SHORTCUTS = "Shortcuts",
 }
 
@@ -124,6 +127,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
 
     const setEditor = (changes: Partial<EditorSettings>) => setDraft({...draft, editor: {...draft.editor, ...changes}});
     const setInterface = (changes: Partial<InterfaceSettings>) => setDraft({...draft, ui: {...draft.ui, ...changes}});
+    const setFiles = (changes: Partial<FileSettings>) => setDraft({...draft, files: {...draft.files, ...changes}});
 
     function setKeyBinding(id: string, accelerator: string | undefined) {
         setDraft(current => {
@@ -279,6 +283,42 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                     <span>Start maximized</span>
                                     <input type={"checkbox"} checked={draft.ui.startMaximized} onChange={e => setInterface({startMaximized: e.target.checked})}/>
                                 </label>
+                            </>
+                        }
+
+                        {section === Section.FILES &&
+                            <>
+                                <h3>New files</h3>
+                                <label className={"settingsRow"}>
+                                    <span>Line endings</span>
+                                    <select value={draft.files.defaultEol} onChange={e => setFiles({defaultEol: e.target.value as EolType})}>
+                                        {EOL_TYPES.map(eol => <option key={eol.id} value={eol.id}>{`${eol.label} (${eol.description})`}</option>)}
+                                    </select>
+                                </label>
+                                <label className={"settingsRow"}>
+                                    <span>Encoding</span>
+                                    <select value={draft.files.defaultEncoding} onChange={e => setFiles({defaultEncoding: e.target.value})}>
+                                        {UNICODE_ENCODINGS.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
+                                        {CHARACTER_SET_GROUPS.map(group => (
+                                            <optgroup key={group.label} label={group.label}>
+                                                {group.sets.map(set => <option key={set.id} value={set.id}>{set.label}</option>)}
+                                            </optgroup>
+                                        ))}
+                                    </select>
+                                </label>
+                                <h3>Opening files</h3>
+                                <label className={"settingsRow"}>
+                                    <span>Guess the encoding of files without a BOM</span>
+                                    <input type={"checkbox"} checked={draft.files.autodetectEncoding}
+                                           onChange={e => setFiles({autodetectEncoding: e.target.checked})}/>
+                                </label>
+                                <div className={"settingsHint"}>Files that are not valid UTF-8 are matched against the known character sets. When this is off, or the guess is unsure, the system code page (ANSI) is used.</div>
+                                <label className={"settingsRow"}>
+                                    <span>Treat plain ASCII files as UTF-8</span>
+                                    <input type={"checkbox"} checked={draft.files.asciiAsUtf8}
+                                           onChange={e => setFiles({asciiAsUtf8: e.target.checked})}/>
+                                </label>
+                                <div className={"settingsHint"}>When this is off, files with only ASCII characters are shown as ANSI. The bytes are the same either way; it only changes the encoding used once you type other characters.</div>
                             </>
                         }
 

@@ -9,7 +9,7 @@ export function readFile(path:string) {
     return fs.readFileSync(path, "utf8");
 }
 
-export function writeFile(path:string, content:string) {
+export function writeFile(path:string, content:string | Uint8Array) {
     fs.writeFileSync(path, content, {});
 }
 
@@ -42,6 +42,10 @@ export async function readFileAsync(filePath: string) {
     return fs.promises.readFile(filePath, "utf8");
 }
 
+export async function readFileBytes(filePath: string) {
+    return fs.promises.readFile(filePath);
+}
+
 export async function getFileSize(filePath: string) {
     return (await fs.promises.stat(filePath)).size;
 }
@@ -52,8 +56,11 @@ export async function isBinaryFile(filePath: string) {
     try {
         const buffer = Buffer.alloc(8000);
         const {bytesRead} = await handle.read(buffer, 0, buffer.length, 0);
+        const content = buffer.subarray(0, bytesRead);
 
-        return buffer.subarray(0, bytesRead).includes(0);
+        if (bytesRead >= 2 && ((content[0] === 0xFF && content[1] === 0xFE) || (content[0] === 0xFE && content[1] === 0xFF))) return false;
+
+        return content.includes(0);
     } finally {
         await handle.close();
     }

@@ -1,31 +1,74 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import {useEditorContext} from "./editor/EditorContext";
 import {SupportedLanguages} from "../../domain/SupportedLanguage";
+import {EncodingId, getEolLabel, getShortEncodingLabel} from "../../domain/Encoding";
+import {fireEvent} from "../ApplicationEvents";
+import {EncodingAction, EventType} from "../../enums";
+import {getAnsiCodePage} from "../EncodingInfo";
 
 export default function Footer() {
-    const {data, activeTab} = useEditorContext();
+    const {data, activeTab, setEncodingPicker} = useEditorContext();
+    const [ansiCodePage, setAnsiCodePage] = useState<string>();
+
+    useEffect(() => {
+        getAnsiCodePage().then(setAnsiCodePage).catch(err => console.error(err));
+    }, []);
+
+    const showEolMenu = (event: React.MouseEvent<HTMLElement>) => {
+        event.preventDefault();
+
+        if (!activeTab) return;
+
+        const rect = event.currentTarget.getBoundingClientRect();
+
+        fireEvent(EventType.SHOW_STATUS_MENU, {eol: activeTab.eol, x: rect.left, y: rect.top}).catch(err => console.error(err));
+    }
+
+    const openEncodingPicker = (event: React.MouseEvent<HTMLElement>) => {
+        event.preventDefault();
+
+        setEncodingPicker(EncodingAction.REINTERPRET);
+    }
+
+    const encodingLabel = activeTab?.encoding === EncodingId.ANSI && ansiCodePage
+        ? `ANSI (${getShortEncodingLabel(ansiCodePage)})`
+        : getShortEncodingLabel(activeTab?.encoding);
 
     return (
         <div id={"footer"}>
             <div id={"footerLeft"}>
                 <span>{activeTab?.file}</span>
             </div>
-            {data &&
-                <div id={"footerRight"}>
-                    <label className={"editorDataLabel"}>
-                        length: <span className={"dataContent"}>{data.length}</span>
-                    </label>
-                    <label className={"editorDataLabel"}>
-                        lines: <span className={"dataContent"}>{data.lineCount}</span>
-                    </label>
-                    <label className={"editorDataLabel"}>
-                        selection: <span className={"dataContent"}>{data.selection?.selectionLength} ({"RNG: " + data.selection.selectionRangeCount})</span>
-                    </label>
-                    <label className={"editorDataLabel"}>
-                        lang: <span className={"dataContent"}>{(activeTab?.language || SupportedLanguages.text).label}</span>
-                    </label>
-                </div>
-            }
+            <div id={"footerRight"}>
+                {data &&
+                    <>
+                        <label className={"editorDataLabel"}>
+                            length: <span className={"dataContent"}>{data.length}</span>
+                        </label>
+                        <label className={"editorDataLabel"}>
+                            lines: <span className={"dataContent"}>{data.lineCount}</span>
+                        </label>
+                        <label className={"editorDataLabel"}>
+                            selection: <span className={"dataContent"}>{data.selection?.selectionLength} ({"RNG: " + data.selection.selectionRangeCount})</span>
+                        </label>
+                        <label className={"editorDataLabel"}>
+                            lang: <span className={"dataContent"}>{(activeTab?.language || SupportedLanguages.text).label}</span>
+                        </label>
+                    </>
+                }
+                {activeTab &&
+                    <>
+                        <button id={"footerEol"} className={"statusChip"} title={"Line endings: click to change"}
+                                onClick={showEolMenu} onContextMenu={showEolMenu}>
+                            {getEolLabel(activeTab.eol)}
+                        </button>
+                        <button id={"footerEncoding"} className={"statusChip"} title={"Encoding: click to reopen or convert"}
+                                onClick={openEncodingPicker} onContextMenu={openEncodingPicker}>
+                            {encodingLabel}
+                        </button>
+                    </>
+                }
+            </div>
         </div>
     );
 }

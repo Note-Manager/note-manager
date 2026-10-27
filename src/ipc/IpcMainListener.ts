@@ -1,16 +1,19 @@
 import electron, {BrowserWindow, ipcMain, Menu, shell} from "electron";
-import {EventType, TabAction, UnsavedChangesChoice} from "../enums";
-import {getFocusedWindow, openInWindow, writeEditorState} from "../utils/EditorUtils";
+import {EventType, TabAction, UnencodableChoice, UnsavedChangesChoice} from "../enums";
+import {getFocusedWindow, openInWindow, readTextFile, writeEditorState} from "../utils/EditorUtils";
 import {EditorState} from "../domain/EditorState";
 import * as Environment from "../utils/EnvironmentUtils";
-import {isFileExists, writeFile} from "../utils/FileUtils";
+import {isFileExists, readFileBytes, writeFile} from "../utils/FileUtils";
 import {addRecentFile} from "../utils/RecentFiles";
-import {getUnsavedChangesMessage, UNSAVED_CHANGES_BUTTONS} from "../utils/DialogUtils";
+import {getUnencodableMessage, getUnsavedChangesMessage, UNENCODABLE_SAVE_BUTTONS, UNSAVED_CHANGES_BUTTONS} from "../utils/DialogUtils";
 import {applySettingsToWindows} from "../utils/ElectronUtils";
 import {Theme} from "../domain/Theme";
 import {resolveAccelerator, Settings} from "../domain/Settings";
 import {getShortcutDefinitions, ShortcutId} from "../utils/Shortcuts";
 import {getUserPluginInfos, getUserPluginManifests} from "../utils/UserPlugins";
+import {decodeBuffer, encodeText, findUnencodableCharacters, getAnsiCodePage} from "../utils/EncodingUtils";
+import {DEFAULT_ENCODING, detectEol, EncodingId, EolType, getEncodingLabel, isKnownEncoding, isKnownEol, toEditorText} from "../domain/Encoding";
+import {createEolMenu} from "../utils/EncodingMenu";
 
 const closingWindows = new Set<number>();
 const recordingShortcuts = new Set<number>();
@@ -63,12 +66,103 @@ export default function initIpcMainListeners() {
         return UNSAVED_CHANGES_BUTTONS[result]?.choice ?? UnsavedChangesChoice.CANCEL;
     });
 
-    ipcMain.handle(EventType.WRITE_FILE, (event, data: {file: string, content: string}) => {
+    ipcMain.handle(EventType.WRITE_FILE, (event, data: {file: string, content: string, encoding?: string, eol?: EolType}) => {
         if (typeof data?.file !== "string" || !data.file) throw new Error("file is required");
 
-        writeFile(data.file, typeof data.content === "string" ? data.content : "");
+        const content = typeof data.content === "string" ? data.content : "";
+        const eol = isKnownEol(data.eol) ? data.eol : EolType.LF;
+        let encoding = isKnownEncoding(data.encoding) ? data.encoding : DEFAULT_ENCODING;
+
+        const unencodable = findUnencodableCharacters(content, encoding);
+
+        if (unencodable.count > 0) {
+            const win = BrowserWindow.fromWebContents(event.sender);
+            const options: Electron.MessageBoxSyncOptions = {
+                type: "warning",
+                buttons: UNENCODABLE_SAVE_BUTTONS.map(b => b.label),
+                defaultId: 0,
+                cancelId: UNENCODABLE_SAVE_BUTTONS.length - 1,
+                noLink: true,
+                title: "Save",
+                message: getUnencodableMessage(getEncodingLabel(encoding), unencodable.count, unencodable.samples),
+                detail: data.file,
+            };
+            const choice = UNENCODABLE_SAVE_BUTTONS[win ? electron.dialog.showMessageBoxSync(win, options) : electron.dialog.showMessageBoxSync(options)]?.choice;
+
+            if (choice === UnencodableChoice.CANCEL || choice === undefined) return {saved: false, encoding: encoding};
+            if (choice === UnencodableChoice.CONVERT_TO_UTF8) encoding = EncodingId.UTF8;
+        }
+
+        writeFile(data.file, encodeText(content, encoding, eol));
 
         addRecentFile(data.file);
+
+        return {saved: true, encoding: encoding};
+    });
+
+    ipcMain.handle(EventType.READ_FILE_AS, async (event, data: {file: string, encoding?: string, fallbackEol?: EolType}) => {
+        if (typeof data?.file !== "string" || !data.file) throw new Error("file is required");
+
+        if (!isKnownEncoding(data.encoding)) return readTextFile(data.file);
+
+        const text = decodeBuffer(await readFileBytes(data.file), data.encoding);
+        const eol = detectEol(text, isKnownEol(data.fallbackEol) ? data.fallbackEol : EolType.LF);
+
+        return {content: toEditorText(text, eol), encoding: data.encoding, eol: eol};
+    });
+
+    ipcMain.handle(EventType.GET_ENCODING_INFO, () => ({ansiCodePage: getAnsiCodePage()}));
+
+    ipcMain.handle(EventType.CONFIRM_REINTERPRET, (event, data: {name?: string, encoding?: string}) => {
+        const win = BrowserWindow.fromWebContents(event.sender);
+        const target = isKnownEncoding(data?.encoding) ? getEncodingLabel(data.encoding) : "the detected encoding";
+        const options: Electron.MessageBoxSyncOptions = {
+            type: "question",
+            buttons: ["Reopen", "Cancel"],
+            defaultId: 1,
+            cancelId: 1,
+            noLink: true,
+            title: "Reopen with Encoding",
+            message: `Reopen ${data?.name || "this file"} with ${target}?`,
+            detail: "The file is read again from disk. Your unsaved changes in this tab will be lost.",
+        };
+
+        return (win ? electron.dialog.showMessageBoxSync(win, options) : electron.dialog.showMessageBoxSync(options)) === 0;
+    });
+
+    ipcMain.handle(EventType.CONFIRM_CONVERSION, (event, data: {content: string, encoding: string}) => {
+        if (!isKnownEncoding(data?.encoding)) return false;
+
+        const unencodable = findUnencodableCharacters(typeof data.content === "string" ? data.content : "", data.encoding);
+
+        if (unencodable.count === 0) return true;
+
+        const win = BrowserWindow.fromWebContents(event.sender);
+        const options: Electron.MessageBoxSyncOptions = {
+            type: "warning",
+            buttons: ["Convert", "Cancel"],
+            defaultId: 1,
+            cancelId: 1,
+            noLink: true,
+            title: "Convert to " + getEncodingLabel(data.encoding),
+            message: getUnencodableMessage(getEncodingLabel(data.encoding), unencodable.count, unencodable.samples),
+            detail: "Do you want to convert anyway?",
+        };
+
+        return (win ? electron.dialog.showMessageBoxSync(win, options) : electron.dialog.showMessageBoxSync(options)) === 0;
+    });
+
+    ipcMain.handle(EventType.SHOW_STATUS_MENU, (event, data: {eol?: EolType, x?: number, y?: number}) => {
+        const win = BrowserWindow.fromWebContents(event.sender);
+        if (!win) return;
+
+        const send = (channel: string, payload: any) => event.sender.send(channel, payload);
+
+        Menu.buildFromTemplate(createEolMenu(send, isKnownEol(data?.eol) ? data.eol : undefined)).popup({
+            window: win,
+            x: Number.isFinite(data?.x) ? Math.round(data.x as number) : undefined,
+            y: Number.isFinite(data?.y) ? Math.round(data.y as number) : undefined,
+        });
     });
 
     ipcMain.handle(EventType.SHOW_TAB_CONTEXT_MENU, (event, data: {

@@ -8,7 +8,7 @@ import initIpcMainListeners from "./ipc/IpcMainListener";
 import {initApplicationMenu, loadThemeToWindow, refreshTitlebar} from "./utils/ElectronUtils";
 import {EditorState} from "./domain/EditorState";
 import {SupportedLanguages} from './domain/SupportedLanguage';
-import {hash} from "./utils/TextUtils";
+import {documentHash} from "./utils/TextUtils";
 import {isFileExists} from "./utils/FileUtils";
 import {getSettings} from "./utils/EnvironmentUtils";
 import {loadUserPluginManifests, registerUserPluginProtocol, registerUserPluginScheme} from "./utils/UserPlugins";
@@ -103,7 +103,9 @@ async function getEditorState() {
             name: "New Document.txt",
             displayName: "New Document.txt",
             content: "",
-            hash: await hash(""),
+            hash: await documentHash("", getSettings().files.defaultEncoding, getSettings().files.defaultEol),
+            encoding: getSettings().files.defaultEncoding,
+            eol: getSettings().files.defaultEol,
             language: SupportedLanguages.text,
         }],
         activeTabId: tempTabId

@@ -70,7 +70,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         if (onTabSelect) onTabSelect(tabToSelect);
     }
 
-    const addTab = ({isTemp, name, file, content}: EditorTab) => {
+    const addTab = ({isTemp, name, file, content, encoding, eol}: EditorTab) => {
         if (file && tabs.some(t => t.file === file)) {
             const existing = tabs.find(t => t.file === file);
             if(existing) tabSelect(existing);
@@ -83,6 +83,8 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
             file: file,
             content: content,
             isTemp: isTemp,
+            encoding: encoding || settings.files.defaultEncoding,
+            eol: eol || settings.files.defaultEol,
             language: findLanguageByFileName(file),
             state: {scroll: {left: 0, top: 0}, selection: undefined}
         };
@@ -95,7 +97,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
 
         tabSelect(tab);
 
-        TextUtils.hash(tab.content || "").then((result) => {
+        TextUtils.documentHash(tab.content || "", tab.encoding, tab.eol).then((result) => {
             tab.hash = result;
         });
 
@@ -297,7 +299,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
             off(EventType.INIT_WITH_STATE, initializeWithState);
             off(EventType.TAB_ACTION, onTabAction);
         };
-    }, [activeTab, tabs]);
+    }, [activeTab, tabs, settings]);
 
     const handleTabClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, tabIdx: number) => {
         event.stopPropagation();

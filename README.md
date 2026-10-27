@@ -38,6 +38,15 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - Large documents stay responsive: heavy editor features are turned off for very large content.
 - Only one instance runs at a time; files opened from a second launch go to the existing window.
 
+**Encoding and line endings**
+
+- Files are opened with the right encoding: the BOM first, then UTF-8, then a guess of the character set, and the system code page (ANSI) as the last resort.
+- The status bar always shows the line ending (CRLF, LF or CR) and the encoding of the current document. Click the encoding to open the encoding picker, or the line ending to switch it.
+- The encoding picker has two modes: **Reopen** reads the file again with the chosen encoding, **Convert** keeps the text and saves it with the chosen encoding. Type to search (for example `1254`, `latin 5` or `cyrillic`), use the arrow keys and Enter, and press Tab to switch modes. It lists UTF-8, UTF-8 with BOM, UTF-16 LE/BE, ANSI and nearly 50 regional character sets.
+- The Encoding menu opens the picker in either mode, detects the encoding again, and switches line endings.
+- Characters that the target encoding cannot hold are listed before a conversion or a save, so nothing is lost silently.
+- Settings > Files sets the line ending and encoding of new files, whether encodings are guessed, and whether plain ASCII files count as UTF-8.
+
 **Editing tools** (Plugins menu)
 
 - **Format**: JSON, XML, HTML, SQL, PL/SQL, JavaScript, TypeScript, CSS, YAML, Markdown and Java (powered by Prettier and dedicated formatters). Formats the selections, or the whole document when nothing is selected.
@@ -48,7 +57,7 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 
 **Customization**
 
-- A settings page (Preferences > Settings, `Ctrl+,`) for font, font size, word wrap, soft tabs, tab size, invisible characters, line numbers, tab layout and starting maximized.
+- A settings page (Preferences > Settings, `Ctrl+,`) for font, font size, word wrap, soft tabs, tab size, invisible characters, line numbers, tab layout, starting maximized and file encoding defaults.
 - Every menu shortcut can be changed or removed, with conflict detection.
 - Five bundled themes (Dark, Light, Matrix, Orange Dark, Soft Light), plus your own themes whose colors you can edit from the settings page.
 - Your own plugins, written in plain JavaScript (see [User plugins](#user-plugins)).

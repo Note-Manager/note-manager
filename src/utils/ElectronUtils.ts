@@ -12,6 +12,7 @@ import {Theme} from "../domain/Theme";
 import {resolveAccelerator, Settings} from "../domain/Settings";
 import {getDefaultAccelerator, ShortcutId} from "./Shortcuts";
 import {getUserPluginManifests, getUserPluginPath, loadUserPluginManifests} from "./UserPlugins";
+import {createEncodingMenu} from "./EncodingMenu";
 
 
 export const appIcon = electron.nativeImage.createFromPath(path.join(getSystemPath(SystemPaths.resources), "Icons/note-manager.png"));
@@ -97,6 +98,10 @@ export function createApplicationMenu() {
                 {role: 'delete'},
                 {role: 'selectAll'}
             ]
+        },
+        {
+            label: 'Encoding',
+            submenu: createEncodingMenu(sendToFocusedWindow)
         },
         {
             label: 'Language',
@@ -328,4 +333,4 @@ export function reloadUserPlugins() {
 
 export function initApplicationMenu() {
     electron.Menu.setApplicationMenu(createApplicationMenu());
-}
+}

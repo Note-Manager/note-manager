@@ -37,7 +37,27 @@ export enum EventType {
     RECORD_SHORTCUT = "record-shortcut",
     SHORTCUT_KEY = "shortcut-key",
     GET_USER_PLUGINS = "get-user-plugins",
-    USER_PLUGINS_CHANGED = "user-plugins-changed"
+    USER_PLUGINS_CHANGED = "user-plugins-changed",
+    READ_FILE_AS = "read-file-as",
+    CONFIRM_REINTERPRET = "confirm-reinterpret",
+    CONFIRM_CONVERSION = "confirm-conversion",
+    SHOW_STATUS_MENU = "show-status-menu",
+    ENCODING_ACTION = "encoding-action",
+    EOL_ACTION = "eol-action",
+    OPEN_ENCODING_PICKER = "open-encoding-picker",
+    GET_ENCODING_INFO = "get-encoding-info"
+}
+
+export enum EncodingAction {
+    REINTERPRET = "reinterpret",
+    CONVERT = "convert",
+    REDETECT = "redetect",
+}
+
+export enum UnencodableChoice {
+    CONVERT_TO_UTF8 = "convert-to-utf8",
+    SAVE_ANYWAY = "save-anyway",
+    CANCEL = "cancel",
 }
 
 export enum UnsavedChangesChoice {

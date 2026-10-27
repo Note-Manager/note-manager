@@ -3,8 +3,8 @@ import Editor from "./editor/Editor";
 import React, {useEffect, useRef, useState} from "react";
 import * as TextUtils from "../../utils/TextUtils";
 import {shortenTabName} from "../../utils/TextUtils";
-import {off, on} from "../ApplicationEvents";
-import {EventType} from "../../enums";
+import {fireEvent, off, on} from "../ApplicationEvents";
+import {EncodingAction, EventType} from "../../enums";
 import {Ace} from "ace-builds";
 import {SupportedLanguage, SupportedLanguages} from "../../domain/SupportedLanguage";
 import {useEditorContext} from "./editor/EditorContext";
@@ -15,6 +15,8 @@ import DOMPurify from "dompurify";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTimesRectangle} from "@fortawesome/free-regular-svg-icons/faTimesRectangle";
 import {saveTab} from "../TabSaver";
+import {EolType, getEditorNewLineMode, isKnownEncoding, isKnownEol} from "../../domain/Encoding";
+import EncodingPicker from "./EncodingPicker";
 
 const debounceDelay = 200; // Delay in milliseconds
 let changeDebounceTimer: NodeJS.Timeout; // Timer for change event
@@ -22,11 +24,12 @@ let selectionChangeDebounceTimer: NodeJS.Timeout; // Timer for selection event
 let cursorChangeDebounceTimer: NodeJS.Timeout; // Timer for selection event
 
 export default function EditorContainer() {
-    const {data, setData, activeTab} = useEditorContext();
+    const {data, setData, activeTab, encodingPicker, setEncodingPicker} = useEditorContext();
 
     const[activeTool, setActiveTool] = useState<ToolbarMenuItem>();
 
     const editorRef = useRef<Ace.Editor>();
+    const encodingActionRef = useRef<(action: EncodingAction, encoding?: string) => void>();
 
     useEffect(() => {
         if(!activeTab){
@@ -53,12 +56,94 @@ export default function EditorContainer() {
             }).catch(err => console.error("cannot save " + activeTab.name + ": " + err));
         }
 
+        const refreshChangedState = async () => {
+            const editor = editorRef.current;
+
+            if (editor) activeTab.content = editor.getValue();
+
+            activeTab.isChanged = await TextUtils.documentHash(activeTab.content || "", activeTab.encoding, activeTab.eol) !== activeTab.hash;
+
+            markStateChanged();
+            setData(getEditorData());
+        }
+
+        const reinterpret = async (encoding?: string) => {
+            if (!activeTab.file) {
+                if (!encoding) return;
+
+                activeTab.encoding = encoding;
+                await refreshChangedState();
+                return;
+            }
+
+            if (activeTab.isChanged && !await fireEvent(EventType.CONFIRM_REINTERPRET, {name: activeTab.name, encoding: encoding})) return;
+
+            const result = await fireEvent(EventType.READ_FILE_AS, {file: activeTab.file, encoding: encoding, fallbackEol: activeTab.eol});
+
+            activeTab.encoding = result.encoding;
+            activeTab.eol = result.eol;
+            activeTab.content = result.content;
+            activeTab.hash = await TextUtils.documentHash(result.content, result.encoding, result.eol);
+            activeTab.isChanged = false;
+
+            const editor = editorRef.current;
+
+            if (editor) {
+                editor.session.setNewLineMode(getEditorNewLineMode(result.eol));
+                editor.session.setValue(result.content);
+                activeTab.state = {...activeTab.state, undoHistory: undefined};
+            }
+
+            markStateChanged();
+            setData(getEditorData());
+        }
+
+        const convert = async (encoding: string) => {
+            if (encoding === activeTab.encoding) return;
+
+            if (!await fireEvent(EventType.CONFIRM_CONVERSION, {content: editorRef.current?.getValue() ?? activeTab.content ?? "", encoding: encoding})) return;
+
+            activeTab.encoding = encoding;
+
+            await refreshChangedState();
+        }
+
+        const runEncodingAction = (action: EncodingAction, encoding?: string) => {
+            const run = action === EncodingAction.REDETECT
+                ? reinterpret()
+                : isKnownEncoding(encoding) ? (action === EncodingAction.CONVERT ? convert(encoding) : reinterpret(encoding)) : undefined;
+
+            run?.catch(err => console.error("cannot change encoding of " + activeTab.name + ": " + err));
+        }
+
+        encodingActionRef.current = runEncodingAction;
+
+        const onEncodingAction = (event: any, data: {action: EncodingAction, encoding?: string}) => runEncodingAction(data?.action, data?.encoding);
+
+        const onOpenEncodingPicker = (event: any, data: {action: EncodingAction}) => setEncodingPicker(data?.action === EncodingAction.CONVERT ? EncodingAction.CONVERT : EncodingAction.REINTERPRET);
+
+        const onEolAction = (event: any, data: {eol: EolType}) => {
+            if (!isKnownEol(data?.eol) || data.eol === activeTab.eol) return;
+
+            activeTab.eol = data.eol;
+
+            editorRef.current?.session.setNewLineMode(getEditorNewLineMode(data.eol));
+
+            refreshChangedState().catch(err => console.error("cannot change line endings of " + activeTab.name + ": " + err));
+        }
+
         on(EventType.SAVE_TAB, onTabSave);
         on(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
+        on(EventType.ENCODING_ACTION, onEncodingAction);
+        on(EventType.EOL_ACTION, onEolAction);
+        on(EventType.OPEN_ENCODING_PICKER, onOpenEncodingPicker);
 
         return () => {
             off(EventType.SAVE_TAB, onTabSave);
             off(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
+            off(EventType.ENCODING_ACTION, onEncodingAction);
+            off(EventType.EOL_ACTION, onEolAction);
+            off(EventType.OPEN_ENCODING_PICKER, onOpenEncodingPicker);
         }
     }, [activeTab]);
 
@@ -125,7 +210,7 @@ export default function EditorContainer() {
         clearTimeout(changeDebounceTimer);
 
         changeDebounceTimer = setTimeout(async () => {
-            TextUtils.hash(value).then((result: string) => {
+            TextUtils.documentHash(value, activeTab.encoding, activeTab.eol).then((result: string) => {
                 if (!activeTab) return;
 
                 activeTab.isChanged = result !== activeTab.hash;
@@ -156,11 +241,28 @@ export default function EditorContainer() {
 
     return (
         <div id={"editorBody"}>
+            {encodingPicker &&
+                <EncodingPicker
+                    action={encodingPicker}
+                    encoding={activeTab.encoding}
+                    hasFile={!!activeTab.file}
+                    onActionChange={setEncodingPicker}
+                    onClose={() => {
+                        setEncodingPicker(undefined);
+                        editorRef.current?.focus();
+                    }}
+                    onSelect={(action, encoding) => {
+                        setEncodingPicker(undefined);
+                        encodingActionRef.current?.(action, encoding);
+                        editorRef.current?.focus();
+                    }}/>
+            }
             {activeTab &&
                 <div id={"tabContentWrapper"} key={activeTab.id}>
                     <Editor
                         content={activeTab.content || ""}
                         language={activeTab.language || SupportedLanguages.text}
+                        newLineMode={getEditorNewLineMode(activeTab.eol)}
                         selectionListener={onSelectionChange}
                         changeListener={onContentChange}
                         cursorListener={onCursorChange}
