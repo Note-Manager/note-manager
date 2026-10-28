@@ -41,10 +41,10 @@ export default class PreviewPlugin implements EditorPlugin {
 
                 let generation = 0;
                 let timer: ReturnType<typeof setTimeout> | undefined;
+                let language = context.language || this.editor?.getLanguage();
 
                 const render = () => {
                     const current = ++generation;
-                    const language = this.editor?.getLanguage();
 
                     body.className = language === LanguageName.MARKDOWN ? "markdown-body" : "html-body";
                     body.innerHTML = preview(this.editor?.getValue(), language, context.filePath) || getEmptyPreviewResult();
@@ -55,15 +55,25 @@ export default class PreviewPlugin implements EditorPlugin {
                     }
                 };
 
-                const unsubscribe = this.editor?.onChange(() => {
-                    if(!parent.host.isConnected) {
-                        clearTimeout(timer);
-                        unsubscribe?.();
-                        return;
-                    }
+                const unsubscribeAll = () => {
+                    clearTimeout(timer);
+                    unsubscribeContent?.();
+                    unsubscribeLanguage?.();
+                };
+
+                const unsubscribeContent = this.editor?.onChange(() => {
+                    if(!parent.host.isConnected) return unsubscribeAll();
 
                     clearTimeout(timer);
                     timer = setTimeout(render, LIVE_PREVIEW_DELAY);
+                });
+
+                const unsubscribeLanguage = this.editor?.onLanguageChange(() => {
+                    if(!parent.host.isConnected) return unsubscribeAll();
+
+                    language = this.editor?.getLanguage();
+                    clearTimeout(timer);
+                    render();
                 });
 
                 shadow.addEventListener("click", (event) => {

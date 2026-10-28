@@ -24,6 +24,7 @@ export interface EditorAction {
 
 export interface ToolWindowContext {
     filePath?: string,
+    language?: string,
 }
 
 export interface ToolbarMenuItem {

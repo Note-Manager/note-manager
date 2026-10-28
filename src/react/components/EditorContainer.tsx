@@ -17,6 +17,7 @@ import {faTimesRectangle} from "@fortawesome/free-regular-svg-icons/faTimesRecta
 import {saveTab} from "../TabSaver";
 import {EolType, getEditorNewLineMode, isKnownEncoding, isKnownEol} from "../../domain/Encoding";
 import EncodingPicker from "./EncodingPicker";
+import ToolWindowResizer, {readToolWindowWidth} from "./ToolWindowResizer";
 
 const debounceDelay = 200; // Delay in milliseconds
 let changeDebounceTimer: NodeJS.Timeout; // Timer for change event
@@ -27,6 +28,7 @@ export default function EditorContainer() {
     const {data, setData, activeTab, encodingPicker, setEncodingPicker} = useEditorContext();
 
     const[activeTool, setActiveTool] = useState<ToolbarMenuItem>();
+    const[toolWindowWidth, setToolWindowWidth] = useState<number>(readToolWindowWidth);
 
     const editorRef = useRef<Ace.Editor>();
     const encodingActionRef = useRef<(action: EncodingAction, encoding?: string) => void>();
@@ -156,7 +158,7 @@ export default function EditorContainer() {
             const shadow = el.attachShadow({mode: "open"});
             shadow.innerHTML = sanitizedContent || "";
 
-            if(activeTool?.onContentMount) activeTool?.onContentMount(shadow, {filePath: activeTab?.file});
+            if(activeTool?.onContentMount) activeTool?.onContentMount(shadow, {filePath: activeTab?.file, language: activeTab?.language?.name});
         }
     }, [activeTool, activeTab?.id]);
 
@@ -271,7 +273,10 @@ export default function EditorContainer() {
             }
             <div id={"editorToolsWrapper"}>
                 { activeTool &&
-                    <div id={"toolWindow"}>
+                    <ToolWindowResizer width={toolWindowWidth} onResize={setToolWindowWidth}/>
+                }
+                { activeTool &&
+                    <div id={"toolWindow"} style={{width: toolWindowWidth + "px"}}>
                         <div id={"toolWindowHeader"}>
                             <div id={"toolWindowButtons"}>
                                 <FontAwesomeIcon className={"iconButton"} icon={faTimesRectangle} onClick={() => setActiveTool(undefined)} />

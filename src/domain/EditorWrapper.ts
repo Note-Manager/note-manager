@@ -54,4 +54,6 @@ export interface EditorWrapper {
     getFullRange: () => any;
 
     onChange: (listener: () => void) => () => void;
+
+    onLanguageChange: (listener: () => void) => () => void;
 }

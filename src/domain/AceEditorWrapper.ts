@@ -78,4 +78,10 @@ export class AceEditorWrapper implements EditorWrapper {
 
         return () => this._editor.off("change", listener);
     }
+
+    onLanguageChange(listener: () => void): () => void {
+        this._editor.on("changeMode", listener);
+
+        return () => this._editor.off("changeMode", listener);
+    }
 }

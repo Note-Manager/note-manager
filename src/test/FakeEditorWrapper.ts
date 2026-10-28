@@ -6,6 +6,7 @@ export class FakeEditorWrapper implements EditorWrapper {
     language: LanguageName;
     selections: Array<{start: number, end: number}>;
     changeListeners: Array<() => void> = [];
+    languageListeners: Array<() => void> = [];
 
     constructor(text: string, language: LanguageName = LanguageName.TEXT, selections?: Array<{start: number, end: number}>) {
         this.text = text;
@@ -67,6 +68,19 @@ export class FakeEditorWrapper implements EditorWrapper {
         return () => {
             this.changeListeners = this.changeListeners.filter(l => l !== listener);
         };
+    }
+
+    onLanguageChange(listener: () => void) {
+        this.languageListeners.push(listener);
+
+        return () => {
+            this.languageListeners = this.languageListeners.filter(l => l !== listener);
+        };
+    }
+
+    setLanguage(language: LanguageName) {
+        this.language = language;
+        this.languageListeners.forEach(l => l());
     }
 
     setValue(text: string) {
