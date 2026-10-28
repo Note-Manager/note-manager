@@ -1,5 +1,6 @@
 import {LEGACY_ACTION_CODES} from "./LegacyActionCodes";
 import {DEFAULT_ENCODING, EolType, getSystemDefaultEol, isKnownEncoding, isKnownEol} from "./Encoding";
+import {DEFAULT_WEB_SEARCH_URL, isWebSearchTemplate} from "./Search";
 
 export enum TabLayout {
     SCROLL = "scroll",
@@ -29,10 +30,15 @@ export interface FileSettings {
     autodetectEncoding: boolean,
 }
 
+export interface SearchSettings {
+    webSearchUrl: string,
+}
+
 export interface Settings {
     editor: EditorSettings,
     ui: InterfaceSettings,
     files: FileSettings,
+    search: SearchSettings,
     keyBindings: Record<string, string>,
 }
 
@@ -58,6 +64,9 @@ export const DEFAULT_SETTINGS: Settings = {
         defaultEol: getSystemDefaultEol(),
         asciiAsUtf8: true,
         autodetectEncoding: true,
+    },
+    search: {
+        webSearchUrl: DEFAULT_WEB_SEARCH_URL,
     },
     keyBindings: {},
 };
@@ -143,6 +152,7 @@ export function normalizeSettings(raw: any): Settings {
     const editor = raw?.editor || {};
     const ui = raw?.ui || {};
     const files = raw?.files || {};
+    const search = raw?.search || {};
     const defaults = DEFAULT_SETTINGS;
 
     const keyBindings: Record<string, string> = {};
@@ -178,6 +188,9 @@ export function normalizeSettings(raw: any): Settings {
             defaultEol: isKnownEol(files.defaultEol) ? files.defaultEol : defaults.files.defaultEol,
             asciiAsUtf8: toBoolean(files.asciiAsUtf8, defaults.files.asciiAsUtf8),
             autodetectEncoding: toBoolean(files.autodetectEncoding, defaults.files.autodetectEncoding),
+        },
+        search: {
+            webSearchUrl: isWebSearchTemplate(search.webSearchUrl) ? search.webSearchUrl : defaults.search.webSearchUrl,
         },
         keyBindings: keyBindings,
     };

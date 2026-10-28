@@ -4,6 +4,7 @@ import {registerContextMenuHandlers} from "./ContextMenuHandlers";
 import {registerSettingsHandlers} from "./SettingsHandlers";
 import {registerStateHandlers} from "./StateHandlers";
 import {registerLoggingHandlers} from "./LoggingEventHandlers";
+import {registerSearchHandlers} from "./SearchHandlers";
 
 export default function initIpcMainListeners() {
     registerLoggingHandlers();
@@ -12,4 +13,5 @@ export default function initIpcMainListeners() {
     registerContextMenuHandlers();
     registerSettingsHandlers();
     registerStateHandlers();
+    registerSearchHandlers();
 }

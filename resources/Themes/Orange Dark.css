@@ -25,6 +25,8 @@
     --scrollbar-thumb-hover-color: #8a5530;
     --scrollbar-track-color: transparent;
     --selection-bg: rgba(227, 119, 42, 0.3);
+    --search-match-bg: rgba(242, 179, 61, 0.38);
+    --search-scope-bg: rgba(227, 119, 42, 0.12);
     --active-line-bg: rgb(71, 58, 51);
     --action-bg: #5a2e0b;
 

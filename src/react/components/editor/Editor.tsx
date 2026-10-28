@@ -1,6 +1,5 @@
 import React, {useEffect, useRef, useState} from "react";
 import AceEditor from "react-ace";
-import "ace-builds/src-noconflict/ext-searchbox";
 import "ace-builds/src-noconflict/ext-language_tools";
 import {Ace} from "ace-builds";
 import {SupportedLanguage} from "../../../domain/SupportedLanguage";

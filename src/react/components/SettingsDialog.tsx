@@ -15,6 +15,7 @@ import {
     keyEventToAccelerator,
     normalizeSettings,
     resolveAccelerator,
+    SearchSettings,
     Settings,
     TAB_SIZE_RANGE,
     TabLayout
@@ -22,6 +23,7 @@ import {
 import {getShortcutDefinitions, ShortcutDefinition} from "../../utils/Shortcuts";
 import {isValidThemeName, isValidVariableValue, ThemeVariable} from "../../utils/ThemeVariables";
 import {CHARACTER_SET_GROUPS, EOL_TYPES, EolType, UNICODE_ENCODINGS} from "../../domain/Encoding";
+import {isWebSearchTemplate} from "../../domain/Search";
 
 interface KeyPress {
     code: string,
@@ -36,6 +38,7 @@ enum Section {
     EDITOR = "Editor",
     INTERFACE = "Interface",
     FILES = "Files",
+    SEARCH = "Search",
     SHORTCUTS = "Shortcuts",
 }
 
@@ -149,10 +152,15 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
     const setEditor = (changes: Partial<EditorSettings>) => setDraft({...draft, editor: {...draft.editor, ...changes}});
     const setInterface = (changes: Partial<InterfaceSettings>) => setDraft({...draft, ui: {...draft.ui, ...changes}});
     const setFiles = (changes: Partial<FileSettings>) => setDraft({...draft, files: {...draft.files, ...changes}});
+    const setSearch = (changes: Partial<SearchSettings>) => setDraft({...draft, search: {...draft.search, ...changes}});
 
     const shortcutRows = shortcuts.map(s => ({...s, accelerator: resolveAccelerator(draft, s.id, s.defaultAccelerator)}));
     const conflicts = findShortcutConflicts(shortcutRows);
     const invalidVariables = Object.entries(changedVariables).filter(([, value]) => !isValidVariableValue(value)).map(([name]) => name);
+    const isWebSearchValid = isWebSearchTemplate(draft.search.webSearchUrl);
+    const validationError = conflicts.size > 0 ? "Some shortcuts use the same keys."
+        : invalidVariables.length > 0 ? "Some theme values are not valid."
+            : !isWebSearchValid ? "The web search address is not valid." : "";
 
     const selectTheme = (file: string) => {
         setChangedVariables({});
@@ -172,7 +180,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
     };
 
     const save = () => {
-        if (conflicts.size > 0 || invalidVariables.length > 0) return;
+        if (validationError) return;
 
         setError(undefined);
 
@@ -330,6 +338,18 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                             </>
                         }
 
+                        {section === Section.SEARCH &&
+                            <>
+                                <h3>Search on the web</h3>
+                                <label className={classNames("settingsRow", !isWebSearchValid && "invalid")}>
+                                    <span>Search address</span>
+                                    <input type={"text"} className={"wideField"} spellCheck={false} value={draft.search.webSearchUrl}
+                                        onChange={e => setSearch({webSearchUrl: e.target.value})}/>
+                                </label>
+                                <div className={"settingsHint"}>An http or https address. %s is replaced with the selected text, for example https://duckduckgo.com/?q=%s</div>
+                            </>
+                        }
+
                         {section === Section.SHORTCUTS &&
                             <>
                                 <h3>Keyboard shortcuts</h3>
@@ -350,11 +370,11 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                     </div>
                     <div id={"settingsFooter"}>
                         <span className={"settingsError"}>
-                            {error || (conflicts.size > 0 ? "Some shortcuts use the same keys." : invalidVariables.length > 0 ? "Some theme values are not valid." : "")}
+                            {error || validationError}
                         </span>
                         <button onClick={() => setDraft({...DEFAULT_SETTINGS, keyBindings: {}})}>Restore defaults</button>
                         <button onClick={onClose}>Cancel</button>
-                        <button className={"primary"} disabled={conflicts.size > 0 || invalidVariables.length > 0} onClick={save}>Save</button>
+                        <button className={"primary"} disabled={!!validationError} onClick={save}>Save</button>
                     </div>
                 </div>
             </div>

@@ -23,7 +23,7 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 
 - Your tabs, including unsaved content, cursor position, scroll position and undo history, are saved automatically and restored on the next start.
 - Right-click a tab for Close, Close Other Tabs, Close Unmodified Tabs, Close All Tabs, Pin/Unpin, Open Containing Folder and Reopen Closed Tab.
-- Right-click in the editor for Undo/Redo, Cut/Copy/Paste/Delete, Select All, Base64, Format, line and case tools, Find, Replace, Go to Line, Markdown/HTML preview, Open Containing Folder and Copy File Path. User plugin actions appear there too.
+- Right-click in the editor for Undo/Redo, Cut/Copy/Paste/Delete, Select All, Base64, Format, line and case tools, Find, Replace, Go To, Search on the Web, Markdown/HTML preview, Open Containing Folder and Copy File Path. User plugin actions appear there too.
 - Pinned tabs stay at the front and cannot be closed by accident.
 - Drag tabs to reorder them.
 - Reopen up to 20 recently closed tabs with their content.
@@ -39,6 +39,17 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - A warning is shown before opening very large (50 MB or more) or binary-looking files.
 - Large documents stay responsive: heavy editor features are turned off for very large content.
 - Only one instance runs at a time; files opened from a second launch go to the existing window.
+
+**Search** (Search menu)
+
+- Find (`Ctrl+F`) and Replace (`Ctrl+H`) open a search bar above the editor. It searches as you type, highlights every match and shows "3 of 12". Enter and Shift+Enter go to the next and previous match, Escape closes the bar.
+- Options: match case, whole word (also for letters such as ş, ğ, ç), wrap around and search in selection (turned on by itself when you open the bar with a multi-line selection).
+- Three modes: normal text, extended (`\n`, `\r`, `\t`, `\0`, `\xFF`, `\uFFFF`, `\d065`, `\o101`, `\b01000001`) and regular expressions, with an option to let `.` match line breaks. Matches may span lines, and `\n` matches any line ending.
+- Replace supports `$1`, `\1`, `$<name>` and `$&` in regular expression mode and the escape sequences above in extended mode. Replace All in a document or a selection is a single undo step.
+- The last 20 search and replace terms are kept: press Up/Down in the field or open the clock list.
+- `F3` / `Shift+F3` find the next and previous match without opening the bar; `Ctrl+F3` / `Ctrl+Shift+F3` search for the selection or the word at the cursor.
+- Go To (`Ctrl+G`) jumps to a line (`120`), a line and column (`120:15`) or a character offset (`#3456`). Go to Matching Brace is `Ctrl+B`.
+- Search on the Web opens the selection in your browser; the search address is set in Settings > Search.
 
 **Encoding and line endings**
 
@@ -59,7 +70,7 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 
 **Customization**
 
-- A settings page (Preferences > Settings, `Ctrl+,`) for font, font size, word wrap, soft tabs, tab size, invisible characters, line numbers, tab layout, starting maximized and file encoding defaults.
+- A settings page (Preferences > Settings, `Ctrl+,`) for font, font size, word wrap, soft tabs, tab size, invisible characters, line numbers, tab layout, starting maximized, file encoding defaults and the web search address.
 - Every menu shortcut can be changed or removed, with conflict detection.
 - Five bundled themes (Dark, Light, Matrix, Orange Dark, Soft Light), plus your own themes whose colors you can edit from the settings page.
 - Your own plugins, written in plain JavaScript (see [User plugins](#user-plugins)).
@@ -76,12 +87,17 @@ On macOS, use `Cmd` instead of `Ctrl`. All of these can be changed in Settings >
 | Close tab | `Ctrl+W` |
 | Reopen closed tab | `Ctrl+Shift+T` |
 | Settings | `Ctrl+,` |
+| Find / Replace | `Ctrl+F` / `Ctrl+H` |
+| Find next / previous | `F3` / `Shift+F3` |
+| Select and find next / previous | `Ctrl+F3` / `Ctrl+Shift+F3` |
+| Go to line, column or offset | `Ctrl+G` |
+| Go to matching brace | `Ctrl+B` |
 | Format | `Ctrl+Shift+F` |
 | Sort lines ascending | `Ctrl+Alt+Shift+S` |
 | Base64 encode | `Ctrl+Alt+Shift+E` |
 | Base64 decode | `Ctrl+Alt+Shift+D` |
 
-The usual editing shortcuts of Ace (multiple cursors, find and replace, go to line, and so on) also work.
+The usual editing shortcuts of Ace (multiple cursors, moving and duplicating lines, and so on) also work.
 
 ## Supported languages
 

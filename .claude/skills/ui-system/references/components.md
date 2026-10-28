@@ -213,7 +213,7 @@ The clip-path percentages describe the shape of the check mark, not spacing, so 
 
 ## Menu and menu item (layer 2)
 
-The title bar menus (`.cet-menubar-menu-container`, `.cet-submenu`) and the Ace search box are third-party. Map them to these values in `src/BaseTheme.css` rather than restyling them per instance.
+The title bar menus (`.cet-menubar-menu-container`, `.cet-submenu`) are third-party. Map them to these values in `src/BaseTheme.css` rather than restyling them per instance.
 
 ```css
 .menu {
