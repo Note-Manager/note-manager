@@ -2,7 +2,15 @@
   "name": "note-manager",
   "productName": "Note Manager",
   "version": "1.5.0",
-  "description": "My Electron application description",
+  "description": "A lightweight, fast and multi-functional desktop text editor",
+  "homepage": "https://github.com/Note-Manager/note-manager#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Note-Manager/note-manager.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Note-Manager/note-manager/issues"
+  },
   "main": ".webpack/main/index.cjs",
   "scripts": {
     "start": "electron-forge start",
@@ -83,6 +91,12 @@
     "name": "tdonuk",
     "email": "rtdonuk@gmail.com"
   },
+  "contributors": [
+    {
+      "name": "Hasan YILDIZ",
+      "url": "https://github.com/hasanyildiz"
+    }
+  ],
   "license": "MIT",
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.6.0",

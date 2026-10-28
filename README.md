@@ -2,7 +2,9 @@
 
 [![CI](https://github.com/Note-Manager/note-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/Note-Manager/note-manager/actions/workflows/ci.yml)
 
-A lightweight, fast and multi-functional desktop text editor for Windows, macOS and Linux. Note Manager is built with Electron, React and TypeScript on top of the [Ace](https://ace.c9.io/) editor.
+A lightweight, fast and multi-functional desktop text editor for Windows, macOS and Linux. Note Manager is built with Electron, React and TypeScript on top of the [Ace](https://ace.c9.io/) editor. It is open source, and its code lives at [github.com/Note-Manager/note-manager](https://github.com/Note-Manager/note-manager).
+
+![Note Manager with a formatted JSON document](docs/screenshots/main-window.png)
 
 ## Contents
 
@@ -15,6 +17,7 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - [Themes](#themes)
 - [User plugins](#user-plugins)
 - [Where data is stored](#where-data-is-stored)
+- [Maintainers](#maintainers)
 - [License](#license)
 
 ## Features
@@ -30,6 +33,10 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - Choose a tab layout: a single scrolling row, wrapped rows, or a vertical list.
 - Closing a changed tab or the window asks whether to Save, Don't Save or Cancel.
 - Questions, warnings and errors appear in the app's own themed dialogs and notifications (bottom right), not in system message boxes. Escape cancels a dialog; errors stay until you dismiss them.
+
+![Light theme with the vertical tab layout and a formatted SQL query](docs/screenshots/light-theme-vertical-tabs.png)
+
+*The Light theme with tabs in a vertical list. The pinned tab stays at the top and shows a pin instead of a close button.*
 
 **Files**
 
@@ -60,6 +67,10 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - Bookmarks: `Ctrl+F2` toggles a bookmark on the current line, `F2` / `Shift+F2` go to the next and previous bookmark. Search > Bookmark can also clear or invert them and cut, copy or remove the bookmarked (or the other) lines in a single undo step. Bookmarks move with the text and are kept with the tab.
 - Smart highlighting: select a whole word (for example with a double-click) and its other occurrences are highlighted. It can be turned off in Settings > Search.
 
+| Find All in open tabs | Find in Files |
+| --- | --- |
+| ![Search bar with the results of a search in all open tabs](docs/screenshots/search-results.png) | ![Find in Files searching a folder with file filters](docs/screenshots/find-in-files.png) |
+
 **Encoding and line endings**
 
 - Files are opened with the right encoding: the BOM first, then UTF-8, then a guess of the character set, and the system code page (ANSI) as the last resort.
@@ -69,6 +80,10 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - Characters that the target encoding cannot hold are listed before a conversion or a save, so nothing is lost silently.
 - Settings > Files sets the line ending and encoding of new files, whether encodings are guessed, and whether plain ASCII files count as UTF-8.
 
+| Pick an encoding | The file read again as Windows-1254 |
+| --- | --- |
+| ![Encoding picker filtered to Turkish character sets](docs/screenshots/encoding-picker.png) | ![The same file shown correctly after reopening it as Windows-1254](docs/screenshots/encoding-reopened.png) |
+
 **Editing tools** (Plugins menu)
 
 - **Format**: JSON, XML, HTML, SQL, PL/SQL, JavaScript, TypeScript, CSS, YAML, Markdown and Java (powered by Prettier and dedicated formatters). Formats the selections, or the whole document when nothing is selected.
@@ -77,12 +92,18 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - **Base64**: encode and decode the selection.
 - **Preview**: a sanitized preview for HTML and Markdown. Markdown is rendered GitHub style (tables, task lists, alerts such as `> [!NOTE]`, heading links and highlighted code blocks) in the colors of the current theme, and it follows your edits as you type. Relative images are loaded from the file's folder. Drag the edge between the editor and a tool window such as the preview to change its width (double-click resets it).
 
+![Markdown document with its preview next to it](docs/screenshots/markdown-preview.png)
+
 **Customization**
 
 - A settings page (Preferences > Settings, `Ctrl+,`) for font, font size, word wrap, soft tabs, tab size, invisible characters, line numbers, tab layout, starting maximized, file encoding defaults and the web search address.
 - Every menu shortcut can be changed or removed, with conflict detection.
 - Five bundled themes (Dark, Light, Matrix, Orange Dark, Soft Light), plus your own themes whose colors you can edit from the settings page.
 - Your own plugins, written in plain JavaScript (see [User plugins](#user-plugins)).
+
+| Settings | Shortcuts |
+| --- | --- |
+| ![Settings page with font and theme options](docs/screenshots/settings.png) | ![Shortcut editor in the settings page](docs/screenshots/settings-shortcuts.png) |
 
 ## Keyboard shortcuts
 
@@ -255,6 +276,13 @@ Note Manager keeps its data in the Electron user data folder:
 | `Plugins/` | Your plugins |
 
 If `State.json` is damaged, it is kept as `State.json.corrupt` and the app starts with an empty session.
+
+## Maintainers
+
+- Taha Donuk ([@tdonuk](https://github.com/tdonuk))
+- Hasan YILDIZ ([@hasanyildiz](https://github.com/hasanyildiz))
+
+Bug reports, ideas and pull requests are welcome in the [issue tracker](https://github.com/Note-Manager/note-manager/issues).
 
 ## License
 
