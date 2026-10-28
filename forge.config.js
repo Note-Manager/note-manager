@@ -28,6 +28,7 @@ module.exports = {
       config: {
         icon: "./resources/Icons/note-manager.ico",
         setupIcon: "./resources/Icons/note-manager.ico",
+        loadingGif: "./resources/Installer/loading.gif",
       },
       icon: "./resources/Icons/note-manager.ico"
     },
