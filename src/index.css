@@ -498,6 +498,10 @@ body.resizing-vertical, body.resizing-vertical * {
     gap: var(--space-1);
 }
 
+#searchBar .searchField.filters {
+    flex-basis: calc(var(--control-height-md) * 8);
+}
+
 #searchBar .searchField .textField {
     flex: 1;
     min-width: 0;
@@ -753,7 +757,7 @@ body.resizing-vertical, body.resizing-vertical * {
     visibility: hidden;
 }
 
-#searchResults .searchResultRow:hover .iconButton {
+#searchResults .searchResultRow:hover .iconButton, #searchResults .searchResultRow .iconButton.running {
     visibility: visible;
 }
 

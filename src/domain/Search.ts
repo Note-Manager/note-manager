@@ -7,6 +7,7 @@ export enum SearchMode {
 export enum SearchTarget {
     DOCUMENT = "document",
     OPEN_DOCUMENTS = "open-documents",
+    FOLDER = "folder",
 }
 
 export interface SearchOptions {

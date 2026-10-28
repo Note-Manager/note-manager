@@ -1,8 +1,10 @@
 import {MessageKind, DialogRole, UnencodableChoice, UnsavedChangesChoice} from "../enums";
 import {DialogAction, MessageDialog, Notice} from "../domain/Dialog";
+import {SkippedFile} from "../domain/FindInFiles";
 import {countOf} from "./TextUtils";
 
 const BYTES_PER_MEGABYTE = 1024 * 1024;
+const MAX_LISTED_FILES = 10;
 
 function confirmActions(label: string): Array<DialogAction<boolean>> {
     return [
@@ -110,6 +112,23 @@ export function openFailedNotice(fileName: string, error: unknown): Notice {
 
 export function preferencesFailedNotice(error: unknown): Notice {
     return errorNotice("Your preferences could not be loaded. The defaults are used.", error);
+}
+
+export function replaceInFilesDialog(directory: string, text: string, replacement: string): MessageDialog<boolean> {
+    return {
+        kind: MessageKind.WARNING,
+        title: "Replace in files",
+        message: `Replace every "${text}" with "${replacement}" in ${directory}?`,
+        detail: "Files that are not open are changed on disk and this cannot be undone. Open tabs are changed in the editor, where you can undo it.",
+        actions: confirmActions("Replace All"),
+    };
+}
+
+export function skippedFilesNotice(skipped: Array<SkippedFile>): Notice {
+    const listed = skipped.slice(0, MAX_LISTED_FILES).map(s => `${s.file}: ${s.reason}`);
+    const more = skipped.length > MAX_LISTED_FILES ? [`and ${countOf(skipped.length - MAX_LISTED_FILES, "more file")}`] : [];
+
+    return {kind: MessageKind.WARNING, message: `${countOf(skipped.length, "file")} could not be changed.`, detail: [...listed, ...more].join("\n")};
 }
 
 export function errorNotice(message: string, error: unknown): Notice {

@@ -7,6 +7,7 @@ import {DecodedText, EolType} from "./Encoding";
 import {ThemeInfo} from "./ThemeInfo";
 import {UserPluginInfo} from "./PluginManifest";
 import {MessageDialog, Notice} from "./Dialog";
+import {FileSearchProgress, FileSearchRequest, FileSearchSummary} from "./FindInFiles";
 import type {ThemeVariable} from "../utils/ThemeVariables";
 import type {ShortcutDefinition} from "../utils/Shortcuts";
 import type {ContextMenuGroup} from "../react/components/editor/plugins";
@@ -81,6 +82,7 @@ export interface RendererEvents {
     [EventType.OPEN_ENCODING_PICKER]: {action: EncodingAction},
     [EventType.SHOW_MESSAGE_DIALOG]: {id: number, dialog: MessageDialog<unknown>},
     [EventType.SHOW_NOTICE]: Notice,
+    [EventType.FIND_IN_FILES_PROGRESS]: FileSearchProgress,
 }
 
 export interface InvokeRequests {
@@ -104,6 +106,9 @@ export interface InvokeRequests {
     [EventType.CONFIRM_CONVERSION]: {content: string, encoding: string},
     [EventType.GET_ENCODING_INFO]: void,
     [EventType.SEARCH_ON_WEB]: {text: string},
+    [EventType.SHOW_FOLDER_DIALOG]: {defaultPath?: string},
+    [EventType.FIND_IN_FILES]: FileSearchRequest,
+    [EventType.CANCEL_FIND_IN_FILES]: {id: number},
     [EventType.LOG_INFO]: string,
     [EventType.LOG_WARN]: string,
     [EventType.LOG_ERROR]: string,
@@ -130,6 +135,9 @@ export interface InvokeResponses {
     [EventType.CONFIRM_CONVERSION]: boolean,
     [EventType.GET_ENCODING_INFO]: {ansiCodePage: string},
     [EventType.SEARCH_ON_WEB]: boolean,
+    [EventType.SHOW_FOLDER_DIALOG]: string | undefined,
+    [EventType.FIND_IN_FILES]: FileSearchSummary,
+    [EventType.CANCEL_FIND_IN_FILES]: void,
     [EventType.LOG_INFO]: void,
     [EventType.LOG_WARN]: void,
     [EventType.LOG_ERROR]: void,

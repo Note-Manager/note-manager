@@ -27,6 +27,7 @@ export enum ShortcutId {
     NEXT_SEARCH_RESULT = "search.nextResult",
     PREVIOUS_SEARCH_RESULT = "search.previousResult",
     TOGGLE_SEARCH_RESULTS = "search.toggleResults",
+    FIND_IN_FILES = "search.findInFiles",
     SETTINGS = "preferences.settings",
 }
 
@@ -52,6 +53,7 @@ const BUILT_IN_SHORTCUTS: Array<ShortcutDefinition> = [
     {id: ShortcutId.NEXT_SEARCH_RESULT, label: "Search > Next Search Result", defaultAccelerator: "F4"},
     {id: ShortcutId.PREVIOUS_SEARCH_RESULT, label: "Search > Previous Search Result", defaultAccelerator: "Shift+F4"},
     {id: ShortcutId.TOGGLE_SEARCH_RESULTS, label: "Search > Search Results", defaultAccelerator: "F7"},
+    {id: ShortcutId.FIND_IN_FILES, label: "Search > Find in Files", defaultAccelerator: IS_MAC ? "Cmd+Alt+Shift+F" : "Ctrl+Alt+F"},
     {id: ShortcutId.SETTINGS, label: "Preferences > Settings", defaultAccelerator: "CmdOrCtrl+,"},
 ];
 

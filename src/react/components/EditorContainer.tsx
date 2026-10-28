@@ -59,6 +59,7 @@ export default function EditorContainer() {
         [EditorCommand.TOGGLE_PREVIEW]: () => toggleTool(previewTool),
         [EditorCommand.FIND]: () => search.open(false),
         [EditorCommand.REPLACE]: () => search.open(true),
+        [EditorCommand.FIND_IN_FILES]: search.openInFolder,
         [EditorCommand.FIND_NEXT]: search.findNext,
         [EditorCommand.FIND_PREVIOUS]: search.findPrevious,
         [EditorCommand.SELECT_AND_FIND_NEXT]: search.selectAndFindNext,

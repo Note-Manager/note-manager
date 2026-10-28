@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 import {DEFAULT_SEARCH_OPTIONS, SearchTarget} from "../../domain/Search";
-import {createResultRows, describeHit, findAdjacentHit, getHit, hitKey, previewMatch, SearchRun} from "../SearchResults";
+import {applyProgress, compactHits, createResultRows, describeHit, findAdjacentHit, getHit, hitKey, previewMatch, SearchRun} from "../SearchResults";
 import {createSearchDocument} from "../TextSearch";
 
 const DOCUMENT = createSearchDocument(["a", "a", "a"]);
@@ -35,10 +35,26 @@ describe("SearchResults", () => {
     });
 
     it("describes a hit with its positions and the line preview", () => {
-        const document = createSearchDocument(["one", "two hello", "hello"]);
+        const hits = {name: "a", document: createSearchDocument(["one", "two hello", "hello"]), hits: []};
 
-        expect(describeHit(document, {start: 8, end: 13})).toEqual({start: {row: 1, column: 4}, end: {row: 1, column: 9}, preview: {before: "two ", match: "hello", after: ""}});
-        expect(describeHit(document, {start: 14, end: 19})).toEqual({start: {row: 2, column: 0}, end: {row: 2, column: 5}, preview: {before: "", match: "hello", after: ""}});
+        expect(describeHit(hits, {start: 8, end: 13})).toEqual({start: {row: 1, column: 4}, end: {row: 1, column: 9}, preview: {before: "two ", match: "hello", after: ""}});
+        expect(describeHit(hits, {start: 14, end: 19})).toEqual({start: {row: 2, column: 0}, end: {row: 2, column: 5}, preview: {before: "", match: "hello", after: ""}});
+    });
+
+    it("keeps only the lines of the hits and maps them back to their rows", () => {
+        const document = createSearchDocument(["a hit", "skip", "skip", "two hit", "end next", "hit again", "skip"]);
+        const compact = compactHits(document, [{start: 2, end: 5}, {start: 20, end: 27}, {start: 33, end: 36}]);
+
+        expect(compact.lines).toEqual(["a hit", "two hit", "end next", "hit again"]);
+        expect(compact.lineNumbers).toEqual([0, 3, 4, 5]);
+
+        const hits = {name: "f", document: createSearchDocument(compact.lines), lineNumbers: compact.lineNumbers, hits: compact.hits};
+
+        expect(compact.hits.map(hit => describeHit(hits, hit)).map(({start, end, preview}) => [start, end, preview.match])).toEqual([
+            [{row: 0, column: 2}, {row: 0, column: 5}, "hit"],
+            [{row: 3, column: 4}, {row: 4, column: 3}, "hit…"],
+            [{row: 5, column: 0}, {row: 5, column: 3}, "hit"],
+        ]);
     });
 
     it("lists the rows of runs and skips collapsed parts", () => {
@@ -81,5 +97,16 @@ describe("SearchResults", () => {
 
         expect(getHit(runs, {runId: 2, documentIndex: 0, hitIndex: 1})?.hit).toEqual({start: 2, end: 3});
         expect(getHit(runs, {runId: 3, documentIndex: 0, hitIndex: 0})).toBeUndefined();
+    });
+
+    it("adds streamed files to a folder run", () => {
+        const folderRun = {...run(4, []), target: SearchTarget.FOLDER, directory: "/notes", progress: {scanned: 0, isDone: false, isCancelled: false}};
+        const file = {file: "/notes/sub/a.txt", lines: ["x a"], lineNumbers: [9], hits: [{start: 2, end: 3}]};
+        const updated = applyProgress(folderRun, {id: 4, files: [file], scanned: 3, replaced: 0, replacedFiles: 0, skipped: [], isDone: true});
+
+        expect(updated.hitCount).toBe(1);
+        expect(updated.progress).toEqual({scanned: 3, isDone: true, isCancelled: false, error: undefined});
+        expect(updated.documents[0]).toMatchObject({name: "sub/a.txt", file: "/notes/sub/a.txt", lineNumbers: [9]});
+        expect(describeHit(updated.documents[0], updated.documents[0].hits[0]).start).toEqual({row: 9, column: 2});
     });
 });

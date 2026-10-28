@@ -2,6 +2,7 @@ import {Ace} from "ace-builds";
 import {EditorTab} from "../domain/EditorTab";
 import {EolType, toEditorText} from "../domain/Encoding";
 import {SearchQuery, SearchTarget} from "../domain/Search";
+import {FolderSearch, isSearchedFile, parseFileFilters, relativePath} from "../domain/FindInFiles";
 import {createSearchDocument, offsetToPosition, replaceMatches, SearchResult, searchText, splitLines} from "../utils/TextSearch";
 import {DocumentHits, SearchRun} from "../utils/SearchResults";
 import {appendReplacement} from "../utils/UndoHistory";
@@ -13,6 +14,7 @@ export interface SearchSource {
     activeTab: EditorTab,
     editor: Ace.Editor,
     scope?: Ace.Range,
+    folder?: FolderSearch,
 }
 
 export interface ReplaceSummary {
@@ -22,6 +24,10 @@ export interface ReplaceSummary {
 
 let lastRunId = 0;
 
+export function nextRunId(): number {
+    return ++lastRunId;
+}
+
 export function findInDocuments(source: SearchSource, query: SearchQuery, target: SearchTarget): SearchRun | {error: string} {
     const documents: Array<DocumentHits> = [];
 
@@ -29,15 +35,16 @@ export function findInDocuments(source: SearchSource, query: SearchQuery, target
         const result = searchTab(source, tab, query);
 
         if (result.error) return {error: result.error};
-        if (result.matches.length > 0) documents.push({tabId: tab.id || "", name: tab.name || "", file: tab.file, document: result.document, hits: result.matches});
+        if (result.matches.length > 0) documents.push({tabId: tab.id || "", name: documentName(source, tab, target), file: tab.file, document: result.document, hits: result.matches});
     }
 
     return {
-        id: ++lastRunId,
+        id: nextRunId(),
         query: query,
         target: target,
         documents: documents,
         hitCount: documents.reduce((count, document) => count + document.hits.length, 0),
+        directory: target === SearchTarget.FOLDER ? source.folder?.directory : undefined,
     };
 }
 
@@ -54,8 +61,20 @@ export async function replaceInDocuments(source: SearchSource, query: SearchQuer
     return summary;
 }
 
-function targetTabs(source: SearchSource, target: SearchTarget): Array<EditorTab> {
-    return target === SearchTarget.DOCUMENT ? [source.activeTab] : source.tabs;
+export function targetTabs(source: SearchSource, target: SearchTarget): Array<EditorTab> {
+    if (target === SearchTarget.DOCUMENT) return [source.activeTab];
+    if (target === SearchTarget.OPEN_DOCUMENTS) return source.tabs;
+
+    const folder = source.folder;
+    const filters = folder && parseFileFilters(folder.filters);
+
+    return folder && filters ? source.tabs.filter(tab => tab.file && isSearchedFile(folder, filters, tab.file)) : [];
+}
+
+function documentName(source: SearchSource, tab: EditorTab, target: SearchTarget): string {
+    const relative = target === SearchTarget.FOLDER && tab.file && source.folder ? relativePath(source.folder.directory, tab.file) : undefined;
+
+    return relative ?? tab.name ?? "";
 }
 
 function searchTab(source: SearchSource, tab: EditorTab, query: SearchQuery): SearchResult {

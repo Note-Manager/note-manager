@@ -1,8 +1,19 @@
 import {MutableRefObject, useRef, useState} from "react";
 import {Ace} from "ace-builds";
-import {describeHit, findAdjacentHit, getHit, HitAddress, HitDetails, SearchRun} from "../../utils/SearchResults";
+import {applyProgress, describeHit, DocumentHits, findAdjacentHit, getHit, HitAddress, HitDetails, SearchRun} from "../../utils/SearchResults";
+import {EditorTab} from "../../domain/EditorTab";
+import {isSamePath} from "../../domain/FindInFiles";
+import {EventType} from "../../enums";
+import {logError} from "../../utils/Log";
 import {useEditorContext} from "../components/editor/EditorContext";
 import {selectPositions} from "../EditorSearch";
+import {fireEvent} from "../ApplicationEvents";
+import {useIpcEvents} from "./useIpcEvents";
+
+interface PendingHit {
+    document: DocumentHits,
+    hit: HitDetails,
+}
 
 export function useSearchResults(editorRef: MutableRefObject<Ace.Editor | undefined>) {
     const {tabs, activeTab, setActiveTab} = useEditorContext();
@@ -13,9 +24,17 @@ export function useSearchResults(editorRef: MutableRefObject<Ace.Editor | undefi
     const [activeHit, setActiveHit] = useState<HitAddress>();
     const [focusRequest, setFocusRequest] = useState(0);
 
-    const pendingHit = useRef<HitDetails>();
+    const pendingHit = useRef<PendingHit>();
+
+    useIpcEvents({
+        [EventType.FIND_IN_FILES_PROGRESS]: progress => setRuns(current => current.map(run => run.id === progress.id ? applyProgress(run, progress) : run)),
+    }, []);
 
     const selectHit = (editor: Ace.Editor, hit: HitDetails) => selectPositions(editor, hit.start, hit.end);
+
+    const cancelRun = (runId: number) => fireEvent(EventType.CANCEL_FIND_IN_FILES, {id: runId}).catch(logError("cannot stop the search"));
+
+    const cancelRunning = (runsToCancel: Array<SearchRun>) => runsToCancel.filter(run => run.progress && !run.progress.isDone).forEach(run => cancelRun(run.id));
 
     const addRun = (run: SearchRun) => {
         setRuns(current => [run, ...current]);
@@ -25,11 +44,13 @@ export function useSearchResults(editorRef: MutableRefObject<Ace.Editor | undefi
     };
 
     const removeRun = (runId: number) => {
+        cancelRunning(runs.filter(run => run.id === runId));
         setRuns(current => current.filter(run => run.id !== runId));
         setActiveHit(current => current?.runId === runId ? undefined : current);
     };
 
     const clear = () => {
+        cancelRunning(runs);
         setRuns([]);
         setCollapsed(new Set());
         setActiveHit(undefined);
@@ -45,21 +66,24 @@ export function useSearchResults(editorRef: MutableRefObject<Ace.Editor | undefi
 
     const openHit = (address: HitAddress) => {
         const found = getHit(runs, address);
-        const tab = found && tabs.find(t => t.id === found.document.tabId);
 
         setActiveHit(address);
 
-        if (!found || !tab) return;
+        if (!found) return;
 
-        const hit = describeHit(found.document.document, found.hit);
+        const {document} = found;
+        const hit = describeHit(document, found.hit);
+        const tab = tabs.find(t => isDocumentOf(document, t));
 
-        if (tab === activeTab && editorRef.current) {
+        if (tab && tab === activeTab && editorRef.current) {
             selectHit(editorRef.current, hit);
             return;
         }
 
-        pendingHit.current = hit;
-        setActiveTab(tab);
+        pendingHit.current = {document: document, hit: hit};
+
+        if (tab) setActiveTab(tab);
+        else if (document.file) fireEvent(EventType.FILES_DROPPED, {files: [document.file]}).catch(logError("cannot open " + document.file));
     };
 
     const stepHit = (isBackwards: boolean) => {
@@ -72,11 +96,12 @@ export function useSearchResults(editorRef: MutableRefObject<Ace.Editor | undefi
     };
 
     const onEditorLoad = (editor: Ace.Editor) => {
-        const hit = pendingHit.current;
+        const pending = pendingHit.current;
+
+        if (!pending || !activeTab || !isDocumentOf(pending.document, activeTab)) return;
 
         pendingHit.current = undefined;
-
-        if (hit) selectHit(editor, hit);
+        selectHit(editor, pending.hit);
     };
 
     const close = () => {
@@ -100,6 +125,7 @@ export function useSearchResults(editorRef: MutableRefObject<Ace.Editor | undefi
         addRun: addRun,
         removeRun: removeRun,
         clear: clear,
+        cancelRun: cancelRun,
         toggleCollapsed: toggleCollapsed,
         openHit: openHit,
         nextHit: () => stepHit(false),
@@ -111,3 +137,7 @@ export function useSearchResults(editorRef: MutableRefObject<Ace.Editor | undefi
 }
 
 export type SearchResults = ReturnType<typeof useSearchResults>;
+
+function isDocumentOf(document: DocumentHits, tab: EditorTab): boolean {
+    return document.tabId === tab.id || (!!document.file && !!tab.file && isSamePath(document.file, tab.file));
+}

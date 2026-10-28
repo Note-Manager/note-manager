@@ -17,11 +17,16 @@ import {
     toRange,
     toSpan,
 } from "../EditorSearch";
-import {readSearchHistory, readSearchOptions, storeSearchHistory, storeSearchOptions} from "../SearchStorage";
+import {readFolderSearch, readSearchHistory, readSearchOptions, storeFolderSearch, storeSearchHistory, storeSearchOptions} from "../SearchStorage";
 import {createDebouncer} from "../Debounce";
 import {findInDocuments, replaceInDocuments, ReplaceSummary, SearchSource} from "../OpenDocuments";
 import {markStateChanged} from "../StateChangeTracker";
+import {findInFolder, FolderSearchResult, replaceInFolder} from "../FolderSearch";
+import {fireEvent} from "../ApplicationEvents";
+import {EventType} from "../../enums";
+import {FolderSearch, getParentDirectory} from "../../domain/FindInFiles";
 import {useEditorContext} from "../components/editor/EditorContext";
+import {notifyError} from "../Dialogs";
 
 export interface SearchStatus {
     count: number,
@@ -34,9 +39,14 @@ const MESSAGES = {
     NO_RESULTS: "No results",
     NO_MORE_RESULTS: "No more results",
     SELECT_TEXT_FIRST: "Select the text to search in first",
+    CHOOSE_FOLDER: "Choose a folder to search in first",
     replaced: ({count, documentCount}: ReplaceSummary, target: SearchTarget) => `Replaced ${countOf(count, "match", "matches")}`
         + (target === SearchTarget.OPEN_DOCUMENTS ? ` in ${countOf(documentCount, "document")}` : ""),
     found: ({hitCount, documents}: SearchRun) => `Found ${countOf(hitCount, "match", "matches")} in ${countOf(documents.length, "document")}`,
+    folderResult: (verb: string, {count, fileCount, isCancelled, error}: FolderSearchResult) => error
+        ?? `${isCancelled ? "Stopped. " : ""}${verb} ${countOf(count, "match", "matches")} in ${countOf(fileCount, "file")}`,
+    SEARCHING_FOLDER: "Searching the folder...",
+    REPLACING_IN_FOLDER: "Replacing in the folder...",
 };
 
 const debounceRefresh = createDebouncer(REFRESH_DELAY);
@@ -51,6 +61,7 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
     const [history, setHistory] = useState(readSearchHistory);
     const [scope, setScope] = useState<Ace.Range>();
     const [target, setTarget] = useState(SearchTarget.DOCUMENT);
+    const [folder, setFolder] = useState<FolderSearch>(readFolderSearch);
     const [message, setMessage] = useState<string>();
     const [focusRequest, setFocusRequest] = useState(0);
     const [revision, setRevision] = useState(0);
@@ -271,6 +282,12 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
         activeTab: activeTab,
         editor: editor,
         scope: searchTarget === SearchTarget.DOCUMENT ? scope : undefined,
+        folder: folder,
+    };
+
+    const refreshTabs = () => {
+        markStateChanged();
+        setTabs([...tabs]);
     };
 
     const replaceAll = () => {
@@ -278,15 +295,24 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
         const source = editor && createSource(editor, target);
 
         if (!source || !resultFor(query)?.regex) return navigate(false);
+        if (target === SearchTarget.FOLDER && !folder.directory) return showMessage(MESSAGES.CHOOSE_FOLDER);
 
         rememberReplace();
 
+        if (target === SearchTarget.FOLDER) {
+            setMessage(MESSAGES.REPLACING_IN_FOLDER);
+            replaceInFolder(source, query, folder, replacement)
+                .then(result => {
+                    refreshTabs();
+                    setMessage(result && MESSAGES.folderResult("Replaced", result));
+                })
+                .catch(notifyError("Replace in files failed"));
+            return;
+        }
+
         replaceInDocuments(source, query, target, replacement)
             .then(summary => {
-                if (target === SearchTarget.OPEN_DOCUMENTS) {
-                    markStateChanged();
-                    setTabs([...tabs]);
-                }
+                if (target === SearchTarget.OPEN_DOCUMENTS) refreshTabs();
 
                 setMessage(summary.count > 0 ? MESSAGES.replaced(summary, target) : MESSAGES.NO_RESULTS);
             })
@@ -301,11 +327,13 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
         if (!source) return;
         if (!term) return open(isReplace);
 
-        const run = findInDocuments(source, {...options, text: term}, searchTarget);
-
         setText(term);
         setTarget(searchTarget);
         rememberFind(term);
+
+        if (searchTarget === SearchTarget.FOLDER) return findAllInFolder(source, {...options, text: term});
+
+        const run = findInDocuments(source, {...options, text: term}, searchTarget);
 
         if ("error" in run) return showMessage(run.error);
 
@@ -313,10 +341,40 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
         onFindAll(run);
     };
 
+    const findAllInFolder = (source: SearchSource, searchQuery: SearchQuery) => {
+        if (!folder.directory) return showMessage(MESSAGES.CHOOSE_FOLDER);
+
+        const search = findInFolder(source, searchQuery, folder, onFindAll);
+
+        if ("error" in search) return showMessage(search.error);
+
+        setMessage(MESSAGES.SEARCHING_FOLDER);
+        search
+            .then(result => setMessage(MESSAGES.folderResult("Found", result)))
+            .catch(notifyError("Find in files failed"));
+    };
+
     const changeTarget = (next: SearchTarget) => {
         setTarget(next);
 
-        if (next === SearchTarget.OPEN_DOCUMENTS) changeScope(undefined);
+        if (next !== SearchTarget.DOCUMENT) changeScope(undefined);
+        if (next === SearchTarget.FOLDER && !folder.directory && activeTab?.file) changeFolder({directory: getParentDirectory(activeTab.file)});
+    };
+
+    const changeFolder = (changes: Partial<FolderSearch>) => {
+        const next = {...folder, ...changes};
+
+        setFolder(next);
+        storeFolderSearch(next);
+    };
+
+    const browseFolder = () => fireEvent(EventType.SHOW_FOLDER_DIALOG, {defaultPath: folder.directory})
+        .then(directory => directory && changeFolder({directory: directory}))
+        .catch(logError("cannot choose a folder"));
+
+    const openInFolder = () => {
+        open(isReplace);
+        changeTarget(SearchTarget.FOLDER);
     };
 
     const changeText = (next: string) => {
@@ -387,8 +445,12 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
         replace: replace,
         replaceAll: replaceAll,
         target: target,
+        folder: folder,
         findAll: findAll,
         changeTarget: changeTarget,
+        changeFolder: changeFolder,
+        browseFolder: browseFolder,
+        openInFolder: openInFolder,
         changeText: changeText,
         changeReplacement: setReplacement,
         changeOptions: changeOptions,
