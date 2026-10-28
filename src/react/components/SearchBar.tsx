@@ -1,6 +1,8 @@
 import React, {RefObject, useEffect, useRef, useState} from "react";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faClock} from "@fortawesome/free-regular-svg-icons/faClock";
+import {faEye} from "@fortawesome/free-regular-svg-icons/faEye";
+import {faFolderOpen} from "@fortawesome/free-regular-svg-icons/faFolderOpen";
 import {SearchMode, SearchTarget} from "../../domain/Search";
 import {EditorSearch, SearchStatus} from "../hooks/useEditorSearch";
 import {classNames} from "../ClassNames";
@@ -9,6 +11,7 @@ import {countOf} from "../../utils/TextUtils";
 const SEARCH_TARGETS = [
     {target: SearchTarget.DOCUMENT, label: "This file", title: "Find All and Replace All work in this file"},
     {target: SearchTarget.OPEN_DOCUMENTS, label: "Open tabs", title: "Find All and Replace All work in every open tab"},
+    {target: SearchTarget.FOLDER, label: "Folder", title: "Find All and Replace All work in the files of a folder"},
 ];
 
 export default function SearchBar({search}: {search: EditorSearch}) {
@@ -66,7 +69,7 @@ export default function SearchBar({search}: {search: EditorSearch}) {
                         }
                         <span className={"searchDivider"}/>
                         <OptionToggle label={"⇲"} title={"Search in selection"} isPressed={search.isInSelection} onToggle={search.toggleInSelection}
-                            isDisabled={search.target === SearchTarget.OPEN_DOCUMENTS}/>
+                            isDisabled={search.target !== SearchTarget.DOCUMENT}/>
                         <OptionToggle label={"↻"} title={"Wrap around"} isPressed={options.wrap} onToggle={() => search.changeOptions({wrap: !options.wrap})}/>
                         <span className={"searchDivider"}/>
                         <div className={"searchTargets"} role={"radiogroup"} aria-label={"Search in"}>
@@ -85,6 +88,7 @@ export default function SearchBar({search}: {search: EditorSearch}) {
                     <button type={"button"} className={"btn"} title={"List every match in the search results (Alt+Enter)"} onClick={() => search.findAll()}>Find All</button>
                     <button type={"button"} className={"iconButton danger"} aria-label={"Close search"} title={"Close (Escape)"} onClick={search.close}>×</button>
                 </div>
+                {search.target === SearchTarget.FOLDER && <FolderRow search={search}/>}
                 {search.isReplace &&
                     <div className={"searchRow"}>
                         <SearchField label={"Replace"} value={search.replacement} history={search.history.replace}
@@ -171,8 +175,42 @@ function SearchField({label, inputRef, value, history, isInvalid, onChange, onKe
     );
 }
 
+function FolderRow({search}: {search: EditorSearch}) {
+    const {folder} = search;
+
+    const onKeyDown = (event: React.KeyboardEvent) => {
+        if (event.key !== "Enter") return;
+
+        event.preventDefault();
+        search.findAll();
+    };
+
+    return (
+        <div className={"searchRow"}>
+            <div className={"searchField"}>
+                <input type={"text"} className={"textField"} spellCheck={false} aria-label={"Folder"} placeholder={"Folder"} value={folder.directory}
+                    onChange={event => search.changeFolder({directory: event.target.value})} onKeyDown={onKeyDown}/>
+                <button type={"button"} className={"iconButton"} aria-label={"Choose folder"} title={"Choose folder"} onClick={search.browseFolder}>
+                    <FontAwesomeIcon icon={faFolderOpen}/>
+                </button>
+            </div>
+            <div className={"searchField filters"}>
+                <input type={"text"} className={"textField"} spellCheck={false} aria-label={"File filters"} placeholder={"Filters: *.txt *.md !node_modules"}
+                    title={"File name patterns separated by spaces. Start a pattern with ! to skip matching files and folders."}
+                    value={folder.filters} onChange={event => search.changeFolder({filters: event.target.value})} onKeyDown={onKeyDown}/>
+            </div>
+            <div className={"searchOptions"}>
+                <OptionToggle label={"**"} title={"Include subfolders"} isPressed={folder.includeSubfolders}
+                    onToggle={() => search.changeFolder({includeSubfolders: !folder.includeSubfolders})}/>
+                <OptionToggle label={<FontAwesomeIcon icon={faEye}/>} title={"Include hidden files and folders"} isPressed={folder.includeHidden}
+                    onToggle={() => search.changeFolder({includeHidden: !folder.includeHidden})}/>
+            </div>
+        </div>
+    );
+}
+
 function OptionToggle({label, title, isPressed, onToggle, className, isDisabled}: {
-    label: string,
+    label: React.ReactNode,
     title: string,
     isPressed: boolean,
     onToggle: () => void,

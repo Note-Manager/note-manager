@@ -1,5 +1,7 @@
 import {SearchQuery, SearchTarget} from "../domain/Search";
-import {offsetToPosition, readLine, SearchDocument, TextPosition, TextSpan} from "./TextSearch";
+import {FileMatches, FileSearchProgress, relativePath} from "../domain/FindInFiles";
+import {createSearchDocument, offsetToPosition, readLine, SearchDocument, TextPosition, TextSpan} from "./TextSearch";
+import {getFileName} from "./TextUtils";
 
 export interface MatchPreview {
     before: string,
@@ -14,11 +16,25 @@ export interface HitDetails {
 }
 
 export interface DocumentHits {
-    tabId: string,
+    tabId?: string,
     name: string,
     file?: string,
     document: SearchDocument,
+    lineNumbers?: Array<number>,
     hits: Array<TextSpan>,
+}
+
+export interface CompactHits {
+    lines: Array<string>,
+    lineNumbers: Array<number>,
+    hits: Array<TextSpan>,
+}
+
+export interface RunProgress {
+    scanned: number,
+    isDone: boolean,
+    isCancelled: boolean,
+    error?: string,
 }
 
 export interface SearchRun {
@@ -27,6 +43,8 @@ export interface SearchRun {
     target: SearchTarget,
     documents: Array<DocumentHits>,
     hitCount: number,
+    directory?: string,
+    progress?: RunProgress,
 }
 
 export interface HitAddress {
@@ -70,12 +88,64 @@ export function previewMatch(line: string, start: number, end: number): MatchPre
     };
 }
 
-export function describeHit(document: SearchDocument, hit: TextSpan): HitDetails {
+export function describeHit({document, lineNumbers}: DocumentHits, hit: TextSpan): HitDetails {
     const start = offsetToPosition(document.lineStarts, hit.start);
     const end = offsetToPosition(document.lineStarts, hit.end);
     const line = readLine(document, start.row);
+    const toRow = (row: number) => lineNumbers ? lineNumbers[row] : row;
 
-    return {start: start, end: end, preview: previewMatch(line, start.column, end.row === start.row ? end.column : line.length + 1)};
+    return {
+        start: {row: toRow(start.row), column: start.column},
+        end: {row: toRow(end.row), column: end.column},
+        preview: previewMatch(line, start.column, end.row === start.row ? end.column : line.length + 1),
+    };
+}
+
+export function compactHits(document: SearchDocument, matches: Array<TextSpan>): CompactHits {
+    const lineNumbers: Array<number> = [];
+    const compactStarts: Array<number> = [];
+    let length = 0;
+
+    const includeRow = (row: number) => {
+        if (row <= (lineNumbers[lineNumbers.length - 1] ?? -1)) return;
+
+        lineNumbers.push(row);
+        compactStarts.push(length);
+        length += readLine(document, row).length + 1;
+    };
+    const toCompact = (position: TextPosition) => compactStarts[lineNumbers.lastIndexOf(position.row)] + position.column;
+
+    const hits = matches.map(match => {
+        const start = offsetToPosition(document.lineStarts, match.start);
+        const end = offsetToPosition(document.lineStarts, match.end);
+
+        for (let row = start.row; row <= end.row; row++) includeRow(row);
+
+        return {start: toCompact(start), end: toCompact(end)};
+    });
+
+    return {lines: lineNumbers.map(row => readLine(document, row)), lineNumbers: lineNumbers, hits: hits};
+}
+
+export function toDocumentHits(matches: FileMatches, directory: string): DocumentHits {
+    return {
+        name: relativePath(directory, matches.file) ?? getFileName(matches.file),
+        file: matches.file,
+        document: createSearchDocument(matches.lines),
+        lineNumbers: matches.lineNumbers,
+        hits: matches.hits,
+    };
+}
+
+export function applyProgress(run: SearchRun, progress: FileSearchProgress): SearchRun {
+    const documents = progress.files.map(matches => toDocumentHits(matches, run.directory ?? ""));
+
+    return {
+        ...run,
+        documents: documents.length > 0 ? [...run.documents, ...documents] : run.documents,
+        hitCount: documents.reduce((count, document) => count + document.hits.length, run.hitCount),
+        progress: {scanned: progress.scanned, isDone: progress.isDone, isCancelled: !!progress.isCancelled, error: progress.error},
+    };
 }
 
 export function documentKey(runId: number, documentIndex: number): string {

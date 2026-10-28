@@ -2,6 +2,7 @@ import {app} from "electron";
 import * as path from "node:path";
 import fs from "node:fs";
 import {SystemPaths} from "../enums";
+import {BINARY_SAMPLE_SIZE, isBinaryContent} from "./EncodingUtils";
 
 export function writeFile(filePath: string, content: string | Uint8Array) {
     fs.writeFileSync(filePath, content);
@@ -48,13 +49,10 @@ export async function isBinaryFile(filePath: string) {
     const handle = await fs.promises.open(filePath, "r");
 
     try {
-        const buffer = Buffer.alloc(8000);
+        const buffer = Buffer.alloc(BINARY_SAMPLE_SIZE);
         const {bytesRead} = await handle.read(buffer, 0, buffer.length, 0);
-        const content = buffer.subarray(0, bytesRead);
 
-        if (bytesRead >= 2 && ((content[0] === 0xFF && content[1] === 0xFE) || (content[0] === 0xFE && content[1] === 0xFF))) return false;
-
-        return content.includes(0);
+        return isBinaryContent(buffer.subarray(0, bytesRead));
     } finally {
         await handle.close();
     }

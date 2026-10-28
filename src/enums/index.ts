@@ -45,7 +45,11 @@ export enum EventType {
     EOL_ACTION = "eol-action",
     OPEN_ENCODING_PICKER = "open-encoding-picker",
     GET_ENCODING_INFO = "get-encoding-info",
-    SEARCH_ON_WEB = "search-on-web"
+    SEARCH_ON_WEB = "search-on-web",
+    SHOW_FOLDER_DIALOG = "show-folder-dialog",
+    FIND_IN_FILES = "find-in-files",
+    CANCEL_FIND_IN_FILES = "cancel-find-in-files",
+    FIND_IN_FILES_PROGRESS = "find-in-files-progress"
 }
 
 export enum EncodingAction {
@@ -110,5 +114,6 @@ export enum EditorCommand {
     NEXT_SEARCH_RESULT = "next-search-result",
     PREVIOUS_SEARCH_RESULT = "previous-search-result",
     TOGGLE_SEARCH_RESULTS = "toggle-search-results",
+    FIND_IN_FILES = "find-in-files",
     TOGGLE_PREVIEW = "toggle-preview",
 }

@@ -9,6 +9,7 @@ export interface DetectionOptions {
 }
 
 const DETECTION_SAMPLE_SIZE = 64 * 1024;
+export const BINARY_SAMPLE_SIZE = 8000;
 const SINGLE_BYTE_CONFIDENCE = 25;
 const MULTI_BYTE_CONFIDENCE = 50;
 
@@ -132,6 +133,12 @@ function guessCharacterSet(buffer: Uint8Array): string | undefined {
     }
 
     return undefined;
+}
+
+export function isBinaryContent(bytes: Uint8Array): boolean {
+    if (bytes.length >= 2 && ((bytes[0] === 0xFF && bytes[1] === 0xFE) || (bytes[0] === 0xFE && bytes[1] === 0xFF))) return false;
+
+    return bytes.subarray(0, BINARY_SAMPLE_SIZE).includes(0);
 }
 
 export function detectEncoding(buffer: Uint8Array, options: DetectionOptions): string {

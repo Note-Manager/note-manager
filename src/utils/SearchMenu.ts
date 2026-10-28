@@ -8,6 +8,7 @@ type CommandRunner = (command: EditorCommand) => void;
 const SEARCH_ITEMS: Partial<Record<EditorCommand, {label: string, shortcut: ShortcutId}>> = {
     [EditorCommand.FIND]: {label: "Find...", shortcut: ShortcutId.FIND},
     [EditorCommand.REPLACE]: {label: "Replace...", shortcut: ShortcutId.REPLACE},
+    [EditorCommand.FIND_IN_FILES]: {label: "Find in Files...", shortcut: ShortcutId.FIND_IN_FILES},
     [EditorCommand.FIND_NEXT]: {label: "Find Next", shortcut: ShortcutId.FIND_NEXT},
     [EditorCommand.FIND_PREVIOUS]: {label: "Find Previous", shortcut: ShortcutId.FIND_PREVIOUS},
     [EditorCommand.SELECT_AND_FIND_NEXT]: {label: "Select and Find Next", shortcut: ShortcutId.SELECT_AND_FIND_NEXT},
@@ -23,7 +24,7 @@ const SEARCH_ITEMS: Partial<Record<EditorCommand, {label: string, shortcut: Shor
 };
 
 const SEARCH_MENU_GROUPS = [
-    [EditorCommand.FIND, EditorCommand.REPLACE],
+    [EditorCommand.FIND, EditorCommand.REPLACE, EditorCommand.FIND_IN_FILES],
     [EditorCommand.FIND_NEXT, EditorCommand.FIND_PREVIOUS, EditorCommand.SELECT_AND_FIND_NEXT, EditorCommand.SELECT_AND_FIND_PREVIOUS],
     [EditorCommand.FIND_ALL_IN_DOCUMENT, EditorCommand.FIND_ALL_IN_OPEN_DOCUMENTS],
     [EditorCommand.NEXT_SEARCH_RESULT, EditorCommand.PREVIOUS_SEARCH_RESULT, EditorCommand.TOGGLE_SEARCH_RESULTS],

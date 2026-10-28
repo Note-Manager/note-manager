@@ -51,6 +51,8 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - Find All (Alt+Enter in the search field) lists every match in a results panel at the bottom, either in this file or in all open tabs (pick "This file" or "Open tabs" in the bar). Each search stays in the panel, grouped by tab, with the line number and the matched text highlighted. Click a result or press Enter to jump to it, even in another tab; Up/Down, Left/Right (collapse/expand), Delete (remove a search) and Escape work in the panel. The panel can be resized and handles over a million results.
 - `F4` / `Shift+F4` go to the next and previous result of the newest search, and `F7` shows or hides the panel.
 - With "Open tabs" chosen, Replace All changes every open tab. Tabs in the background can be undone with `Ctrl+Z` when you switch to them.
+- Find in Files (`Ctrl+Alt+F`, or "Folder" in the search bar) searches every file of a folder in the background. Pick the folder or type its path, add file filters such as `*.txt *.md !node_modules` (a `!` pattern skips matching files and folders), and choose whether to include subfolders and hidden files. Results arrive in the panel while the search runs and can be stopped. Each file is read with its own encoding, binary files are skipped, and clicking a result opens the file at the match.
+- Replace All with "Folder" chosen asks first, then changes the files on disk and keeps each file's encoding and line endings. Files that are open in tabs are changed in the editor instead, so the change can still be undone. A file whose encoding cannot hold the replacement is left alone and listed in a notice.
 - Go To (`Ctrl+G`) jumps to a line (`120`), a line and column (`120:15`) or a character offset (`#3456`). Go to Matching Brace is `Ctrl+B`.
 - Search on the Web opens the selection in your browser; the search address is set in Settings > Search.
 
@@ -93,6 +95,7 @@ On macOS, use `Cmd` instead of `Ctrl`. All of these can be changed in Settings >
 | Find / Replace | `Ctrl+F` / `Ctrl+H` |
 | Find next / previous | `F3` / `Shift+F3` |
 | Select and find next / previous | `Ctrl+F3` / `Ctrl+Shift+F3` |
+| Find in files | `Ctrl+Alt+F` (`Cmd+Alt+Shift+F` on macOS) |
 | Next / previous search result | `F4` / `Shift+F4` |
 | Show or hide search results | `F7` |
 | Go to line, column or offset | `Ctrl+G` |

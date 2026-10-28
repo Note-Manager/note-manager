@@ -2,10 +2,11 @@ import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from "reac
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTrashCan} from "@fortawesome/free-regular-svg-icons/faTrashCan";
 import {faTimesRectangle} from "@fortawesome/free-regular-svg-icons/faTimesRectangle";
+import {faCircleStop} from "@fortawesome/free-regular-svg-icons/faCircleStop";
 import PanelResizer, {ResizeAxis} from "./PanelResizer";
 import {SEARCH_RESULTS_PANEL} from "./PanelSizes";
 import {SearchTarget} from "../../domain/Search";
-import {createResultRows, describeHit, hitKey, ResultRow} from "../../utils/SearchResults";
+import {createResultRows, describeHit, hitKey, ResultRow, SearchRun} from "../../utils/SearchResults";
 import {SearchResults} from "../hooks/useSearchResults";
 import {classNames} from "../ClassNames";
 import {countOf} from "../../utils/TextUtils";
@@ -133,7 +134,8 @@ export default function SearchResultsPanel({results, height, onResize}: {results
                                 isActive={row.key === activeKey}
                                 isCollapsed={results.collapsed.has(row.key)}
                                 onActivate={() => activate(row)}
-                                onRemove={() => results.removeRun(row.run.id)}/>
+                                onRemove={() => results.removeRun(row.run.id)}
+                                onCancel={() => results.cancelRun(row.run.id)}/>
                         ))}
                     </div>
                 </div>
@@ -142,7 +144,7 @@ export default function SearchResultsPanel({results, height, onResize}: {results
     );
 }
 
-function ResultRowView({row, top, isCursor, isActive, isCollapsed, onActivate, onRemove}: {
+function ResultRowView({row, top, isCursor, isActive, isCollapsed, onActivate, onRemove, onCancel}: {
     row: ResultRow,
     top: number,
     isCursor: boolean,
@@ -150,7 +152,10 @@ function ResultRowView({row, top, isCursor, isActive, isCollapsed, onActivate, o
     isCollapsed: boolean,
     onActivate: () => void,
     onRemove: () => void,
+    onCancel: () => void,
 }) {
+    const isRunning = row.kind === "run" && !!row.run.progress && !row.run.progress.isDone;
+
     return (
         <div id={rowId(row)} role={"treeitem"} className={classNames("searchResultRow", row.kind, isCursor && "cursor")} style={{top: top + "px"}}
             aria-level={row.kind === "run" ? 1 : row.kind === "document" ? 2 : 3}
@@ -160,6 +165,15 @@ function ResultRowView({row, top, isCursor, isActive, isCollapsed, onActivate, o
             onClick={onActivate}>
             {row.kind !== "hit" && <span className={"searchResultTwisty"} aria-hidden={true}>{isCollapsed ? "▸" : "▾"}</span>}
             <RowContent row={row}/>
+            {isRunning &&
+                <button type={"button"} className={"iconButton running"} tabIndex={-1} aria-label={"Stop this search"} title={"Stop this search"}
+                    onClick={event => {
+                        event.stopPropagation();
+                        onCancel();
+                    }}>
+                    <FontAwesomeIcon icon={faCircleStop}/>
+                </button>
+            }
             {row.kind === "run" &&
                 <button type={"button"} className={"iconButton danger"} tabIndex={-1} aria-label={"Remove this search"} title={"Remove this search (Delete)"}
                     onClick={event => {
@@ -173,15 +187,10 @@ function ResultRowView({row, top, isCursor, isActive, isCollapsed, onActivate, o
 
 function RowContent({row}: {row: ResultRow}) {
     if (row.kind === "run") {
-        const {query, hitCount, documents, target} = row.run;
-
         return (
             <span className={"searchResultLabel"}>
-                <span className={"searchResultQuery"}>{query.text}</span>
-                <span className={"searchResultMeta"}>
-                    {`${countOf(hitCount, "hit")} in ${countOf(documents.length, "document")}`}
-                    {` · ${target === SearchTarget.OPEN_DOCUMENTS ? "open tabs" : "this file"}`}
-                </span>
+                <span className={"searchResultQuery"}>{row.run.query.text}</span>
+                <span className={"searchResultMeta"}>{describeRun(row.run)}</span>
             </span>
         );
     }
@@ -191,12 +200,12 @@ function RowContent({row}: {row: ResultRow}) {
             <span className={"searchResultLabel"} title={row.document.file}>
                 <span>{row.document.name}</span>
                 <span className={"searchResultMeta"}>{countOf(row.document.hits.length, "hit")}</span>
-                {row.document.file && <span className={"searchResultMeta"}>{row.document.file}</span>}
+                {row.document.file && row.run.target !== SearchTarget.FOLDER && <span className={"searchResultMeta"}>{row.document.file}</span>}
             </span>
         );
     }
 
-    const {start, preview} = describeHit(row.document.document, row.hit);
+    const {start, preview} = describeHit(row.document, row.hit);
 
     return (
         <span className={"searchResultLabel"}>
@@ -204,6 +213,20 @@ function RowContent({row}: {row: ResultRow}) {
             <span className={"searchResultPreview"}>{preview.before}<mark>{preview.match}</mark>{preview.after}</span>
         </span>
     );
+}
+
+function describeRun({hitCount, documents, target, directory, progress}: SearchRun): string {
+    const isFolder = target === SearchTarget.FOLDER;
+    const parts = [
+        `${countOf(hitCount, "hit")} in ${countOf(documents.length, isFolder ? "file" : "document")}`,
+        isFolder ? directory : target === SearchTarget.OPEN_DOCUMENTS ? "open tabs" : "this file",
+    ];
+
+    if (progress?.error) parts.push("failed: " + progress.error);
+    else if (progress?.isCancelled) parts.push(`stopped after ${countOf(progress.scanned, "file")}`);
+    else if (progress && !progress.isDone) parts.push(`searching, ${countOf(progress.scanned, "file")} read`);
+
+    return parts.join(" · ");
 }
 
 function rowId(row: ResultRow): string {

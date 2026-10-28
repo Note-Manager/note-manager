@@ -16,6 +16,7 @@ const BUILT_IN_COMMANDS: EditorCommandHandlers = {
 const KEEPS_FOCUS = [
     EditorCommand.FIND,
     EditorCommand.REPLACE,
+    EditorCommand.FIND_IN_FILES,
     EditorCommand.FIND_NEXT,
     EditorCommand.FIND_PREVIOUS,
     EditorCommand.SELECT_AND_FIND_NEXT,

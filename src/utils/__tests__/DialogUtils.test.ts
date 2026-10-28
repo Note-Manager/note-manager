@@ -1,5 +1,14 @@
 import {describe, expect, it} from "vitest";
-import {conversionDialog, getUnencodableMessage, getUnsavedChangesMessage, missingRecentFileNotice, unencodableSaveDialog, unsavedChangesDialog} from "../DialogUtils";
+import {
+    conversionDialog,
+    getUnencodableMessage,
+    getUnsavedChangesMessage,
+    missingRecentFileNotice,
+    replaceInFilesDialog,
+    skippedFilesNotice,
+    unencodableSaveDialog,
+    unsavedChangesDialog,
+} from "../DialogUtils";
 import {DialogRole, MessageKind, UnencodableChoice, UnsavedChangesChoice} from "../../enums";
 import {getCancelAction} from "../../domain/Dialog";
 
@@ -41,5 +50,20 @@ describe("DialogUtils", () => {
     it("names the characters an encoding cannot hold", () => {
         expect(getUnencodableMessage("ANSI", 1, ["€"])).toBe('1 character cannot be represented in ANSI and will be replaced with "?": "€"');
         expect(getUnencodableMessage("ISO 8859-1", 12, ["ş", "ğ"])).toBe('12 characters cannot be represented in ISO 8859-1 and will be replaced with "?": "ş" "ğ" ...');
+    });
+
+    it("asks before replacing in files and cancels by default", () => {
+        const dialog = replaceInFilesDialog("/notes", "a", "b");
+
+        expect(dialog.message).toBe('Replace every "a" with "b" in /notes?');
+        expect(getCancelAction(dialog).value).toBe(false);
+    });
+
+    it("lists at most ten skipped files", () => {
+        const skipped = Array.from({length: 12}, (_, i) => ({file: "f" + i, reason: "locked"}));
+        const notice = skippedFilesNotice(skipped);
+
+        expect(notice.message).toBe("12 files could not be changed.");
+        expect(notice.detail?.split("\n")).toEqual([...skipped.slice(0, 10).map(s => s.file + ": locked"), "and 2 more files"]);
     });
 });
