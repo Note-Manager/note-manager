@@ -4,7 +4,7 @@ import {isKnownEol} from "../domain/Encoding";
 import {createEolMenu} from "../utils/EncodingMenu";
 import {ShortcutId} from "../utils/Shortcuts";
 import {getAccelerator} from "../utils/Accelerators";
-import {createSearchMenuItem} from "../utils/SearchMenu";
+import {CLEAR_STYLE_MENU, createSearchMenuItem, STYLE_MENU} from "../utils/SearchMenu";
 import {popupMenu, send, Sender, sendPluginAction} from "../utils/WindowUtils";
 import {ContextMenuGroup} from "../react/components/editor/plugins";
 import {EditorMenuRequest, TabMenuRequest} from "../domain/IpcContract";
@@ -92,6 +92,13 @@ function createEditorMenu(sender: WebContents, data: EditorMenuRequest): Array<M
     );
 
     if (data?.canPreview) template.push({label: data.isPreviewOpen ? "Hide Preview" : "Show Preview", click: command(EditorCommand.TOGGLE_PREVIEW)});
+
+    template.push(
+        {type: "separator"},
+        createSearchMenuItem(EditorCommand.TOGGLE_BOOKMARK, runCommand),
+        createSearchMenuItem(STYLE_MENU, runCommand),
+        createSearchMenuItem(CLEAR_STYLE_MENU, runCommand),
+    );
 
     template.push(
         {type: "separator"},

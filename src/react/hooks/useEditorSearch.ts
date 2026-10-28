@@ -11,7 +11,7 @@ import {
     createAnchoredRange,
     MatchHighlight,
     readSearchTerm,
-    removeBuiltInSearchCommands,
+    removeOverriddenCommands,
     searchSession,
     selectRange,
     toRange,
@@ -42,6 +42,7 @@ const MESSAGES = {
     CHOOSE_FOLDER: "Choose a folder to search in first",
     replaced: ({count, documentCount}: ReplaceSummary, target: SearchTarget) => `Replaced ${countOf(count, "match", "matches")}`
         + (target === SearchTarget.OPEN_DOCUMENTS ? ` in ${countOf(documentCount, "document")}` : ""),
+    marked: (count: number) => `Marked ${countOf(count, "match", "matches")}`,
     found: ({hitCount, documents}: SearchRun) => `Found ${countOf(hitCount, "match", "matches")} in ${countOf(documents.length, "document")}`,
     folderResult: (verb: string, {count, fileCount, isCancelled, error}: FolderSearchResult) => error
         ?? `${isCancelled ? "Stopped. " : ""}${verb} ${countOf(count, "match", "matches")} in ${countOf(fileCount, "file")}`,
@@ -51,7 +52,7 @@ const MESSAGES = {
 
 const debounceRefresh = createDebouncer(REFRESH_DELAY);
 
-export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefined>, onFindAll: (run: SearchRun) => void) {
+export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefined>, onFindAll: (run: SearchRun) => void, onMarkAll: (query: SearchQuery, withBookmarks: boolean) => SearchResult | undefined) {
     const {tabs, activeTab, setTabs} = useEditorContext();
     const [isOpen, setIsOpen] = useState(false);
     const [isReplace, setIsReplace] = useState(false);
@@ -117,7 +118,7 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
     };
 
     const onEditorLoad = (editor: Ace.Editor) => {
-        removeBuiltInSearchCommands(editor);
+        removeOverriddenCommands(editor);
         removeScopeMarker.current = undefined;
         setScope(undefined);
 
@@ -319,26 +320,48 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
             .catch(logError("cannot replace all"));
     };
 
+    const resolveQuery = (editor: Ace.Editor): SearchQuery | undefined => {
+        const term = text || readSearchTerm(editor).text;
+
+        if (!term) {
+            open(isReplace);
+            return undefined;
+        }
+
+        setText(term);
+        rememberFind(term);
+
+        return {...options, text: term};
+    };
+
     const findAll = (searchTarget: SearchTarget = target) => {
         const editor = editorRef.current;
         const source = editor && createSource(editor, searchTarget);
-        const term = editor && (text || readSearchTerm(editor).text);
+        const searchQuery = source && resolveQuery(source.editor);
 
-        if (!source) return;
-        if (!term) return open(isReplace);
+        if (!source || !searchQuery) return;
 
-        setText(term);
         setTarget(searchTarget);
-        rememberFind(term);
 
-        if (searchTarget === SearchTarget.FOLDER) return findAllInFolder(source, {...options, text: term});
+        if (searchTarget === SearchTarget.FOLDER) return findAllInFolder(source, searchQuery);
 
-        const run = findInDocuments(source, {...options, text: term}, searchTarget);
+        const run = findInDocuments(source, searchQuery, searchTarget);
 
         if ("error" in run) return showMessage(run.error);
 
         setMessage(run.hitCount === 0 ? MESSAGES.NO_RESULTS : searchTarget === SearchTarget.OPEN_DOCUMENTS ? MESSAGES.found(run) : undefined);
         onFindAll(run);
+    };
+
+    const markAll = (withBookmarks: boolean) => {
+        const editor = editorRef.current;
+        const searchQuery = editor && resolveQuery(editor);
+        const result = searchQuery && onMarkAll(searchQuery, withBookmarks);
+
+        if (!result) return;
+        if (!result.regex) return showMessage(result.error);
+
+        showMessage(result.matches.length > 0 ? MESSAGES.marked(result.matches.length) : MESSAGES.NO_RESULTS);
     };
 
     const findAllInFolder = (source: SearchSource, searchQuery: SearchQuery) => {
@@ -447,6 +470,7 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
         target: target,
         folder: folder,
         findAll: findAll,
+        markAll: markAll,
         changeTarget: changeTarget,
         changeFolder: changeFolder,
         browseFolder: browseFolder,

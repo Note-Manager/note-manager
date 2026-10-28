@@ -1,5 +1,6 @@
 import {SupportedLanguage} from "./SupportedLanguage";
 import {EolType} from "./Encoding";
+import {MarkRule} from "./Marks";
 
 export interface EditorTab {
     id?:string,
@@ -21,5 +22,7 @@ export interface EditorTab {
         },
         selection?: any,
         undoHistory?: any,
+        bookmarks?: Array<number>,
+        marks?: Array<MarkRule>,
     }
 }

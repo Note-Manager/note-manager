@@ -347,6 +347,11 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                         onChange={e => setSearch({webSearchUrl: e.target.value})}/>
                                 </label>
                                 <div className={"settingsHint"}>An http or https address. %s is replaced with the selected text, for example https://duckduckgo.com/?q=%s</div>
+                                <h3>Highlighting</h3>
+                                <label className={"settingsRow"}>
+                                    <span>Highlight other occurrences of the selected word</span>
+                                    <input type={"checkbox"} checked={draft.search.smartHighlight} onChange={e => setSearch({smartHighlight: e.target.checked})}/>
+                                </label>
                             </>
                         }
 

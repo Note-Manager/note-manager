@@ -86,6 +86,7 @@ export default function SearchBar({search}: {search: EditorSearch}) {
                     <button type={"button"} className={"iconButton"} aria-label={"Previous match"} title={"Previous match (Shift+Enter)"} onClick={search.findPrevious}>↑</button>
                     <button type={"button"} className={"iconButton"} aria-label={"Next match"} title={"Next match (Enter)"} onClick={search.findNext}>↓</button>
                     <button type={"button"} className={"btn"} title={"List every match in the search results (Alt+Enter)"} onClick={() => search.findAll()}>Find All</button>
+                    <button type={"button"} className={"btn"} title={"Highlight every match in this file"} onClick={() => search.markAll(false)}>Mark All</button>
                     <button type={"button"} className={"iconButton danger"} aria-label={"Close search"} title={"Close (Escape)"} onClick={search.close}>×</button>
                 </div>
                 {search.target === SearchTarget.FOLDER && <FolderRow search={search}/>}

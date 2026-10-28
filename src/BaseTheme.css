@@ -69,6 +69,14 @@
     --selection-bg: var(--action-bg);
     --search-match-bg: color-mix(in srgb, var(--warning-color) 40%, transparent);
     --search-scope-bg: color-mix(in srgb, var(--positive-color) 10%, transparent);
+    --mark-found-bg: color-mix(in srgb, var(--tag-1-color) 35%, transparent);
+    --mark-1-bg: color-mix(in srgb, var(--tag-5-color) 35%, transparent);
+    --mark-2-bg: color-mix(in srgb, var(--tag-2-color) 35%, transparent);
+    --mark-3-bg: color-mix(in srgb, var(--tag-3-color) 35%, transparent);
+    --mark-4-bg: color-mix(in srgb, var(--tag-7-color) 35%, transparent);
+    --mark-5-bg: color-mix(in srgb, var(--tag-8-color) 35%, transparent);
+    --smart-highlight-bg: color-mix(in srgb, var(--tag-4-color) 25%, transparent);
+    --bookmark-color: var(--positive-color);
     --scrollbar-thumb-hover-color: var(--scrollbar-thumb-color);
     --scrollbar-track-color: transparent;
 
@@ -300,7 +308,7 @@ body .cet-menubar-menu-container .cet-action-menu-item {
     z-index: var(--z-tooltip) !important;
 }
 
-.ace_marker-layer .searchMatch, .ace_marker-layer .searchScope {
+.ace_marker-layer .searchMatch, .ace_marker-layer .searchScope, .ace_marker-layer .mark, .ace_marker-layer .smartHighlight {
     position: absolute;
     z-index: var(--z-editor-marker);
 }
@@ -312,6 +320,50 @@ body .cet-menubar-menu-container .cet-action-menu-item {
 
 .ace_marker-layer .searchScope {
     background-color: var(--search-scope-bg);
+}
+
+.ace_marker-layer .mark, .ace_marker-layer .smartHighlight {
+    border-radius: var(--radius-sm);
+}
+
+.ace_marker-layer .smartHighlight {
+    background-color: var(--smart-highlight-bg);
+}
+
+.ace_marker-layer .mark.found {
+    background-color: var(--mark-found-bg);
+}
+
+.ace_marker-layer .mark.style-1 {
+    background-color: var(--mark-1-bg);
+}
+
+.ace_marker-layer .mark.style-2 {
+    background-color: var(--mark-2-bg);
+}
+
+.ace_marker-layer .mark.style-3 {
+    background-color: var(--mark-3-bg);
+}
+
+.ace_marker-layer .mark.style-4 {
+    background-color: var(--mark-4-bg);
+}
+
+.ace_marker-layer .mark.style-5 {
+    background-color: var(--mark-5-bg);
+}
+
+.ace_gutter-cell.bookmark::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: var(--space-1);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--bookmark-color);
+    transform: translateY(-50%);
 }
 
 .ace_line-hover {
