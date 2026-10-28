@@ -1,0 +1,7 @@
+{
+  "name": "glob",
+  "version": "7.99.0",
+  "description": "Callback glob API for legacy packaging tools, backed by node:fs glob",
+  "main": "index.js",
+  "license": "MIT"
+}
