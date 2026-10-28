@@ -1,17 +1,14 @@
-import type {MessageBoxSyncOptions} from "electron";
-import {UnencodableChoice, UnsavedChangesChoice} from "../enums";
+import {MessageKind, DialogRole, UnencodableChoice, UnsavedChangesChoice} from "../enums";
+import {DialogAction, MessageDialog, Notice} from "../domain/Dialog";
 
-export const UNSAVED_CHANGES_BUTTONS = [
-    {label: "Save", choice: UnsavedChangesChoice.SAVE},
-    {label: "Don't Save", choice: UnsavedChangesChoice.DISCARD},
-    {label: "Cancel", choice: UnsavedChangesChoice.CANCEL},
-];
+const BYTES_PER_MEGABYTE = 1024 * 1024;
 
-export const UNENCODABLE_SAVE_BUTTONS = [
-    {label: "Convert to UTF-8 and Save", choice: UnencodableChoice.CONVERT_TO_UTF8},
-    {label: "Save Anyway", choice: UnencodableChoice.SAVE_ANYWAY},
-    {label: "Cancel", choice: UnencodableChoice.CANCEL},
-];
+function confirmActions(label: string): Array<DialogAction<boolean>> {
+    return [
+        {label: "Cancel", role: DialogRole.CANCEL, value: false},
+        {label: label, role: DialogRole.PRIMARY, value: true},
+    ];
+}
 
 export function getUnsavedChangesMessage(names: Array<string>): {message: string, detail: string} {
     if (names.length === 1) {
@@ -33,78 +30,87 @@ export function getUnencodableMessage(encodingLabel: string, count: number, samp
     return `${count} character${count === 1 ? "" : "s"} cannot be represented in ${encodingLabel} and will be replaced with "?": ${characters}${count > samples.length ? " ..." : ""}`;
 }
 
-export function unsavedChangesDialog(names: Array<string>): MessageBoxSyncOptions {
+export function unsavedChangesDialog(names: Array<string>): MessageDialog<UnsavedChangesChoice> {
     return {
-        type: "warning",
-        buttons: UNSAVED_CHANGES_BUTTONS.map(b => b.label),
-        defaultId: 0,
-        cancelId: UNSAVED_CHANGES_BUTTONS.length - 1,
-        noLink: true,
+        kind: MessageKind.WARNING,
         title: "Unsaved changes",
         ...getUnsavedChangesMessage(names),
+        actions: [
+            {label: "Save", role: DialogRole.PRIMARY, value: UnsavedChangesChoice.SAVE},
+            {label: "Don't Save", role: DialogRole.DESTRUCTIVE, value: UnsavedChangesChoice.DISCARD},
+            {label: "Cancel", role: DialogRole.CANCEL, value: UnsavedChangesChoice.CANCEL},
+        ],
     };
 }
 
-export function unencodableSaveDialog(file: string, encodingLabel: string, count: number, samples: Array<string>): MessageBoxSyncOptions {
+export function unencodableSaveDialog(file: string, encodingLabel: string, count: number, samples: Array<string>): MessageDialog<UnencodableChoice> {
     return {
-        type: "warning",
-        buttons: UNENCODABLE_SAVE_BUTTONS.map(b => b.label),
-        defaultId: 0,
-        cancelId: UNENCODABLE_SAVE_BUTTONS.length - 1,
-        noLink: true,
+        kind: MessageKind.WARNING,
         title: "Save",
         message: getUnencodableMessage(encodingLabel, count, samples),
+        detail: file,
+        actions: [
+            {label: "Convert to UTF-8 and Save", role: DialogRole.PRIMARY, value: UnencodableChoice.CONVERT_TO_UTF8},
+            {label: "Save Anyway", role: DialogRole.SECONDARY, value: UnencodableChoice.SAVE_ANYWAY},
+            {label: "Cancel", role: DialogRole.CANCEL, value: UnencodableChoice.CANCEL},
+        ],
+    };
+}
+
+export function reinterpretDialog(name: string | undefined, encodingLabel: string | undefined): MessageDialog<boolean> {
+    return {
+        kind: MessageKind.QUESTION,
+        title: "Reopen with Encoding",
+        message: `Reopen ${name || "this file"} with ${encodingLabel || "the detected encoding"}?`,
+        detail: "The file is read again from disk. Your unsaved changes in this tab will be lost.",
+        actions: confirmActions("Reopen"),
+    };
+}
+
+export function conversionDialog(encodingLabel: string, count: number, samples: Array<string>): MessageDialog<boolean> {
+    return {
+        kind: MessageKind.WARNING,
+        title: "Convert to " + encodingLabel,
+        message: getUnencodableMessage(encodingLabel, count, samples),
+        detail: "Do you want to convert anyway?",
+        actions: confirmActions("Convert"),
+    };
+}
+
+export function openLargeOrBinaryFileDialog(fileName: string, sizeInBytes: number, isBinary: boolean): MessageDialog<boolean> {
+    const reason = isBinary
+        ? "This file looks like a binary file."
+        : `This file is ${(sizeInBytes / BYTES_PER_MEGABYTE).toFixed(1)} MB. Large files may make the editor slow.`;
+
+    return {
+        kind: MessageKind.WARNING,
+        title: "Open " + fileName,
+        message: reason,
+        detail: "Do you want to open it anyway?",
+        actions: confirmActions("Open"),
+    };
+}
+
+export function missingFileNotice(file: string): Notice {
+    return {kind: MessageKind.WARNING, message: "File not found.", detail: file};
+}
+
+export function missingRecentFileNotice(file: string): Notice {
+    return {
+        kind: MessageKind.WARNING,
+        message: "File not found. It was removed from the recent files.",
         detail: file,
     };
 }
 
-export function reinterpretDialog(name: string | undefined, encodingLabel: string | undefined): MessageBoxSyncOptions {
-    return {
-        type: "question",
-        buttons: ["Reopen", "Cancel"],
-        defaultId: 1,
-        cancelId: 1,
-        noLink: true,
-        title: "Reopen with Encoding",
-        message: `Reopen ${name || "this file"} with ${encodingLabel || "the detected encoding"}?`,
-        detail: "The file is read again from disk. Your unsaved changes in this tab will be lost.",
-    };
+export function openFailedNotice(fileName: string, error: unknown): Notice {
+    return errorNotice("Cannot open " + fileName, error);
 }
 
-export function conversionDialog(encodingLabel: string, count: number, samples: Array<string>): MessageBoxSyncOptions {
-    return {
-        type: "warning",
-        buttons: ["Convert", "Cancel"],
-        defaultId: 1,
-        cancelId: 1,
-        noLink: true,
-        title: "Convert to " + encodingLabel,
-        message: getUnencodableMessage(encodingLabel, count, samples),
-        detail: "Do you want to convert anyway?",
-    };
+export function preferencesFailedNotice(error: unknown): Notice {
+    return errorNotice("Your preferences could not be loaded. The defaults are used.", error);
 }
 
-export function openLargeOrBinaryFileDialog(fileName: string, sizeInBytes: number, isBinary: boolean): MessageBoxSyncOptions {
-    const reason = isBinary
-        ? "This file looks like a binary file."
-        : `This file is ${(sizeInBytes / 1024 / 1024).toFixed(1)} MB. Large files may make the editor slow.`;
-
-    return {
-        type: "warning",
-        buttons: ["Cancel", "Open"],
-        defaultId: 1,
-        cancelId: 0,
-        title: "Open file",
-        message: fileName,
-        detail: reason + "\n\nDo you want to open it anyway?",
-    };
-}
-
-export function missingRecentFileDialog(file: string): MessageBoxSyncOptions {
-    return {
-        type: "warning",
-        title: "Open Recent",
-        message: "File not found",
-        detail: file + "\n\nIt will be removed from the recent files list.",
-    };
+export function errorNotice(message: string, error: unknown): Notice {
+    return {kind: MessageKind.ERROR, message: message, detail: String(error)};
 }

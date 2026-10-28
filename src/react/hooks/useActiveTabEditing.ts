@@ -3,9 +3,11 @@ import {Ace} from "ace-builds";
 import {EditorTab} from "../../domain/EditorTab";
 import {SupportedLanguage} from "../../domain/SupportedLanguage";
 import {EncodingAction, EventType} from "../../enums";
-import {EolType, getEditorNewLineMode, isKnownEncoding, isKnownEol} from "../../domain/Encoding";
+import {EolType, getEditorNewLineMode, getEncodingLabel, isKnownEncoding, isKnownEol} from "../../domain/Encoding";
 import {fireEvent} from "../ApplicationEvents";
 import {saveTab} from "../TabSaver";
+import {notifyError, showDialog} from "../Dialogs";
+import {reinterpretDialog} from "../../utils/DialogUtils";
 import {markStateChanged} from "../StateChangeTracker";
 import {useEditorContext} from "../components/editor/EditorContext";
 import {useIpcEvents} from "./useIpcEvents";
@@ -45,7 +47,7 @@ export function useActiveTabEditing(editorRef: MutableRefObject<Ace.Editor | und
 
         saveTab(tab)
             .then(isSaved => isSaved && onTabUpdated())
-            .catch(logError("cannot save " + tab.name));
+            .catch(notifyError("Cannot save " + tab.name));
     };
 
     const reinterpret = async (tab: EditorTab, encoding?: string) => {
@@ -56,7 +58,7 @@ export function useActiveTabEditing(editorRef: MutableRefObject<Ace.Editor | und
             return refreshChangedState(tab);
         }
 
-        if (tab.isChanged && !await fireEvent(EventType.CONFIRM_REINTERPRET, {name: tab.name, encoding: encoding})) return;
+        if (tab.isChanged && !await showDialog(reinterpretDialog(tab.name, isKnownEncoding(encoding) ? getEncodingLabel(encoding) : undefined))) return;
 
         const result = await fireEvent(EventType.READ_FILE_AS, {file: tab.file, encoding: encoding, fallbackEol: tab.eol});
 
@@ -96,7 +98,7 @@ export function useActiveTabEditing(editorRef: MutableRefObject<Ace.Editor | und
             ? reinterpret(tab)
             : isKnownEncoding(encoding) ? (action === EncodingAction.CONVERT ? convert(tab, encoding) : reinterpret(tab, encoding)) : undefined;
 
-        run?.catch(logError("cannot change encoding of " + tab.name));
+        run?.catch(notifyError("Cannot change the encoding of " + tab.name));
     };
 
     const changeEol = (tab: EditorTab, eol: EolType) => {

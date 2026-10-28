@@ -9,7 +9,7 @@ import {initApplicationMenu, refreshTitlebar} from "./utils/ApplicationMenu";
 import {getThemeBackgroundColor, loadThemeToWindow} from "./utils/ThemeLoader";
 import {getSettings, loadPreferences} from "./utils/EnvironmentUtils";
 import {isFileExists} from "./utils/FileUtils";
-import {send} from "./utils/WindowUtils";
+import {notify, send} from "./utils/WindowUtils";
 import {createEmptyTab, DEFAULT_TAB_NAME, hashTab} from "./utils/TabUtils";
 import {loadUserPluginManifests, registerUserPluginProtocol, registerUserPluginScheme} from "./utils/UserPlugins";
 
@@ -21,7 +21,7 @@ if (require("electron-squirrel-startup")) app.quit();
 process.on("uncaughtException", logError);
 process.on("unhandledRejection", logError);
 
-loadPreferences();
+const preferencesNotice = loadPreferences();
 setupTitlebar();
 registerUserPluginScheme();
 initIpcMainListeners();
@@ -100,6 +100,8 @@ function createWindow() {
         refreshTitlebar();
 
         send(win.webContents, EventType.INIT_WITH_STATE, await getInitialState());
+
+        if (preferencesNotice) notify(win.webContents, preferencesNotice);
     });
 
     win.on("close", (event) => {

@@ -15,8 +15,8 @@ import {ShortcutId} from "./Shortcuts";
 import {getAccelerator} from "./Accelerators";
 import {getUserPluginManifests, getUserPluginPath, loadUserPluginManifests} from "./UserPlugins";
 import {createEncodingMenu} from "./EncodingMenu";
-import {missingRecentFileDialog} from "./DialogUtils";
-import {broadcast, sendPluginAction, sendToFocusedWindow} from "./WindowUtils";
+import {missingRecentFileNotice} from "./DialogUtils";
+import {broadcast, notify, sendPluginAction, sendToFocusedWindow} from "./WindowUtils";
 import {RendererChannel, RendererPayload} from "../domain/IpcContract";
 import {logError} from "./Log";
 
@@ -207,5 +207,6 @@ function openRecentFile(file: string) {
         return;
     }
 
-    dialog.showMessageBox(targetWindow, missingRecentFileDialog(file)).finally(() => removeRecentFile(file));
+    removeRecentFile(file);
+    notify(targetWindow.webContents, missingRecentFileNotice(file));
 }

@@ -1,4 +1,4 @@
-import {EditorCommand, EncodingAction, EventType, TabAction, UnsavedChangesChoice} from "../enums";
+import {EditorCommand, EncodingAction, EventType, TabAction} from "../enums";
 import {EditorTab} from "./EditorTab";
 import {EditorState} from "./EditorState";
 import {Settings} from "./Settings";
@@ -6,6 +6,7 @@ import {SupportedLanguage} from "./SupportedLanguage";
 import {DecodedText, EolType} from "./Encoding";
 import {ThemeInfo} from "./ThemeInfo";
 import {UserPluginInfo} from "./PluginManifest";
+import {MessageDialog, Notice} from "./Dialog";
 import type {ThemeVariable} from "../utils/ThemeVariables";
 import type {ShortcutDefinition} from "../utils/Shortcuts";
 import type {ContextMenuGroup} from "../react/components/editor/plugins";
@@ -78,12 +79,14 @@ export interface RendererEvents {
     [EventType.ENCODING_ACTION]: {action: EncodingAction, encoding?: string},
     [EventType.EOL_ACTION]: {eol: EolType},
     [EventType.OPEN_ENCODING_PICKER]: {action: EncodingAction},
+    [EventType.SHOW_MESSAGE_DIALOG]: {id: number, dialog: MessageDialog<unknown>},
+    [EventType.SHOW_NOTICE]: Notice,
 }
 
 export interface InvokeRequests {
     [EventType.FILES_DROPPED]: {files: Array<string>},
     [EventType.SHOW_SAVE_DIALOG]: {title?: string, defaultName?: string},
-    [EventType.SHOW_UNSAVED_CHANGES_DIALOG]: {names: Array<string>},
+    [EventType.MESSAGE_DIALOG_RESPONSE]: {id: number, index: number},
     [EventType.SAVE_STATE]: EditorState,
     [EventType.CLOSE_WITH_STATE]: EditorState,
     [EventType.WRITE_FILE]: WriteFileRequest,
@@ -98,7 +101,6 @@ export interface InvokeRequests {
     [EventType.CREATE_THEME]: {name: string, baseFile: string},
     [EventType.RECORD_SHORTCUT]: {active: boolean},
     [EventType.GET_USER_PLUGINS]: void,
-    [EventType.CONFIRM_REINTERPRET]: {name?: string, encoding?: string},
     [EventType.CONFIRM_CONVERSION]: {content: string, encoding: string},
     [EventType.GET_ENCODING_INFO]: void,
     [EventType.LOG_INFO]: string,
@@ -109,7 +111,7 @@ export interface InvokeRequests {
 export interface InvokeResponses {
     [EventType.FILES_DROPPED]: void,
     [EventType.SHOW_SAVE_DIALOG]: string | undefined,
-    [EventType.SHOW_UNSAVED_CHANGES_DIALOG]: UnsavedChangesChoice,
+    [EventType.MESSAGE_DIALOG_RESPONSE]: void,
     [EventType.SAVE_STATE]: void,
     [EventType.CLOSE_WITH_STATE]: void,
     [EventType.WRITE_FILE]: {saved: boolean, encoding: string},
@@ -124,7 +126,6 @@ export interface InvokeResponses {
     [EventType.CREATE_THEME]: {file: string, themes: Array<ThemeInfo>},
     [EventType.RECORD_SHORTCUT]: void,
     [EventType.GET_USER_PLUGINS]: Array<UserPluginInfo>,
-    [EventType.CONFIRM_REINTERPRET]: boolean,
     [EventType.CONFIRM_CONVERSION]: boolean,
     [EventType.GET_ENCODING_INFO]: {ansiCodePage: string},
     [EventType.LOG_INFO]: void,

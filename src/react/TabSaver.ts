@@ -1,6 +1,8 @@
 import {EditorTab} from "../domain/EditorTab";
 import {fireEvent} from "./ApplicationEvents";
 import {EventType, UnsavedChangesChoice} from "../enums";
+import {unsavedChangesDialog} from "../utils/DialogUtils";
+import {showDialog} from "./Dialogs";
 import {applySavedFile} from "../utils/TabUtils";
 import {documentHash} from "../utils/TextUtils";
 import {markStateChanged} from "./StateChangeTracker";
@@ -42,9 +44,7 @@ export async function saveTab(tab: EditorTab): Promise<boolean> {
 export async function resolveUnsavedChanges(changedTabs: Array<EditorTab>): Promise<boolean> {
     if (changedTabs.length === 0) return true;
 
-    const choice = await fireEvent(EventType.SHOW_UNSAVED_CHANGES_DIALOG, {
-        names: changedTabs.map(t => t.name || "")
-    });
+    const choice = await showDialog(unsavedChangesDialog(changedTabs.map(t => t.name || "")));
 
     if (choice === UnsavedChangesChoice.DISCARD) return true;
     if (choice !== UnsavedChangesChoice.SAVE) return false;
