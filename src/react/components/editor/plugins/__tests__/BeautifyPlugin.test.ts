@@ -45,4 +45,12 @@ describe("BeautifyPlugin", () => {
     it("formats JavaScript with prettier", async () => {
         expect(await format("const a={b:1,c:[1,2]}", LanguageName.JAVASCRIPT)).toBe("const a = { b: 1, c: [1, 2] };");
     });
+
+    it("offers Format in the context menu only for formattable languages", () => {
+        const action = new BeautifyPlugin().contextMenuItems[0].actions[0];
+
+        expect(action.code).toBe("beautify.format");
+        expect(action.isAvailable?.(new FakeEditorWrapper("{}", LanguageName.JSON))).toBe(true);
+        expect(action.isAvailable?.(new FakeEditorWrapper("text", LanguageName.TEXT))).toBe(false);
+    });
 });

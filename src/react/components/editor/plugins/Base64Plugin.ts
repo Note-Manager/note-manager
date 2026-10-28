@@ -10,7 +10,6 @@ export default class Base64Plugin implements EditorPlugin {
     actionMap = new Map<string, EditorAction>();
 
     name: string = "Base64";
-    contextMenuItems: Array<EditorMenuItem> = []
     applicationMenuItems: Array<EditorMenuItem> = [
         {
             label: "Base64",
@@ -28,6 +27,7 @@ export default class Base64Plugin implements EditorPlugin {
             ]
         }
     ];
+    contextMenuItems: Array<EditorMenuItem> = this.applicationMenuItems;
     editor?: EditorWrapper
 
     doAction(code: string): void {

@@ -21,7 +21,6 @@ export default class PreviewPlugin implements EditorPlugin {
     name: string = "Preview";
 
     applicationMenuItems: Array<EditorMenuItem> = [];
-    contextMenuItems: Array<EditorMenuItem> = [];
     toolbarMenuItems: Array<ToolbarMenuItem> = [
         {
             label: "Preview",

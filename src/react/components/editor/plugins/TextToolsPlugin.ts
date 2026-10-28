@@ -48,7 +48,6 @@ export default class TextToolsPlugin implements EditorPlugin {
     actionMap = new Map<string, EditorAction>();
 
     name: string = "Text Tools";
-    contextMenuItems: Array<EditorMenuItem> = [];
     applicationMenuItems: Array<EditorMenuItem> = [
         {
             label: "Lines",
@@ -70,6 +69,7 @@ export default class TextToolsPlugin implements EditorPlugin {
             ]
         }
     ];
+    contextMenuItems: Array<EditorMenuItem> = this.applicationMenuItems;
     editor?: EditorWrapper;
 
     doAction(code: string): void {

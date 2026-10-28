@@ -1,5 +1,5 @@
-import electron, {BrowserWindow, ipcMain, Menu, shell} from "electron";
-import {EventType, TabAction, UnencodableChoice, UnsavedChangesChoice} from "../enums";
+import electron, {BrowserWindow, clipboard, ipcMain, Menu, shell} from "electron";
+import {EditorCommand, EventType, TabAction, UnencodableChoice, UnsavedChangesChoice} from "../enums";
 import {getFocusedWindow, openInWindow, readTextFile, writeEditorState} from "../utils/EditorUtils";
 import {EditorState} from "../domain/EditorState";
 import * as Environment from "../utils/EnvironmentUtils";
@@ -9,11 +9,12 @@ import {getUnencodableMessage, getUnsavedChangesMessage, UNENCODABLE_SAVE_BUTTON
 import {applySettingsToWindows} from "../utils/ElectronUtils";
 import {Theme} from "../domain/Theme";
 import {resolveAccelerator, Settings} from "../domain/Settings";
-import {getShortcutDefinitions, ShortcutId} from "../utils/Shortcuts";
+import {getDefaultAccelerator, getShortcutDefinitions, ShortcutId} from "../utils/Shortcuts";
 import {getUserPluginInfos, getUserPluginManifests} from "../utils/UserPlugins";
 import {decodeBuffer, encodeText, findUnencodableCharacters, getAnsiCodePage} from "../utils/EncodingUtils";
 import {DEFAULT_ENCODING, detectEol, EncodingId, EolType, getEncodingLabel, isKnownEncoding, isKnownEol, toEditorText} from "../domain/Encoding";
 import {createEolMenu} from "../utils/EncodingMenu";
+import {ContextMenuGroup} from "../react/components/editor/plugins";
 
 const closingWindows = new Set<number>();
 const recordingShortcuts = new Set<number>();
@@ -191,6 +192,73 @@ export default function initIpcMainListeners() {
             {type: "separator"},
             {label: "Reopen Closed Tab", accelerator: resolveAccelerator(Environment.getSettings(), ShortcutId.REOPEN_CLOSED, "CmdOrCtrl+Shift+T"), enabled: data.canReopen, click: send(TabAction.REOPEN_CLOSED)},
         ]).popup({window: win});
+    });
+
+    ipcMain.handle(EventType.SHOW_EDITOR_CONTEXT_MENU, (event, data: {
+        hasSelection: boolean,
+        canUndo: boolean,
+        canRedo: boolean,
+        file?: string,
+        canPreview: boolean,
+        isPreviewOpen: boolean,
+        groups: Array<ContextMenuGroup>,
+        x?: number,
+        y?: number
+    }) => {
+        const win = BrowserWindow.fromWebContents(event.sender);
+        if (!win) return;
+
+        const command = (cmd: EditorCommand) => () => event.sender.send(EventType.EDITOR_COMMAND, {command: cmd});
+        const file = typeof data?.file === "string" && data.file ? data.file : undefined;
+
+        const pluginItems = (Array.isArray(data?.groups) ? data.groups : [])
+            .filter(group => typeof group?.label === "string" && Array.isArray(group.actions))
+            .map(group => {
+                const actions = group.actions.filter(a => typeof a?.label === "string" && typeof a.code === "string").map(action => ({
+                    label: action.label,
+                    enabled: action.enabled !== false,
+                    accelerator: resolveAccelerator(Environment.getSettings(), action.code, getDefaultAccelerator(action.code, getUserPluginManifests())),
+                    click: () => event.sender.send(action.code)
+                } as Electron.MenuItemConstructorOptions));
+
+                return actions.length === 1 ? actions[0] : {label: group.label, submenu: actions} as Electron.MenuItemConstructorOptions;
+            })
+            .filter(item => !Array.isArray(item.submenu) || item.submenu.length > 0);
+
+        const template: Array<Electron.MenuItemConstructorOptions> = [
+            {label: "Undo", accelerator: "CmdOrCtrl+Z", enabled: data?.canUndo !== false, click: command(EditorCommand.UNDO)},
+            {label: "Redo", accelerator: "CmdOrCtrl+Shift+Z", enabled: data?.canRedo !== false, click: command(EditorCommand.REDO)},
+            {type: "separator"},
+            {role: "cut", enabled: !!data?.hasSelection},
+            {role: "copy", enabled: !!data?.hasSelection},
+            {role: "paste"},
+            {label: "Delete", accelerator: "Delete", enabled: !!data?.hasSelection, click: command(EditorCommand.DELETE)},
+            {type: "separator"},
+            {label: "Select All", accelerator: "CmdOrCtrl+A", click: command(EditorCommand.SELECT_ALL)},
+        ];
+
+        if (pluginItems.length > 0) template.push({type: "separator"}, ...pluginItems);
+
+        template.push(
+            {type: "separator"},
+            {label: "Find", accelerator: "CmdOrCtrl+F", click: command(EditorCommand.FIND)},
+            {label: "Replace", accelerator: process.platform === "darwin" ? "Cmd+Alt+F" : "Ctrl+H", click: command(EditorCommand.REPLACE)},
+            {label: "Go to Line", accelerator: "CmdOrCtrl+L", click: command(EditorCommand.GO_TO_LINE)},
+        );
+
+        if (data?.canPreview) template.push({label: data.isPreviewOpen ? "Hide Preview" : "Show Preview", click: command(EditorCommand.TOGGLE_PREVIEW)});
+
+        template.push(
+            {type: "separator"},
+            {label: "Open Containing Folder", enabled: !!file, click: () => event.sender.send(EventType.TAB_ACTION, {action: TabAction.REVEAL_IN_FOLDER})},
+            {label: "Copy File Path", enabled: !!file, click: () => file && clipboard.writeText(file)},
+        );
+
+        Menu.buildFromTemplate(template).popup({
+            window: win,
+            x: Number.isFinite(data?.x) ? Math.round(data.x as number) : undefined,
+            y: Number.isFinite(data?.y) ? Math.round(data.y as number) : undefined,
+        });
     });
 
     ipcMain.handle(EventType.REVEAL_FILE, (event, data: {file: string}) => {

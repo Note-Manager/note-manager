@@ -23,6 +23,7 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 
 - Your tabs, including unsaved content, cursor position, scroll position and undo history, are saved automatically and restored on the next start.
 - Right-click a tab for Close, Close Other Tabs, Close Unmodified Tabs, Close All Tabs, Pin/Unpin, Open Containing Folder and Reopen Closed Tab.
+- Right-click in the editor for Undo/Redo, Cut/Copy/Paste/Delete, Select All, Base64, Format, line and case tools, Find, Replace, Go to Line, Markdown/HTML preview, Open Containing Folder and Copy File Path. User plugin actions appear there too.
 - Pinned tabs stay at the front and cannot be closed by accident.
 - Drag tabs to reorder them.
 - Reopen up to 20 recently closed tabs with their content.

@@ -24,7 +24,16 @@ export default class BeautifyPlugin implements EditorPlugin{
     ];
 
     contextMenuItems: Array<EditorMenuItem> = [
-
+        {
+            label: this.name,
+            actions: [
+                {
+                    label: "Format",
+                    code: Keys.FORMAT,
+                    isAvailable: (editor: EditorWrapper) => isFormattable(editor.getLanguage() || LanguageName.TEXT)
+                }
+            ]
+        }
     ];
 
     editor?: EditorWrapper;
