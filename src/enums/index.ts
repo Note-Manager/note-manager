@@ -11,7 +11,9 @@ export enum EventType {
     SET_TAB_LANGUAGE = "set-tab-language",
     BUILD_MENU = "build-menu",
     SHOW_SAVE_DIALOG = "show-save-dialog",
-    SHOW_UNSAVED_CHANGES_DIALOG = "show-unsaved-changes-dialog",
+    SHOW_MESSAGE_DIALOG = "show-message-dialog",
+    MESSAGE_DIALOG_RESPONSE = "message-dialog-response",
+    SHOW_NOTICE = "show-notice",
     LOG_INFO = "log-info",
     LOG_ERROR = "log-error",
     LOG_WARN = "log-warning",
@@ -37,7 +39,6 @@ export enum EventType {
     GET_USER_PLUGINS = "get-user-plugins",
     USER_PLUGINS_CHANGED = "user-plugins-changed",
     READ_FILE_AS = "read-file-as",
-    CONFIRM_REINTERPRET = "confirm-reinterpret",
     CONFIRM_CONVERSION = "confirm-conversion",
     SHOW_STATUS_MENU = "show-status-menu",
     ENCODING_ACTION = "encoding-action",
@@ -55,6 +56,21 @@ export enum EncodingAction {
 export enum UnencodableChoice {
     CONVERT_TO_UTF8 = "convert-to-utf8",
     SAVE_ANYWAY = "save-anyway",
+    CANCEL = "cancel",
+}
+
+export enum MessageKind {
+    INFO = "info",
+    QUESTION = "question",
+    SUCCESS = "success",
+    WARNING = "warning",
+    ERROR = "error",
+}
+
+export enum DialogRole {
+    PRIMARY = "primary",
+    SECONDARY = "secondary",
+    DESTRUCTIVE = "destructive",
     CANCEL = "cancel",
 }
 

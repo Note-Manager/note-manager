@@ -5,11 +5,13 @@ import {installUserPluginApi, loadUserPlugins} from "./UserPluginRegistry";
 import {on} from "./ApplicationEvents";
 import {EventType} from "../enums";
 import {installMenuFit} from "./MenuFit";
+import {installDialogEvents, notifyError} from "./Dialogs";
 
 installUserPluginApi();
 installMenuFit();
+installDialogEvents();
 
-const reloadUserPlugins = () => loadUserPlugins().catch(err => console.error("cannot load user plugins: " + err));
+const reloadUserPlugins = () => loadUserPlugins().catch(notifyError("Cannot load user plugins"));
 
 on(EventType.USER_PLUGINS_CHANGED, reloadUserPlugins);
 reloadUserPlugins();

@@ -8,6 +8,7 @@ import {useIpcEvents} from "../hooks/useIpcEvents";
 import {logError} from "../../utils/Log";
 import {EventType} from "../../enums";
 import SettingsDialog from "./SettingsDialog";
+import DialogHost from "./DialogHost";
 import {normalizeSettings} from "../../domain/Settings";
 
 export default function TabManager() {
@@ -60,6 +61,8 @@ function Workbench() {
             <Footer/>
 
             {isSettingsOpen && <SettingsDialog onClose={() => setIsSettingsOpen(false)}/>}
+
+            <DialogHost/>
         </div>
     );
 }

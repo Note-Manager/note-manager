@@ -739,3 +739,238 @@ body.resizing-tool-window, body.resizing-tool-window * {
     font-size: var(--font-size-sm);
     color: var(--negative-color);
 }
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+
+    height: var(--control-height-md);
+    padding: 0 var(--space-3);
+
+    font: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color);
+    white-space: nowrap;
+
+    background-color: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+
+    transition: background-color var(--duration-fast) var(--easing-standard), border-color var(--duration-fast) var(--easing-standard);
+}
+
+.btn:hover {
+    background-color: var(--hover-bg);
+}
+
+.btn:active {
+    background-color: var(--action-bg);
+}
+
+.btn:focus-visible {
+    outline: 1px solid var(--focus-ring-color);
+    outline-offset: 1px;
+}
+
+.btn:disabled {
+    opacity: var(--disabled-opacity);
+    pointer-events: none;
+}
+
+.btn.primary {
+    color: var(--on-accent-color);
+    background-color: var(--positive-color);
+    border-color: var(--positive-color);
+}
+
+.btn.primary:hover {
+    background-image: linear-gradient(var(--hover-bg), var(--hover-bg));
+}
+
+.btn.danger {
+    color: var(--negative-color);
+}
+
+.dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-overlay);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: var(--overlay-bg);
+}
+
+.dialog {
+    display: flex;
+    flex-direction: column;
+
+    max-width: 92vw;
+    max-height: 85vh;
+
+    overflow: hidden;
+
+    color: var(--color);
+    background-color: var(--elevated-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+
+    z-index: var(--z-dialog);
+    animation: ui-overlay-enter var(--duration-normal) var(--easing-standard);
+}
+
+.dialog-header {
+    padding: var(--space-3) var(--space-4);
+
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-bold);
+
+    border-bottom: 1px solid var(--border-subtle-color);
+}
+
+.dialog-body {
+    flex: 1;
+    overflow-y: auto;
+
+    padding: var(--space-4);
+    user-select: text;
+}
+
+.dialog-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2);
+
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--border-subtle-color);
+}
+
+.dialog-footer .btn.leading {
+    margin-right: auto;
+}
+
+.messageDialog {
+    width: min(calc(var(--control-height-md) * 16), 92vw);
+}
+
+.messageDialogBody {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.messageDialogText, .toastText {
+    flex: 1;
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+.messageDialogMessage {
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-ui);
+}
+
+.messageDialogDetail, .toastDetail {
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-ui);
+    color: var(--muted-color);
+}
+
+.severityIcon {
+    flex: none;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: var(--control-height-sm);
+    height: var(--control-height-sm);
+
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--positive-color);
+
+    border: 1px solid currentColor;
+    border-radius: var(--radius-pill);
+}
+
+.severityIcon.success {
+    color: var(--success-color);
+}
+
+.severityIcon.warning {
+    color: var(--warning-color);
+}
+
+.severityIcon.error {
+    color: var(--negative-color);
+}
+
+.toast-stack {
+    position: fixed;
+    right: var(--space-4);
+    bottom: calc(var(--control-height-md) + var(--space-4));
+    z-index: var(--z-toast);
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-2);
+}
+
+.toast {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+
+    width: min(calc(var(--control-height-md) * 14), calc(100vw - var(--space-6)));
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+
+    font-size: var(--font-size-sm);
+    color: var(--color);
+    background-color: var(--elevated-bg);
+    border: 1px solid var(--border-subtle-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+
+    user-select: text;
+    animation: ui-overlay-enter var(--duration-normal) var(--easing-standard);
+}
+
+.toast.success {
+    box-shadow: var(--shadow-sm), inset var(--marker-width) 0 0 var(--success-color);
+}
+
+.toast.warning {
+    box-shadow: var(--shadow-sm), inset var(--marker-width) 0 0 var(--warning-color);
+}
+
+.toast.error {
+    box-shadow: var(--shadow-sm), inset var(--marker-width) 0 0 var(--negative-color);
+}
+
+.toastMessage {
+    line-height: var(--line-height-ui);
+}
+
+.toast .iconButton {
+    flex: none;
+    color: var(--muted-color);
+}
+
+.toast .iconButton:hover {
+    color: var(--color);
+}

@@ -1,11 +1,12 @@
 import * as path from "node:path";
-import {dialog} from "electron";
 import {ensureExists, getSystemPath, writeFileAtomic} from "./FileUtils";
 import {Preferences, readPreferences} from "../domain/Preferences";
 import {Theme} from "../domain/Theme";
 import {SystemPaths} from "../enums";
 import {normalizeSettings, Settings} from "../domain/Settings";
 import {getBundledThemePath, getUserThemePath} from "./ThemeStore";
+import {preferencesFailedNotice} from "./DialogUtils";
+import {Notice} from "../domain/Dialog";
 
 const PREFERENCES_FILE = "preferences.json";
 const STATE_FILE = "State.json";
@@ -20,7 +21,7 @@ export function getStateFilePath() {
     return path.join(getSystemPath(SystemPaths.data), STATE_FILE);
 }
 
-export function loadPreferences() {
+export function loadPreferences(): Notice | undefined {
     try {
         ensureExists(getSystemPath(SystemPaths.data), PREFERENCES_FILE, serializePreferences());
         ensureExists(getUserThemePath());
@@ -28,7 +29,7 @@ export function loadPreferences() {
         preferences = readPreferences(getPreferencesFilePath());
     } catch (error) {
         console.error(error);
-        dialog.showErrorBox("Error!", "An error occurred while loading your preferences:\n\n" + error);
+        return preferencesFailedNotice(error);
     }
 }
 

@@ -6,7 +6,8 @@ import {resolveUnsavedChanges} from "../TabSaver";
 import {useEditorContext} from "../components/editor/EditorContext";
 import {findLanguageByFileName} from "../../domain/SupportedLanguage";
 import {createEmptyTab, DEFAULT_TAB_NAME, generateUniqueName, hashTab, orderByPinned, renameTab} from "../../utils/TabUtils";
-import {logError} from "../../utils/Log";
+import {missingFileNotice} from "../../utils/DialogUtils";
+import {notify, notifyError} from "../Dialogs";
 
 const MAX_CLOSED_TABS = 20;
 
@@ -72,7 +73,7 @@ export function useTabActions() {
 
         closeTabs([tab])
             .then(isClosed => isClosed || setActiveTab(tab))
-            .catch(logError("cannot close " + tab.name));
+            .catch(notifyError("Cannot close " + tab.name));
     };
 
     const reopenClosedTab = () => {
@@ -98,11 +99,13 @@ export function useTabActions() {
     };
 
     const revealInFolder = (tab: EditorTab | undefined) => {
-        if (!tab?.file) return;
+        const file = tab?.file;
 
-        fireEvent(EventType.REVEAL_FILE, {file: tab.file})
-            .then(isRevealed => isRevealed || console.warn("cannot reveal missing file " + tab.file))
-            .catch(logError("cannot reveal " + tab.file));
+        if (!file) return;
+
+        fireEvent(EventType.REVEAL_FILE, {file})
+            .then(isRevealed => isRevealed || notify(missingFileNotice(file)))
+            .catch(notifyError("Cannot show " + file + " in its folder"));
     };
 
     const closeWindow = async () => {

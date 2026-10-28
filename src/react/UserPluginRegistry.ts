@@ -4,6 +4,8 @@ import {UserPluginInfo} from "../domain/PluginManifest";
 import {fireEvent} from "./ApplicationEvents";
 import {EventType} from "../enums";
 import {bundledPlugins} from "../utils/PluginLoader";
+import {errorNotice} from "../utils/DialogUtils";
+import {notify} from "./Dialogs";
 
 export interface UserPluginImplementation {
     initialize?: (editor: EditorWrapper) => void,
@@ -37,7 +39,7 @@ export function installUserPluginApi() {
             }
 
             if (typeof implementation?.doAction !== "function") {
-                logError(`user plugin '${id}' did not provide a doAction function`);
+                reportPluginError(`user plugin '${id}' did not provide a doAction function`);
                 return;
             }
 
@@ -62,7 +64,7 @@ export async function loadUserPlugins() {
 
         script.src = info.scriptUrl + "?t=" + Date.now();
         script.setAttribute(SCRIPT_ATTRIBUTE, info.id);
-        script.onerror = () => logError(`cannot load user plugin '${info.id}'`);
+        script.onerror = () => reportPluginError(`cannot load user plugin '${info.id}'`);
 
         document.head.appendChild(script);
     });
@@ -105,7 +107,7 @@ function createPlugin(info: UserPluginInfo, implementation: UserPluginImplementa
             try {
                 implementation.initialize?.(wrapper);
             } catch (err) {
-                logError(`user plugin '${info.id}' failed to initialize: ${err}`);
+                reportPluginError(`user plugin '${info.id}' failed to initialize: ${err}`);
             }
         },
         getAvailableActions: () => info.actions.map(a => a.code),
@@ -115,13 +117,14 @@ function createPlugin(info: UserPluginInfo, implementation: UserPluginImplementa
             try {
                 implementation.doAction(code, editor);
             } catch (err) {
-                logError(`user plugin '${info.id}' failed on '${code}': ${err}`);
+                reportPluginError(`user plugin '${info.id}' failed on '${code}': ${err}`);
             }
         },
     };
 }
 
-function logError(message: string) {
+function reportPluginError(message: string) {
     console.error(message);
+    notify(errorNotice("A user plugin failed", message));
     fireEvent(EventType.LOG_ERROR, message).catch(() => undefined);
 }

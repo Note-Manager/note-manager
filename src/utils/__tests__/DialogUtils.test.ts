@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest";
-import {getUnencodableMessage, getUnsavedChangesMessage, UNSAVED_CHANGES_BUTTONS} from "../DialogUtils";
-import {UnsavedChangesChoice} from "../../enums";
+import {conversionDialog, getUnencodableMessage, getUnsavedChangesMessage, missingRecentFileNotice, unencodableSaveDialog, unsavedChangesDialog} from "../DialogUtils";
+import {DialogRole, MessageKind, UnencodableChoice, UnsavedChangesChoice} from "../../enums";
+import {getCancelAction} from "../../domain/Dialog";
 
 describe("DialogUtils", () => {
     it("asks about a single document by name", () => {
@@ -17,12 +18,24 @@ describe("DialogUtils", () => {
         expect(detail.startsWith("a.txt\nb.txt\n\n")).toBe(true);
     });
 
-    it("orders the buttons as save, don't save, cancel", () => {
-        expect(UNSAVED_CHANGES_BUTTONS.map(b => b.choice)).toEqual([
-            UnsavedChangesChoice.SAVE,
-            UnsavedChangesChoice.DISCARD,
-            UnsavedChangesChoice.CANCEL,
+    it("offers save as the primary action and don't save as the destructive one", () => {
+        const actions = unsavedChangesDialog(["a.txt"]).actions;
+
+        expect(actions.map(a => [a.role, a.value])).toEqual([
+            [DialogRole.PRIMARY, UnsavedChangesChoice.SAVE],
+            [DialogRole.DESTRUCTIVE, UnsavedChangesChoice.DISCARD],
+            [DialogRole.CANCEL, UnsavedChangesChoice.CANCEL],
         ]);
+    });
+
+    it("cancels every question without saving or converting", () => {
+        expect(getCancelAction(unsavedChangesDialog(["a.txt"])).value).toBe(UnsavedChangesChoice.CANCEL);
+        expect(getCancelAction(unencodableSaveDialog("a.txt", "ANSI", 1, ["€"])).value).toBe(UnencodableChoice.CANCEL);
+        expect(getCancelAction(conversionDialog("ANSI", 1, ["€"])).value).toBe(false);
+    });
+
+    it("reports a missing recent file as a warning with its path", () => {
+        expect(missingRecentFileNotice("C:\\notes\\a.txt")).toMatchObject({kind: MessageKind.WARNING, detail: "C:\\notes\\a.txt"});
     });
 
     it("names the characters an encoding cannot hold", () => {

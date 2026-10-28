@@ -4,15 +4,15 @@ import {EditorTab} from "../domain/EditorTab";
 import {documentHash, hash, shortenTabName} from "./TextUtils";
 import * as Environment from "./EnvironmentUtils";
 import {EditorState} from "../domain/EditorState";
-import {BrowserWindow, dialog} from "electron";
+import {BrowserWindow} from "electron";
 import {EventType} from "../enums";
 import {findLanguageByFileName} from "../domain/SupportedLanguage";
 import {addRecentFile} from "./RecentFiles";
 import {decodeText} from "./EncodingUtils";
 import {getDetectionOptions} from "../domain/Settings";
 import {DecodedText, detectEol, isKnownEncoding, isKnownEol, toEditorText} from "../domain/Encoding";
-import {openLargeOrBinaryFileDialog} from "./DialogUtils";
-import {send} from "./WindowUtils";
+import {openFailedNotice, openLargeOrBinaryFileDialog} from "./DialogUtils";
+import {notify, send, showMessageDialog} from "./WindowUtils";
 
 export async function readTextFile(file: string, preferredEncoding?: string): Promise<DecodedText> {
     const settings = Environment.getSettings();
@@ -135,9 +135,7 @@ export async function confirmOpen(window: BrowserWindow, file: string) {
 
     if (size < LARGE_FILE_WARNING_SIZE && !isBinary) return true;
 
-    const {response} = await dialog.showMessageBox(window, openLargeOrBinaryFileDialog(path.basename(file), size, isBinary));
-
-    return response === 1;
+    return showMessageDialog(window.webContents, openLargeOrBinaryFileDialog(path.basename(file), size, isBinary));
 }
 
 export async function openInWindow(window: BrowserWindow, file: string) {
@@ -149,5 +147,6 @@ export async function openInWindow(window: BrowserWindow, file: string) {
         addRecentFile(file);
     } catch (err) {
         console.error(`cannot open file '${file}': ${err}`);
+        notify(window.webContents, openFailedNotice(path.basename(file), err));
     }
 }

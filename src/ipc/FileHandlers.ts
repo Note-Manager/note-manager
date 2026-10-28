@@ -3,10 +3,10 @@ import {EventType, UnencodableChoice} from "../enums";
 import {openInWindow, readTextFile} from "../utils/EditorUtils";
 import {isFileExists, readFileBytes, writeFile} from "../utils/FileUtils";
 import {addRecentFile} from "../utils/RecentFiles";
-import {UNENCODABLE_SAVE_BUTTONS, unencodableSaveDialog} from "../utils/DialogUtils";
+import {unencodableSaveDialog} from "../utils/DialogUtils";
 import {decodeBuffer, encodeText, findUnencodableCharacters, getAnsiCodePage} from "../utils/EncodingUtils";
 import {DEFAULT_ENCODING, detectEol, EncodingId, EolType, getEncodingLabel, isKnownEncoding, isKnownEol, toEditorText} from "../domain/Encoding";
-import {showMessageBox} from "../utils/WindowUtils";
+import {showMessageDialog} from "../utils/WindowUtils";
 import {handle, optionalFile, requireFile} from "./IpcMain";
 
 export function registerFileHandlers() {
@@ -18,7 +18,7 @@ export function registerFileHandlers() {
         data.files.forEach(file => openInWindow(win, file));
     });
 
-    handle(EventType.WRITE_FILE, (event, data) => {
+    handle(EventType.WRITE_FILE, async (event, data) => {
         const file = requireFile(data);
         const content = typeof data.content === "string" ? data.content : "";
         const eol = isKnownEol(data.eol) ? data.eol : EolType.LF;
@@ -27,10 +27,9 @@ export function registerFileHandlers() {
         const unencodable = findUnencodableCharacters(content, encoding);
 
         if (unencodable.count > 0) {
-            const options = unencodableSaveDialog(file, getEncodingLabel(encoding), unencodable.count, unencodable.samples);
-            const choice = UNENCODABLE_SAVE_BUTTONS[showMessageBox(event.sender, options)]?.choice;
+            const choice = await showMessageDialog(event.sender, unencodableSaveDialog(file, getEncodingLabel(encoding), unencodable.count, unencodable.samples));
 
-            if (choice === undefined || choice === UnencodableChoice.CANCEL) return {saved: false, encoding: encoding};
+            if (choice === UnencodableChoice.CANCEL) return {saved: false, encoding: encoding};
             if (choice === UnencodableChoice.CONVERT_TO_UTF8) encoding = EncodingId.UTF8;
         }
 

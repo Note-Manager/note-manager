@@ -29,6 +29,7 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - Reopen up to 20 recently closed tabs with their content.
 - Choose a tab layout: a single scrolling row, wrapped rows, or a vertical list.
 - Closing a changed tab or the window asks whether to Save, Don't Save or Cancel.
+- Questions, warnings and errors appear in the app's own themed dialogs and notifications (bottom right), not in system message boxes. Escape cancels a dialog; errors stay until you dismiss them.
 
 **Files**
 

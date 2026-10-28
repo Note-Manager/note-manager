@@ -27,8 +27,10 @@ Every change must leave the code readable, free of duplication and with one clea
 | Main-process IPC handlers | `src/ipc/<Area>Handlers.ts`, registered in `IpcMainListener.ts` |
 | Application menu | `src/utils/ApplicationMenu.ts` |
 | Theme injection / theme files / preferences | `ThemeLoader.ts` / `ThemeStore.ts` / `EnvironmentUtils.ts` |
-| Window messaging, message boxes, menu popups | `src/utils/WindowUtils.ts` |
-| Dialog texts and options | `src/utils/DialogUtils.ts` (pure, tested) |
+| Window messaging, in-app message dialogs and notices from main, menu popups | `src/utils/WindowUtils.ts` |
+| Dialog and notice texts and actions | `src/utils/DialogUtils.ts` (pure, tested, no Node imports so the renderer can use it) |
+| Dialog and notice types, result and button order | `src/domain/Dialog.ts` |
+| Renderer dialog and notice store | `src/react/Dialogs.ts`, rendered by `DialogHost` |
 | Tab creation and tab helpers | `src/utils/TabUtils.ts` |
 | Renderer logic | hooks in `src/react/hooks/` |
 | Renderer UI | components in `src/react/components/` render only; logic goes to hooks |
@@ -42,7 +44,7 @@ Search for an existing helper before writing a new one. Extract a helper the sec
 
 - IPC in the renderer: `useIpcEvents({[EventType.X]: data => ...}, deps)` to listen, `fireEvent(EventType.X, payload)` to invoke. Never pair `on`/`off` by hand in a component.
 - IPC in main: `handle(EventType.X, (event, data) => ...)` from `src/ipc/IpcMain.ts` (typed from `IpcContract`), `requireFile` / `optionalFile` for payload checks, `send(contents, EventType.X, data)`, `sendToFocusedWindow`, `broadcast`, `sendPluginAction`.
-- Dialogs: `showMessageBox(event.sender, someDialog(...))` with option builders from `DialogUtils`.
+- Dialogs and notices are always the app's own, never native message boxes (`dialog.showMessageBox`, `showErrorBox`, `Notification`). Only the native file open/save pickers stay native. Build the dialog with a `DialogUtils` builder (`MessageDialog<T>` whose actions carry their `value` and a `DialogRole`). In main: `await showMessageDialog(event.sender, someDialog(...))` resolves to the chosen value (cancel when the window closes or reloads) and `notify(contents, someNotice(...))` shows a toast. In the renderer: `await showDialog(someDialog(...))`, `notify(notice)` and `.catch(notifyError("Cannot ..."))` for failures the user should see.
 - Menus: `popupMenu(template, win, position)`; accelerators always through `getAccelerator(id)` (user key bindings apply), never a hard-coded default that `Shortcuts.ts` already defines.
 - Tabs: `createEmptyTab`, `generateUniqueName`, `renameTab`, `hashTab`, `refreshIsChanged`, `applySavedFile`, `orderByPinned`, `moveTab`, `DEFAULT_TAB_NAME`.
 - Editor text changes: `transformSelections` / `transformSelectionsOrDocument` / `getNonEmptySelections` from `EditorTransforms.ts`.
