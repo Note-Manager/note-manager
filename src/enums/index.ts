@@ -25,6 +25,8 @@ export enum EventType {
     SAVE_STATE = "save-state",
     WRITE_FILE = "write-file",
     SHOW_TAB_CONTEXT_MENU = "show-tab-context-menu",
+    SHOW_EDITOR_CONTEXT_MENU = "show-editor-context-menu",
+    EDITOR_COMMAND = "editor-command",
     TAB_ACTION = "tab-action",
     INIT_WITH_STATE = "initialize-with-state",
     REVEAL_FILE = "reveal-file",
@@ -74,4 +76,15 @@ export enum TabAction {
     TOGGLE_PIN = "toggle-pin",
     REOPEN_CLOSED = "reopen-closed",
     REVEAL_IN_FOLDER = "reveal-in-folder",
+}
+
+export enum EditorCommand {
+    UNDO = "undo",
+    REDO = "redo",
+    DELETE = "delete",
+    SELECT_ALL = "select-all",
+    FIND = "find",
+    REPLACE = "replace",
+    GO_TO_LINE = "go-to-line",
+    TOGGLE_PREVIEW = "toggle-preview",
 }

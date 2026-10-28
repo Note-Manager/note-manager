@@ -88,9 +88,12 @@ function rebuildUserPlugins() {
 function createPlugin(info: UserPluginInfo, implementation: UserPluginImplementation): EditorPlugin {
     let editor: EditorWrapper | undefined;
 
+    const menuItems = [{label: info.name, actions: info.actions.map(a => ({label: a.label, code: a.code, accelerator: a.accelerator}))}];
+
     return {
         name: info.name,
-        applicationMenuItems: [{label: info.name, actions: info.actions.map(a => ({label: a.label, code: a.code, accelerator: a.accelerator}))}],
+        applicationMenuItems: menuItems,
+        contextMenuItems: menuItems,
         initializePlugin: (wrapper: EditorWrapper) => {
             editor = wrapper;
 

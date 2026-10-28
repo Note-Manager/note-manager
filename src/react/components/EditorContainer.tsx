@@ -4,13 +4,13 @@ import React, {useEffect, useRef, useState} from "react";
 import * as TextUtils from "../../utils/TextUtils";
 import {shortenTabName} from "../../utils/TextUtils";
 import {fireEvent, off, on} from "../ApplicationEvents";
-import {EncodingAction, EventType} from "../../enums";
+import {EditorCommand, EncodingAction, EventType} from "../../enums";
 import {Ace} from "ace-builds";
-import {SupportedLanguage, SupportedLanguages} from "../../domain/SupportedLanguage";
+import {LanguageName, SupportedLanguage, SupportedLanguages} from "../../domain/SupportedLanguage";
 import {useEditorContext} from "./editor/EditorContext";
 import {markStateChanged} from "../StateChangeTracker";
 import {allPlugins} from "../../utils/PluginLoader";
-import {ToolbarMenuItem} from "./editor/plugins";
+import {ContextMenuGroup, ToolbarMenuItem} from "./editor/plugins";
 import DOMPurify from "dompurify";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTimesRectangle} from "@fortawesome/free-regular-svg-icons/faTimesRectangle";
@@ -18,6 +18,10 @@ import {saveTab} from "../TabSaver";
 import {EolType, getEditorNewLineMode, isKnownEncoding, isKnownEol} from "../../domain/Encoding";
 import EncodingPicker from "./EncodingPicker";
 import ToolWindowResizer, {readToolWindowWidth} from "./ToolWindowResizer";
+import {getUserPlugins} from "../UserPluginRegistry";
+import {AceEditorWrapper} from "../../domain/AceEditorWrapper";
+
+const PREVIEW_LANGUAGES: Array<string> = [LanguageName.MARKDOWN, LanguageName.HTML];
 
 const debounceDelay = 200; // Delay in milliseconds
 let changeDebounceTimer: NodeJS.Timeout; // Timer for change event
@@ -32,6 +36,8 @@ export default function EditorContainer() {
 
     const editorRef = useRef<Ace.Editor>();
     const encodingActionRef = useRef<(action: EncodingAction, encoding?: string) => void>();
+
+    const previewTool = allPlugins.flatMap(p => p.toolbarMenuItems || []).find(item => item.label === "Preview");
 
     useEffect(() => {
         if(!activeTab){
@@ -134,7 +140,43 @@ export default function EditorContainer() {
             refreshChangedState().catch(err => console.error("cannot change line endings of " + activeTab.name + ": " + err));
         }
 
+        const onEditorCommand = (event: any, data: {command: EditorCommand}) => {
+            const editor = editorRef.current;
+
+            if (!editor) return;
+
+            switch (data?.command) {
+                case EditorCommand.UNDO:
+                    editor.undo();
+                    break;
+                case EditorCommand.REDO:
+                    editor.redo();
+                    break;
+                case EditorCommand.DELETE:
+                    editor.execCommand("del");
+                    break;
+                case EditorCommand.SELECT_ALL:
+                    editor.selectAll();
+                    break;
+                case EditorCommand.FIND:
+                    editor.execCommand("find");
+                    return;
+                case EditorCommand.REPLACE:
+                    editor.execCommand("replace");
+                    return;
+                case EditorCommand.GO_TO_LINE:
+                    editor.execCommand("gotoline");
+                    return;
+                case EditorCommand.TOGGLE_PREVIEW:
+                    setActiveTool(current => current === previewTool ? undefined : previewTool);
+                    break;
+            }
+
+            editor.focus();
+        }
+
         on(EventType.SAVE_TAB, onTabSave);
+        on(EventType.EDITOR_COMMAND, onEditorCommand);
         on(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
         on(EventType.ENCODING_ACTION, onEncodingAction);
         on(EventType.EOL_ACTION, onEolAction);
@@ -142,6 +184,7 @@ export default function EditorContainer() {
 
         return () => {
             off(EventType.SAVE_TAB, onTabSave);
+            off(EventType.EDITOR_COMMAND, onEditorCommand);
             off(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
             off(EventType.ENCODING_ACTION, onEncodingAction);
             off(EventType.EOL_ACTION, onEolAction);
@@ -233,6 +276,38 @@ export default function EditorContainer() {
         }, debounceDelay);
     }
 
+    const showContextMenu = (event: React.MouseEvent) => {
+        const editor = editorRef.current;
+
+        if (!editor || (event.target as HTMLElement).closest(".ace_search")) return;
+
+        event.preventDefault();
+
+        const wrapper = new AceEditorWrapper(editor);
+        const undoManager = editor.session.getUndoManager();
+
+        const groups: Array<ContextMenuGroup> = [...allPlugins, ...getUserPlugins()].flatMap(plugin => plugin.contextMenuItems || []).map(item => ({
+            label: item.label,
+            actions: item.actions.map(action => ({
+                label: action.label,
+                code: action.code,
+                enabled: action.isAvailable ? action.isAvailable(wrapper) : true
+            }))
+        }));
+
+        fireEvent(EventType.SHOW_EDITOR_CONTEXT_MENU, {
+            hasSelection: !editor.selection.isEmpty(),
+            canUndo: undoManager.hasUndo(),
+            canRedo: undoManager.hasRedo(),
+            file: activeTab.file,
+            canPreview: !!previewTool && PREVIEW_LANGUAGES.includes(activeTab.language?.name || ""),
+            isPreviewOpen: !!previewTool && activeTool === previewTool,
+            groups: groups,
+            x: event.clientX,
+            y: event.clientY,
+        }).catch(err => console.error("cannot show editor context menu: " + err));
+    }
+
     const onEditorLoad = (editor: Ace.Editor) => {
         editorRef.current = editor;
 
@@ -260,7 +335,7 @@ export default function EditorContainer() {
                     }}/>
             }
             {activeTab &&
-                <div id={"tabContentWrapper"} key={activeTab.id}>
+                <div id={"tabContentWrapper"} key={activeTab.id} onContextMenu={showContextMenu}>
                     <Editor
                         content={activeTab.content || ""}
                         language={activeTab.language || SupportedLanguages.text}

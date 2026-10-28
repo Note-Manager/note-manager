@@ -20,6 +20,12 @@ export interface EditorAction {
     code: string,
     perform?: (editor: EditorWrapper) => void
     accelerator?: string,
+    isAvailable?: (editor: EditorWrapper) => boolean,
+}
+
+export interface ContextMenuGroup {
+    label: string,
+    actions: Array<{label: string, code: string, enabled: boolean}>
 }
 
 export interface ToolWindowContext {
