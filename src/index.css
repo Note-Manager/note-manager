@@ -51,11 +51,31 @@ body, html {
 
 #toolWindow {
     width: 400px;
+    min-width: 220px;
+    max-width: calc(100vw - 320px);
 
     display: flex;
     flex-direction: column;
 
     border-left: 1px solid;
+}
+
+#toolWindowResizer {
+    width: 5px;
+    margin-right: -5px;
+    z-index: 1;
+
+    cursor: col-resize;
+    transition: 0.15s background-color ease;
+}
+
+#toolWindowResizer:hover, #toolWindowResizer.dragging {
+    background-color: var(--positive-color);
+}
+
+body.resizing-tool-window, body.resizing-tool-window * {
+    cursor: col-resize !important;
+    user-select: none !important;
 }
 
 #toolWindowHeader {
