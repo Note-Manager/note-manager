@@ -5,7 +5,7 @@ import {EventType} from "./enums";
 import {attachTitlebarToWindow, setupTitlebar} from "custom-electron-titlebar/main";
 import {fileToTab, openInWindow, readEditorState} from "./utils/EditorUtils";
 import initIpcMainListeners from "./ipc/IpcMainListener";
-import {initApplicationMenu, loadThemeToWindow, refreshTitlebar} from "./utils/ElectronUtils";
+import {getThemeBackgroundColor, initApplicationMenu, loadThemeToWindow, refreshTitlebar} from "./utils/ElectronUtils";
 import {EditorState} from "./domain/EditorState";
 import {SupportedLanguages} from './domain/SupportedLanguage';
 import {documentHash} from "./utils/TextUtils";
@@ -45,6 +45,7 @@ const createWindow = () => {
         height: 860,
         titleBarStyle: "hidden",
         titleBarOverlay: false,
+        backgroundColor: getThemeBackgroundColor(),
         webPreferences: {
             // @ts-ignore
             preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,

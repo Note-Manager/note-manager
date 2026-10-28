@@ -84,7 +84,7 @@ export default function EncodingPicker({action, encoding, hasFile, onActionChang
             <div id={"encodingPicker"} role={"dialog"} aria-label={"Encoding"} onKeyDown={onKeyDown}>
                 <div id={"encodingPickerModes"} role={"tablist"}>
                     {MODES.map(m => (
-                        <button key={m.action} role={"tab"} aria-selected={m.action === mode} className={m.action === mode ? "selected" : ""}
+                        <button key={m.action} role={"tab"} aria-selected={m.action === mode} className={"chip ghost" + (m.action === mode ? " selected" : "")}
                                 onClick={() => changeMode(m.action)}>{m.label}</button>
                     ))}
                     <span id={"encodingPickerHint"}>{MODES.find(m => m.action === mode)?.hint}</span>
@@ -109,7 +109,7 @@ export default function EncodingPicker({action, encoding, hasFile, onActionChang
                                      onMouseMove={() => index !== highlighted && setHighlighted(index)}
                                      onClick={() => choose(choice)}>
                                     <span className={"encodingChoiceLabel"}>{choice.label}</span>
-                                    {choice.id === encoding && <span className={"encodingChoiceCurrent"}>current</span>}
+                                    {choice.id === encoding && <span className={"encodingChoiceCurrent chip current"}>current</span>}
                                     <span className={"encodingChoiceDescription"}>{choice.description}</span>
                                 </div>
                             </React.Fragment>

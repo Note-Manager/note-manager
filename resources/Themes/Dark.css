@@ -4,14 +4,27 @@
     --primary-bg: #1e1e1e;
     --secondary-bg: #131313;
     --border-color: #474747;
+    --border-subtle-color: #333333;
+    --elevated-bg: #252526;
+    --hover-bg: rgba(255, 255, 255, 0.06);
+    --overlay-bg: rgba(0, 0, 0, 0.5);
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    --muted-color: #8f8b93;
 
     /* misc */
     --negative-color: #bf0000;
     --positive-color: dodgerblue;
+    --warning-color: #d19a2a;
+    --success-color: #3fa45b;
+    --on-accent-color: #ffffff;
+    --focus-ring-color: #4da3ff;
 
     /* editor related */
     --selected-highlight-color: #788cbd;
-    --scrollbar-thumb-color: #757575;
+    --scrollbar-thumb-color: #4a4a4a;
+    --scrollbar-thumb-hover-color: #6a6a6a;
+    --scrollbar-track-color: transparent;
+    --selection-bg: #264f78;
     --active-line-bg: rgba(0, 0, 0, 0.48);
     --action-bg: rgb(57, 57, 57);
 
@@ -25,4 +38,14 @@
     --comment-color: #dfb6b6;
     --number-color: #4f9cf6;
     --xml-tag-color: #eccb2a;
+
+    /* tags */
+    --tag-1-color: #e5534b;
+    --tag-2-color: #e0823d;
+    --tag-3-color: #c69026;
+    --tag-4-color: #3fa45b;
+    --tag-5-color: #39a8b0;
+    --tag-6-color: #4493f8;
+    --tag-7-color: #a371f7;
+    --tag-8-color: #db61a2;
 }

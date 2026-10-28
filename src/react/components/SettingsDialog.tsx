@@ -180,7 +180,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
             <div id={"settingsDialog"} role={"dialog"} aria-label={"Settings"}>
                 <div id={"settingsNav"}>
                     {Object.values(Section).map(s => (
-                        <div key={s} className={"settingsNavItem" + (s === section ? " selected" : "")} onClick={() => setSection(s)}>{s}</div>
+                        <button type={"button"} key={s} className={"settingsNavItem" + (s === section ? " selected" : "")} aria-current={s === section} onClick={() => setSection(s)}>{s}</button>
                     ))}
                 </div>
                 <div id={"settingsBody"}>

@@ -13,6 +13,7 @@ import {resolveAccelerator, Settings} from "../domain/Settings";
 import {getDefaultAccelerator, ShortcutId} from "./Shortcuts";
 import {getUserPluginManifests, getUserPluginPath, loadUserPluginManifests} from "./UserPlugins";
 import {createEncodingMenu} from "./EncodingMenu";
+import {parseThemeVariables} from "./ThemeVariables";
 
 
 export const appIcon = electron.nativeImage.createFromPath(path.join(getSystemPath(SystemPaths.resources), "Icons/note-manager.png"));
@@ -300,9 +301,20 @@ onRecentFilesChanged(rebuildMenus);
 
 const insertedThemeKeys = new Map<number, string>();
 
+export function getThemeBackgroundColor(): string | undefined {
+    try {
+        return parseThemeVariables(Environment.getPreferences().theme.getCSSContent()).find(v => v.name === "--primary-bg")?.value;
+    } catch {
+        return undefined;
+    }
+}
+
 export function loadThemeToWindow(win: BrowserWindow) {
     const contents = win.webContents;
     const previousKey = insertedThemeKeys.get(contents.id);
+    const background = getThemeBackgroundColor();
+
+    if (background) win.setBackgroundColor(background);
 
     contents.insertCSS(Environment.getPreferences().theme.getCSSContent())
         .then(key => {
