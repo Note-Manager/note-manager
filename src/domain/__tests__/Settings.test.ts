@@ -26,6 +26,11 @@ describe("Settings", () => {
         expect(normalizeSettings({files: {defaultEncoding: "utf-7", defaultEol: "LS", asciiAsUtf8: "no"}}).files).toEqual(DEFAULT_SETTINGS.files);
     });
 
+    it("keeps a valid web search address and drops invalid ones", () => {
+        expect(normalizeSettings({search: {webSearchUrl: "https://duckduckgo.com/?q=%s"}}).search.webSearchUrl).toBe("https://duckduckgo.com/?q=%s");
+        expect(normalizeSettings({search: {webSearchUrl: "javascript:alert(%s)"}}).search).toEqual(DEFAULT_SETTINGS.search);
+    });
+
     it("passes the file options to detection", () => {
         expect(getDetectionOptions(DEFAULT_SETTINGS)).toEqual({asciiAsUtf8: true, autodetect: true});
         expect(getDetectionOptions({...DEFAULT_SETTINGS, files: {...DEFAULT_SETTINGS.files, defaultEncoding: "utf-8-bom"}}).asciiAsUtf8).toBe(true);

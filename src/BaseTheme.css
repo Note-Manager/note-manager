@@ -46,6 +46,7 @@
     --easing-standard: cubic-bezier(0.2, 0, 0, 1);
 
     --z-resizer: 1;
+    --z-editor-marker: 4;
     --z-dropdown: 100;
     --z-popover: 200;
     --z-overlay: 900;
@@ -66,6 +67,8 @@
     --focus-ring-color: var(--positive-color);
     --shadow-color: rgba(0, 0, 0, 0.4);
     --selection-bg: var(--action-bg);
+    --search-match-bg: color-mix(in srgb, var(--warning-color) 40%, transparent);
+    --search-scope-bg: color-mix(in srgb, var(--positive-color) 10%, transparent);
     --scrollbar-thumb-hover-color: var(--scrollbar-thumb-color);
     --scrollbar-track-color: transparent;
 
@@ -297,70 +300,18 @@ body .cet-menubar-menu-container .cet-action-menu-item {
     z-index: var(--z-tooltip) !important;
 }
 
-.ace_search {
-    padding: var(--space-2) !important;
-    font-family: var(--font-ui) !important;
-    font-size: var(--font-size-sm) !important;
-    color: var(--color) !important;
-    background-color: var(--elevated-bg) !important;
-    border: 1px solid var(--border-subtle-color) !important;
-    border-top: 0 !important;
-    border-radius: 0 0 var(--radius-md) var(--radius-md) !important;
-    box-shadow: var(--shadow-sm) !important;
-    z-index: var(--z-popover) !important;
-    animation: ui-overlay-enter var(--duration-normal) var(--easing-standard);
+.ace_marker-layer .searchMatch, .ace_marker-layer .searchScope {
+    position: absolute;
+    z-index: var(--z-editor-marker);
 }
 
-.ace_search_form, .ace_replace_form {
-    border-color: var(--border-color) !important;
-    border-radius: var(--radius-sm) !important;
-    overflow: hidden;
+.ace_marker-layer .searchMatch {
+    background-color: var(--search-match-bg);
+    border-radius: var(--radius-sm);
 }
 
-.ace_search_field {
-    height: var(--control-height-md) !important;
-    padding: 0 var(--space-2) !important;
-    font-family: var(--font-ui) !important;
-    font-size: var(--font-size-sm) !important;
-    color: var(--color) !important;
-    background-color: var(--secondary-bg) !important;
-    border-color: var(--border-color) !important;
-}
-
-.ace_searchbtn, .ace_button {
-    height: var(--control-height-md) !important;
-    font-size: var(--font-size-sm) !important;
-    color: var(--color) !important;
-    background-color: var(--secondary-bg) !important;
-    border-color: var(--border-color) !important;
-    cursor: default !important;
-    transition: background-color var(--duration-fast) var(--easing-standard);
-}
-
-.ace_button {
-    height: auto !important;
-    margin: 0 var(--space-1) 0 0 !important;
-    padding: 0 var(--space-1) !important;
-    border-radius: var(--radius-sm) !important;
-    opacity: 1 !important;
-}
-
-.ace_searchbtn:hover, .ace_button:hover {
-    background-color: var(--hover-bg) !important;
-}
-
-.ace_button.checked {
-    background-color: var(--action-bg) !important;
-    border-color: var(--positive-color) !important;
-}
-
-.ace_search_counter {
-    color: var(--muted-color) !important;
-}
-
-.ace_searchbtn_close {
-    filter: none !important;
-    background-color: transparent !important;
+.ace_marker-layer .searchScope {
+    background-color: var(--search-scope-bg);
 }
 
 .ace_line-hover {

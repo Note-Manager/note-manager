@@ -15,6 +15,7 @@ import {ShortcutId} from "./Shortcuts";
 import {getAccelerator} from "./Accelerators";
 import {getUserPluginManifests, getUserPluginPath, loadUserPluginManifests} from "./UserPlugins";
 import {createEncodingMenu} from "./EncodingMenu";
+import {createSearchMenu} from "./SearchMenu";
 import {missingRecentFileNotice} from "./DialogUtils";
 import {broadcast, notify, sendPluginAction, sendToFocusedWindow} from "./WindowUtils";
 import {RendererChannel, RendererPayload} from "../domain/IpcContract";
@@ -71,6 +72,7 @@ function createApplicationMenu() {
                 {role: "selectAll"}
             ]
         },
+        {label: "Search", submenu: createSearchMenu(command => sendToFocusedWindow(EventType.EDITOR_COMMAND, {command: command}))},
         {label: "Encoding", submenu: createEncodingMenu(sendToFocusedWindow)},
         {
             label: "Language",

@@ -41,9 +41,18 @@ body, html {
     overflow: hidden;
 }
 
+#editorColumn {
+    flex: 1;
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+}
+
 #tabContentWrapper, .tabContentWrapper {
     flex: 1;
     min-width: 0;
+    min-height: 0;
 
     display: flex;
     overflow: hidden;
@@ -86,6 +95,28 @@ body, html {
 
 .iconButton.danger:hover {
     color: var(--negative-color);
+}
+
+.iconButton:focus-visible {
+    outline: 1px solid var(--focus-ring-color);
+    outline-offset: 1px;
+}
+
+.iconButton:disabled {
+    opacity: var(--disabled-opacity);
+    pointer-events: none;
+}
+
+.iconButton.toggle {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    color: var(--muted-color);
+}
+
+.iconButton.toggle[aria-pressed="true"] {
+    color: var(--color);
+    background-color: var(--action-bg);
+    border-color: var(--positive-color);
 }
 
 .chip {
@@ -409,7 +440,140 @@ body.resizing-tool-window, body.resizing-tool-window * {
     min-width: 0;
 }
 
-#encodingPickerOverlay {
+#searchBar {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-1);
+
+    padding: var(--space-1) var(--space-2);
+
+    font-size: var(--font-size-sm);
+    color: var(--color);
+    background-color: var(--secondary-bg);
+    border-bottom: 1px solid var(--border-subtle-color);
+}
+
+#searchBar .searchExpander {
+    height: var(--control-height-md);
+}
+
+#searchBar .searchRows {
+    flex: 1;
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+#searchBar .searchRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+#searchBar .searchField {
+    position: relative;
+
+    flex: 0 1 calc(var(--control-height-md) * 12);
+    min-width: calc(var(--control-height-md) * 5);
+
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+#searchBar .searchField .textField {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-mono);
+}
+
+#searchBar .textField[aria-invalid="true"] {
+    border-color: var(--negative-color);
+}
+
+#searchBar .searchOptions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+#searchBar .wholeWord {
+    text-decoration: underline;
+}
+
+#searchBar .searchDivider {
+    align-self: stretch;
+    width: 1px;
+    margin: 0 var(--space-1);
+    background-color: var(--border-subtle-color);
+}
+
+#searchBar .searchStatus {
+    flex: 1;
+    min-width: 0;
+    padding: 0 var(--space-2);
+
+    font-size: var(--font-size-xs);
+    color: var(--muted-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#searchBar .searchStatus.notice {
+    color: var(--warning-color);
+}
+
+#searchBar .searchStatus.error {
+    color: var(--negative-color);
+}
+
+#searchBar .searchHistory {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    left: 0;
+    right: 0;
+    z-index: var(--z-dropdown);
+
+    max-height: calc(var(--control-height-md) * 8);
+    padding: var(--space-1);
+    overflow-y: auto;
+
+    background-color: var(--elevated-bg);
+    border: 1px solid var(--border-subtle-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+
+    animation: ui-overlay-enter var(--duration-normal) var(--easing-standard);
+}
+
+#searchBar .searchHistoryItem {
+    display: flex;
+    align-items: center;
+
+    min-height: var(--control-height-md);
+    padding: 0 var(--space-2);
+
+    font-family: var(--font-mono);
+    white-space: pre;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    border-radius: var(--radius-sm);
+}
+
+#searchBar .searchHistoryItem:hover {
+    background-color: var(--hover-bg);
+}
+
+#searchBar .searchHistoryItem[aria-selected="true"] {
+    background-color: var(--action-bg);
+    box-shadow: inset var(--marker-width) 0 0 var(--positive-color);
+}
+
+.paletteOverlay {
     position: fixed;
     inset: 0;
     z-index: var(--z-overlay);
@@ -422,7 +586,7 @@ body.resizing-tool-window, body.resizing-tool-window * {
     background-color: var(--overlay-bg);
 }
 
-#encodingPicker {
+.palette {
     display: flex;
     flex-direction: column;
 
@@ -456,9 +620,15 @@ body.resizing-tool-window, body.resizing-tool-window * {
     color: var(--muted-color);
 }
 
-#encodingPickerSearch {
+.paletteInput {
     flex: none;
     margin: var(--space-2);
+}
+
+.paletteHint {
+    padding: 0 var(--space-3) var(--space-2) var(--space-3);
+    font-size: var(--font-size-xs);
+    color: var(--muted-color);
 }
 
 #encodingPickerList {
@@ -624,7 +794,7 @@ body.resizing-tool-window, body.resizing-tool-window * {
     color: var(--muted-color);
 }
 
-#settingsDialog input[type="text"], #settingsDialog input[type="number"], #settingsDialog select, #settingsDialog button, #encodingPickerSearch {
+#settingsDialog input[type="text"], #settingsDialog input[type="number"], #settingsDialog select, #settingsDialog button, .textField {
     height: var(--control-height-md);
     padding: 0 var(--space-2);
 
@@ -639,13 +809,13 @@ body.resizing-tool-window, body.resizing-tool-window * {
     transition: background-color var(--duration-fast) var(--easing-standard), border-color var(--duration-fast) var(--easing-standard);
 }
 
-#settingsDialog input[type="text"]:focus-visible, #settingsDialog input[type="number"]:focus-visible, #settingsDialog select:focus-visible, #encodingPickerSearch:focus-visible {
+#settingsDialog input[type="text"]:focus-visible, #settingsDialog input[type="number"]:focus-visible, #settingsDialog select:focus-visible, .textField:focus-visible {
     outline: 1px solid var(--focus-ring-color);
     outline-offset: -1px;
     border-color: var(--focus-ring-color);
 }
 
-#settingsDialog input::placeholder, #encodingPickerSearch::placeholder {
+#settingsDialog input::placeholder, .textField::placeholder {
     color: var(--muted-color);
 }
 
@@ -655,6 +825,10 @@ body.resizing-tool-window, body.resizing-tool-window * {
 
 #settingsDialog input[type="text"] {
     width: calc(var(--control-height-md) * 8);
+}
+
+#settingsDialog input.wideField {
+    width: calc(var(--control-height-md) * 14);
 }
 
 #settingsDialog input[type="number"] {

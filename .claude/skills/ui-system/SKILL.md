@@ -48,6 +48,7 @@ Components never pick their own values. Every color, spacing, radius, font, shad
 | Editor active line | `--active-line-bg` | theme |
 | Scrollbar | `--scrollbar-thumb-color`, `--scrollbar-thumb-hover-color`, `--scrollbar-track-color` | theme |
 | Text selection (editor, preview, inputs) | `--selection-bg` | theme |
+| Search match highlight / search-in-selection scope in the editor | `--search-match-bg`, `--search-scope-bg` | theme |
 | Code tokens | `--keyword-color`, `--type-color`, `--attribute-color`, `--string-color`, `--number-color`, `--comment-color`, `--variable-color`, `--block-color`, `--xml-tag-color` | theme |
 | Tag palette | `--tag-1-color` … `--tag-8-color` (theme), `--tag-1-bg` … `--tag-8-bg` (derived in base) | theme + base |
 | Spacing scale | `--space-1` … `--space-6` | base |
@@ -60,7 +61,7 @@ Components never pick their own values. Every color, spacing, radius, font, shad
 | Sidebar width (vertical tabs) | `--sidebar-width` | base |
 | Shadows | `--shadow-sm` (layer 2), `--shadow-lg` (layer 3) | base |
 | Motion | `--duration-fast` (hover/color), `--duration-normal` (open/close), `--easing-standard` | base |
-| z-index | `--z-resizer`, `--z-dropdown`, `--z-popover`, `--z-overlay`, `--z-dialog`, `--z-toast`, `--z-tooltip` | base |
+| z-index | `--z-resizer`, `--z-editor-marker` (search highlights in the Ace marker layer, below the selection), `--z-dropdown`, `--z-popover`, `--z-overlay`, `--z-dialog`, `--z-toast`, `--z-tooltip` | base |
 | Editor/preview text measure (70ch) | `--content-width` | base |
 | Selection / drop marker thickness | `--marker-width` | base |
 | Disabled opacity | `--disabled-opacity` | base |
@@ -77,7 +78,7 @@ The editor font family and size are user settings (`editorSettings.fontFamily` a
 4. Never write `transition: all`. List the properties, for example `transition: background-color var(--duration-fast) var(--easing-standard), color var(--duration-fast) var(--easing-standard)`.
 5. Never use `!important` in component styles. The `!important` rules in `src/BaseTheme.css` override third-party CSS (custom-electron-titlebar `.cet-*`, Ace `.ace_*`, which inject their own styles later) and the reduced-motion block. Those are the only places it is allowed: add one only when a third-party rule cannot be beaten otherwise.
 6. Never write theme-specific selectors (`.dark`, `[data-theme]`, `body.light`) or check the theme name in components. Light and dark work only by swapping variable values.
-7. Before creating a component, look for an existing one and extend it with a modifier class rather than building a lookalike. What exists today in `src/index.css`: `.iconButton` (+ `.danger`) for icon-only buttons, `.chip` (+ `.current`, `.ghost`, `.selected`) for status chips and segmented choices, the `#settingsDialog` button/input/select styles for form controls, `.settingsNavItem` / `.encodingChoice` / `.editorTabHeader` for rows, `#encodingPicker` for layer 2 pickers, `#settingsDialog` for layer 3 dialogs, `.btn` (+ `.primary`, `.danger`) for text buttons, `.dialog-backdrop` / `.dialog` / `.dialog-header` / `.dialog-body` / `.dialog-footer` (+ `.messageDialog`) for message dialogs, `.toast-stack` / `.toast` (+ `.success`, `.warning`, `.error`) for notices and `.severityIcon` for the kind badge in both. `references/components.md` has the generic recipes these follow.
+7. Before creating a component, look for an existing one and extend it with a modifier class rather than building a lookalike. What exists today in `src/index.css`: `.iconButton` (+ `.danger`, `.toggle` with `aria-pressed`) for icon-only buttons and option toggles, `.textField` for text inputs outside Settings, `.chip` (+ `.current`, `.ghost`, `.selected`) for status chips and segmented choices, the `#settingsDialog` button/input/select styles for form controls, `.settingsNavItem` / `.encodingChoice` / `.editorTabHeader` for rows, `.paletteOverlay` / `.palette` / `.paletteInput` / `.paletteHint` for layer 2 pickers opened like a command palette (encoding picker, go to box), `#searchBar` (layer 1 strip above the editor) with `.searchHistory` as its layer 2 dropdown, `#settingsDialog` for layer 3 dialogs, `.btn` (+ `.primary`, `.danger`) for text buttons, `.dialog-backdrop` / `.dialog` / `.dialog-header` / `.dialog-body` / `.dialog-footer` (+ `.messageDialog`) for message dialogs, `.toast-stack` / `.toast` (+ `.success`, `.warning`, `.error`) for notices and `.severityIcon` for the kind badge in both. `references/components.md` has the generic recipes these follow.
 8. Screen-level and container styles (`#workspace`, `#editorBody`, `#tabManager`, `#settingsDialog` layout) do layout only: display, flex/grid, sizing, overflow. Look comes from the component classes inside them.
 9. No inline `style={{...}}` for visual values in TSX. Inline styles are allowed only for runtime geometry (for example the tool window width while resizing).
 
@@ -89,7 +90,7 @@ Elements on the same layer look identical. Pick the layer first, then take its w
 |---|---|---|---|---|---|
 | 0 | Ace editor, markdown preview body, tool window body | `--primary-bg` | none | none | none |
 | 1 | Title bar, tab bar, footer/status bar, tool window header, editor tools strip, settings nav, vertical tab sidebar | `--secondary-bg` | 1px `--border-subtle-color` only on the edge that meets content | none | none |
-| 2 | Title bar menus and submenus, context menus, Ace search box, tooltips, encoding picker, command palette, slash menu, any dropdown | `--elevated-bg` | 1px `--border-subtle-color` | `--shadow-sm` | `--radius-md` |
+| 2 | Title bar menus and submenus, context menus, search history dropdown, go to box, tooltips, encoding picker, command palette, slash menu, any dropdown | `--elevated-bg` | 1px `--border-subtle-color` | `--shadow-sm` | `--radius-md` |
 | 3 | Settings dialog, confirm/unsaved dialogs, any modal | `--elevated-bg` | 1px `--border-color` | `--shadow-lg` | `--radius-lg`, with `--overlay-bg` backdrop at `--z-overlay` |
 
 A picker that is opened like a command palette (the encoding picker) is layer 2. It may have a backdrop for click-away, but the backdrop is `--overlay-bg` and the box keeps the layer 2 recipe.

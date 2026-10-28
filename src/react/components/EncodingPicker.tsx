@@ -77,8 +77,8 @@ export default function EncodingPicker({action, encoding, hasFile, onActionChang
     let lastGroup: string | undefined;
 
     return (
-        <div id={"encodingPickerOverlay"} onMouseDown={event => event.target === event.currentTarget && onClose()}>
-            <div id={"encodingPicker"} role={"dialog"} aria-label={"Encoding"} onKeyDown={onKeyDown}>
+        <div className={"paletteOverlay"} onMouseDown={event => event.target === event.currentTarget && onClose()}>
+            <div id={"encodingPicker"} className={"palette"} role={"dialog"} aria-label={"Encoding"} onKeyDown={onKeyDown}>
                 <div id={"encodingPickerModes"} role={"tablist"}>
                     {MODES.map(m => (
                         <button key={m.action} role={"tab"} aria-selected={m.action === mode} className={classNames("chip ghost", m.action === mode && "selected")}
@@ -86,7 +86,7 @@ export default function EncodingPicker({action, encoding, hasFile, onActionChang
                     ))}
                     <span id={"encodingPickerHint"}>{MODES.find(m => m.action === mode)?.hint}</span>
                 </div>
-                <input id={"encodingPickerSearch"} type={"text"} autoFocus={true} placeholder={"Search, e.g. 1254, latin, cyrillic"}
+                <input className={"textField paletteInput"} type={"text"} autoFocus={true} placeholder={"Search, e.g. 1254, latin, cyrillic"}
                     value={query} onChange={e => {
                         setCursor(undefined);
                         setQuery(e.target.value);

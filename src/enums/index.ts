@@ -44,7 +44,8 @@ export enum EventType {
     ENCODING_ACTION = "encoding-action",
     EOL_ACTION = "eol-action",
     OPEN_ENCODING_PICKER = "open-encoding-picker",
-    GET_ENCODING_INFO = "get-encoding-info"
+    GET_ENCODING_INFO = "get-encoding-info",
+    SEARCH_ON_WEB = "search-on-web"
 }
 
 export enum EncodingAction {
@@ -97,6 +98,12 @@ export enum EditorCommand {
     SELECT_ALL = "select-all",
     FIND = "find",
     REPLACE = "replace",
-    GO_TO_LINE = "go-to-line",
+    FIND_NEXT = "find-next",
+    FIND_PREVIOUS = "find-previous",
+    SELECT_AND_FIND_NEXT = "select-and-find-next",
+    SELECT_AND_FIND_PREVIOUS = "select-and-find-previous",
+    GO_TO = "go-to",
+    GO_TO_MATCHING_BRACE = "go-to-matching-brace",
+    SEARCH_ON_WEB = "search-on-web",
     TOGGLE_PREVIEW = "toggle-preview",
 }

@@ -1,32 +1,42 @@
-import {MutableRefObject} from "react";
+import {MutableRefObject, useRef} from "react";
 import {Ace} from "ace-builds";
 import {EditorCommand, EventType} from "../../enums";
 import {useIpcEvents} from "./useIpcEvents";
 
-const ACE_COMMANDS: Partial<Record<EditorCommand, string>> = {
-    [EditorCommand.DELETE]: "del",
-    [EditorCommand.FIND]: "find",
-    [EditorCommand.REPLACE]: "replace",
-    [EditorCommand.GO_TO_LINE]: "gotoline",
+export type EditorCommandHandlers = Partial<Record<EditorCommand, (editor: Ace.Editor) => void>>;
+
+const BUILT_IN_COMMANDS: EditorCommandHandlers = {
+    [EditorCommand.DELETE]: editor => editor.execCommand("del"),
+    [EditorCommand.UNDO]: editor => editor.undo(),
+    [EditorCommand.REDO]: editor => editor.redo(),
+    [EditorCommand.SELECT_ALL]: editor => editor.selectAll(),
+    [EditorCommand.GO_TO_MATCHING_BRACE]: editor => editor.jumpToMatching(),
 };
 
-const OPENS_A_SEARCH_BOX = [EditorCommand.FIND, EditorCommand.REPLACE, EditorCommand.GO_TO_LINE];
+const KEEPS_FOCUS = [
+    EditorCommand.FIND,
+    EditorCommand.REPLACE,
+    EditorCommand.FIND_NEXT,
+    EditorCommand.FIND_PREVIOUS,
+    EditorCommand.SELECT_AND_FIND_NEXT,
+    EditorCommand.SELECT_AND_FIND_PREVIOUS,
+    EditorCommand.GO_TO,
+    EditorCommand.SEARCH_ON_WEB,
+];
 
-export function useEditorCommands(editorRef: MutableRefObject<Ace.Editor | undefined>, togglePreview: () => void) {
+export function useEditorCommands(editorRef: MutableRefObject<Ace.Editor | undefined>, handlers: EditorCommandHandlers) {
+    const latestHandlers = useRef(handlers);
+
+    latestHandlers.current = handlers;
+
     const runCommand = (command: EditorCommand) => {
         const editor = editorRef.current;
 
         if (!editor) return;
 
-        const aceCommand = ACE_COMMANDS[command];
+        (latestHandlers.current[command] ?? BUILT_IN_COMMANDS[command])?.(editor);
 
-        if (aceCommand) editor.execCommand(aceCommand);
-        else if (command === EditorCommand.UNDO) editor.undo();
-        else if (command === EditorCommand.REDO) editor.redo();
-        else if (command === EditorCommand.SELECT_ALL) editor.selectAll();
-        else if (command === EditorCommand.TOGGLE_PREVIEW) togglePreview();
-
-        if (!OPENS_A_SEARCH_BOX.includes(command)) editor.focus();
+        if (!KEEPS_FOCUS.includes(command)) editor.focus();
     };
 
     useIpcEvents({

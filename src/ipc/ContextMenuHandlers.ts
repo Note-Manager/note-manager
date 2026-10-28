@@ -4,6 +4,7 @@ import {isKnownEol} from "../domain/Encoding";
 import {createEolMenu} from "../utils/EncodingMenu";
 import {ShortcutId} from "../utils/Shortcuts";
 import {getAccelerator} from "../utils/Accelerators";
+import {createSearchMenuItem} from "../utils/SearchMenu";
 import {popupMenu, send, Sender, sendPluginAction} from "../utils/WindowUtils";
 import {ContextMenuGroup} from "../react/components/editor/plugins";
 import {EditorMenuRequest, TabMenuRequest} from "../domain/IpcContract";
@@ -14,9 +15,6 @@ const EDITOR_ACCELERATORS = {
     REDO: "CmdOrCtrl+Shift+Z",
     DELETE: "Delete",
     SELECT_ALL: "CmdOrCtrl+A",
-    FIND: "CmdOrCtrl+F",
-    REPLACE: process.platform === "darwin" ? "Cmd+Alt+F" : "Ctrl+H",
-    GO_TO_LINE: "CmdOrCtrl+L",
 };
 
 export function registerContextMenuHandlers() {
@@ -65,7 +63,8 @@ function createTabMenu(sender: WebContents, data: TabMenuRequest): Array<MenuIte
 }
 
 function createEditorMenu(sender: WebContents, data: EditorMenuRequest): Array<MenuItemConstructorOptions> {
-    const command = (cmd: EditorCommand) => () => send(sender, EventType.EDITOR_COMMAND, {command: cmd});
+    const runCommand = (cmd: EditorCommand) => send(sender, EventType.EDITOR_COMMAND, {command: cmd});
+    const command = (cmd: EditorCommand) => () => runCommand(cmd);
     const file = optionalFile(data);
     const hasSelection = !!data?.hasSelection;
     const pluginItems = createPluginItems(sender, data?.groups);
@@ -86,9 +85,10 @@ function createEditorMenu(sender: WebContents, data: EditorMenuRequest): Array<M
 
     template.push(
         {type: "separator"},
-        {label: "Find", accelerator: EDITOR_ACCELERATORS.FIND, click: command(EditorCommand.FIND)},
-        {label: "Replace", accelerator: EDITOR_ACCELERATORS.REPLACE, click: command(EditorCommand.REPLACE)},
-        {label: "Go to Line", accelerator: EDITOR_ACCELERATORS.GO_TO_LINE, click: command(EditorCommand.GO_TO_LINE)},
+        createSearchMenuItem(EditorCommand.FIND, runCommand),
+        createSearchMenuItem(EditorCommand.REPLACE, runCommand),
+        createSearchMenuItem(EditorCommand.GO_TO, runCommand),
+        createSearchMenuItem(EditorCommand.SEARCH_ON_WEB, runCommand, hasSelection),
     );
 
     if (data?.canPreview) template.push({label: data.isPreviewOpen ? "Hide Preview" : "Show Preview", click: command(EditorCommand.TOGGLE_PREVIEW)});
