@@ -1,0 +1,46 @@
+import {BrowserWindow, dialog} from "electron";
+import {handle} from "./IpcMain";
+import {EventType, UnsavedChangesChoice} from "../enums";
+import {conversionDialog, reinterpretDialog, UNSAVED_CHANGES_BUTTONS, unsavedChangesDialog} from "../utils/DialogUtils";
+import {findUnencodableCharacters} from "../utils/EncodingUtils";
+import {getEncodingLabel, isKnownEncoding} from "../domain/Encoding";
+import {showMessageBox} from "../utils/WindowUtils";
+
+const CONFIRM_BUTTON = 0;
+
+export function registerDialogHandlers() {
+    handle(EventType.SHOW_SAVE_DIALOG, (event, data) => {
+        const win = BrowserWindow.fromWebContents(event.sender);
+
+        if (!win) return;
+
+        return dialog.showSaveDialogSync(win, {
+            title: data?.title || "Save",
+            defaultPath: data?.defaultName
+        });
+    });
+
+    handle(EventType.SHOW_UNSAVED_CHANGES_DIALOG, (event, data) => {
+        if (!BrowserWindow.fromWebContents(event.sender)) return UnsavedChangesChoice.CANCEL;
+
+        const names = Array.isArray(data?.names) ? data.names : [];
+
+        return UNSAVED_CHANGES_BUTTONS[showMessageBox(event.sender, unsavedChangesDialog(names))]?.choice ?? UnsavedChangesChoice.CANCEL;
+    });
+
+    handle(EventType.CONFIRM_REINTERPRET, (event, data) => {
+        const encodingLabel = isKnownEncoding(data?.encoding) ? getEncodingLabel(data.encoding) : undefined;
+
+        return showMessageBox(event.sender, reinterpretDialog(data?.name, encodingLabel)) === CONFIRM_BUTTON;
+    });
+
+    handle(EventType.CONFIRM_CONVERSION, (event, data) => {
+        if (!isKnownEncoding(data?.encoding)) return false;
+
+        const unencodable = findUnencodableCharacters(typeof data.content === "string" ? data.content : "", data.encoding);
+
+        if (unencodable.count === 0) return true;
+
+        return showMessageBox(event.sender, conversionDialog(getEncodingLabel(data.encoding), unencodable.count, unencodable.samples)) === CONFIRM_BUTTON;
+    });
+}

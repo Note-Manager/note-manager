@@ -182,7 +182,7 @@ export const SupportedLanguages: Record<LanguageName, SupportedLanguage> = {
     }
 };
 
-export function findLanguageByFileName(fileName: string|undefined): SupportedLanguage {
+export function findLanguageByFileName(fileName: string | undefined): SupportedLanguage {
     if (!fileName) return SupportedLanguages[LanguageName.TEXT];
 
     const baseName = fileName.split(/[\\/]/).pop() || fileName;

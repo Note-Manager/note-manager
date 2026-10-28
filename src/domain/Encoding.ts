@@ -12,6 +12,12 @@ export enum EolType {
     CR = "CR",
 }
 
+export interface DecodedText {
+    content: string,
+    encoding: string,
+    eol: EolType,
+}
+
 export interface CharacterSet {
     id: string,
     label: string,
@@ -57,12 +63,12 @@ export function isUnicodeEncoding(encoding: string): boolean {
     return encoding === EncodingId.UTF8 || encoding === EncodingId.UTF8_BOM || encoding === EncodingId.UTF16_BE || encoding === EncodingId.UTF16_LE;
 }
 
-export function isKnownEncoding(encoding: any): encoding is string {
+export function isKnownEncoding(encoding: unknown): encoding is string {
     return typeof encoding === "string" && (UNICODE_ENCODINGS.some(e => e.id === encoding) || CHARACTER_SETS.has(encoding));
 }
 
-export function isKnownEol(eol: any): eol is EolType {
-    return Object.values(EolType).includes(eol);
+export function isKnownEol(eol: unknown): eol is EolType {
+    return Object.values(EolType).includes(eol as EolType);
 }
 
 export function getEncodingLabel(encoding?: string): string {

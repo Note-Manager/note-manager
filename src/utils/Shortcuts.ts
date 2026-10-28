@@ -1,4 +1,4 @@
-import {allPlugins} from "./PluginLoader";
+import {bundledPlugins} from "./PluginLoader";
 import {PluginManifest} from "../domain/PluginManifest";
 
 export interface ShortcutDefinition {
@@ -26,7 +26,7 @@ const BUILT_IN_SHORTCUTS: Array<ShortcutDefinition> = [
 ];
 
 export function getShortcutDefinitions(userPlugins: Array<PluginManifest> = []): Array<ShortcutDefinition> {
-    const pluginShortcuts = allPlugins.flatMap(plugin => (plugin.applicationMenuItems || []).flatMap(item => item.actions.map(action => ({
+    const pluginShortcuts = bundledPlugins.flatMap(plugin => (plugin.applicationMenuItems || []).flatMap(item => item.actions.map(action => ({
         id: action.code,
         label: `Plugins > ${item.label} > ${action.label}`,
         defaultAccelerator: action.accelerator,

@@ -1,53 +1,70 @@
-import {app, BrowserWindow, shell} from 'electron';
-
-import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
-import {EventType} from "./enums";
+import {app, BrowserWindow, shell} from "electron";
 import {attachTitlebarToWindow, setupTitlebar} from "custom-electron-titlebar/main";
-import {fileToTab, openInWindow, readEditorState} from "./utils/EditorUtils";
-import initIpcMainListeners from "./ipc/IpcMainListener";
-import {getThemeBackgroundColor, initApplicationMenu, loadThemeToWindow, refreshTitlebar} from "./utils/ElectronUtils";
+import {EventType} from "./enums";
 import {EditorState} from "./domain/EditorState";
-import {SupportedLanguages} from './domain/SupportedLanguage';
-import {documentHash} from "./utils/TextUtils";
+import initIpcMainListeners from "./ipc/IpcMainListener";
+import {isClosingWindow} from "./ipc/StateHandlers";
+import {fileToTab, openInWindow, readEditorState} from "./utils/EditorUtils";
+import {initApplicationMenu, refreshTitlebar} from "./utils/ApplicationMenu";
+import {getThemeBackgroundColor, loadThemeToWindow} from "./utils/ThemeLoader";
+import {getSettings, loadPreferences} from "./utils/EnvironmentUtils";
 import {isFileExists} from "./utils/FileUtils";
-import {getSettings} from "./utils/EnvironmentUtils";
+import {send} from "./utils/WindowUtils";
+import {createEmptyTab, DEFAULT_TAB_NAME, hashTab} from "./utils/TabUtils";
 import {loadUserPluginManifests, registerUserPluginProtocol, registerUserPluginScheme} from "./utils/UserPlugins";
 
+declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
+declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
+if (require("electron-squirrel-startup")) app.quit();
+
+process.on("uncaughtException", logError);
+process.on("unhandledRejection", logError);
+
+loadPreferences();
 setupTitlebar();
 registerUserPluginScheme();
+initIpcMainListeners();
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
+let mainWindow: BrowserWindow | undefined;
+
+if (!app.requestSingleInstanceLock()) {
     app.quit();
+} else {
+    app.on("second-instance", (event, argv) => {
+        if (!mainWindow) return;
+
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
+
+        const file = getFileArgument(argv);
+
+        if (file) openInWindow(mainWindow, file);
+    });
+
+    app.whenReady().then(() => {
+        registerUserPluginProtocol();
+        loadUserPluginManifests();
+        createWindow();
+
+        app.on("activate", () => {
+            if (BrowserWindow.getAllWindows().length === 0) createWindow();
+        });
+    });
 }
 
-const logError = (error: Error | any) => {
-    const logMessage = `[${new Date().toISOString()}] ${error.stack || error}\n`;
-    console.error(logMessage);
-};
-
-// Catch uncaught exceptions
-process.on('uncaughtException', (error) => {
-    logError(error);
+app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") app.quit();
 });
 
-// Catch unhandled promise rejections
-process.on('unhandledRejection', (reason: any) => {
-    logError(reason);
-});
-
-let mainWindow: BrowserWindow;
-
-const createWindow = () => {
-    mainWindow = new BrowserWindow({
+function createWindow() {
+    const win = new BrowserWindow({
         width: 1440,
         height: 860,
         titleBarStyle: "hidden",
         titleBarOverlay: false,
         backgroundColor: getThemeBackgroundColor(),
         webPreferences: {
-            // @ts-ignore
             preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
             nodeIntegration: false,
             contextIsolation: true,
@@ -55,164 +72,91 @@ const createWindow = () => {
         }
     });
 
-    mainWindow.webContents.setWindowOpenHandler(({url}) => {
+    mainWindow = win;
+
+    win.webContents.setWindowOpenHandler(({url}) => {
         openExternalUrl(url);
 
         return {action: "deny"};
     });
 
-    mainWindow.webContents.on("will-navigate", (event, url) => {
-        if (url === mainWindow.webContents.getURL()) return;
+    win.webContents.on("will-navigate", (event, url) => {
+        if (url === win.webContents.getURL()) return;
 
         event.preventDefault();
         openExternalUrl(url);
     });
 
-    if (getSettings().ui.startMaximized) mainWindow.maximize();
+    if (getSettings().ui.startMaximized) win.maximize();
 
     initApplicationMenu();
 
-    // load index.html
-    // @ts-ignore
-    mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+    win.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-    attachTitlebarToWindow(mainWindow);
+    attachTitlebarToWindow(win);
 
-    mainWindow.webContents.on("dom-ready", async () => {
-        loadThemeToWindow(mainWindow);
+    win.webContents.on("dom-ready", async () => {
+        loadThemeToWindow(win);
         refreshTitlebar();
 
-        const state = await getEditorState();
-
-        mainWindow.webContents.send(EventType.INIT_WITH_STATE, state);
+        send(win.webContents, EventType.INIT_WITH_STATE, await getInitialState());
     });
 
-    mainWindow.on(EventType.CLOSE_WINDOW, (event) => {
+    win.on("close", (event) => {
+        if (isClosingWindow(win.webContents)) return;
+
         event.preventDefault();
 
-        mainWindow.webContents.send(EventType.CLOSE_WINDOW);
-    })
-};
-
-async function getEditorState() {
-    const fileArg = getFileArgument();
-
-    const tempTabId = crypto.randomUUID();
-    let initialState: EditorState = {
-        tabs: [{
-            id: tempTabId,
-            name: "New Document.txt",
-            displayName: "New Document.txt",
-            content: "",
-            hash: await documentHash("", getSettings().files.defaultEncoding, getSettings().files.defaultEol),
-            encoding: getSettings().files.defaultEncoding,
-            eol: getSettings().files.defaultEol,
-            language: SupportedLanguages.text,
-        }],
-        activeTabId: tempTabId
-    }
-
-        const persistentState = await readEditorState();
-
-    if (persistentState) { // restore the state
-        initialState = persistentState;
-    }
-
-    if (fileArg && !initialState.tabs.map(t => t.file).includes(fileArg)) {
-        const tab = await fileToTab(fileArg);
-
-        initialState.tabs.push(tab);
-        initialState.activeTabId = tab.id;
-    } else if (fileArg && initialState.tabs.map(t => t.file).includes(fileArg)) {
-        initialState.activeTabId = initialState.tabs.find(t => t.file === fileArg)?.id;
-    }
-
-    return initialState;
-}
-
-if (!app.requestSingleInstanceLock()) {
-    app.quit(); // Quit if another instance is already running
-} else {
-    app.on('second-instance', (_, argv) => {
-        // When a second instance is launched
-        if (mainWindow) {
-            // Focus the existing window
-            if (mainWindow.isMinimized()) mainWindow.restore();
-            mainWindow.focus();
-
-            // Pass the file argument (e.g., argv[2] on Windows, argv[1] on macOS)
-            const fileArg = getFileArgument(argv);
-            if (fileArg) {
-                openInWindow(mainWindow, fileArg);
-            }
-        }
-    });
-
-    // This method will be called when Electron has finished
-    // initialization and is ready to create browser windows.
-    // Some APIs can only be used after this event occurs.
-    app.whenReady().then(() => {
-        registerUserPluginProtocol();
-        loadUserPluginManifests();
-
-        const arg = getFileArgument(); // open with...
-
-        if(arg && mainWindow) {
-            const targetWindow = mainWindow;
-
-            openInWindow(targetWindow, arg);
-
-            targetWindow.moveTop();
-            targetWindow.focus();
-        } else {
-            createWindow();
-        }
-
-        // On OS X it's common to re-create a window in the app when the
-        // dock icon is clicked and there are no other windows open.
-        app.on('activate', () => {
-            if (BrowserWindow.getAllWindows().length === 0) {
-                createWindow();
-            }
-        });
+        send(win.webContents, EventType.CLOSE_WINDOW);
     });
 }
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
+async function getInitialState(): Promise<EditorState> {
+    const state = await readEditorState() ?? await createEmptyState();
+    const file = getFileArgument();
+
+    if (!file) return state;
+
+    const openTab = state.tabs.find(t => t.file === file);
+
+    if (openTab) {
+        state.activeTabId = openTab.id;
+        return state;
     }
-});
+
+    const tab = await fileToTab(file);
+
+    state.tabs.push(tab);
+    state.activeTabId = tab.id;
+
+    return state;
+}
+
+async function createEmptyState(): Promise<EditorState> {
+    const {defaultEncoding, defaultEol} = getSettings().files;
+    const tab = createEmptyTab(DEFAULT_TAB_NAME, defaultEncoding, defaultEol);
+
+    tab.hash = await hashTab(tab);
+
+    return {tabs: [tab], activeTabId: tab.id};
+}
+
+function getFileArgument(args: Array<string> = process.argv) {
+    if (!app.isPackaged) return undefined;
+
+    return args.slice(1).filter(arg => arg && arg !== "." && arg !== "./" && isFileExists(arg)).pop();
+}
 
 function openExternalUrl(url: string) {
     try {
         const protocol = new URL(url).protocol;
 
         if (protocol === "http:" || protocol === "https:") shell.openExternal(url);
-    } catch (ignored) {
+    } catch {
+        console.warn("ignored invalid url: " + url);
     }
 }
 
-function getFileArgument(args?: string[]) {
-    let result;
-
-    const processArguments = args || process.argv;
-
-    if (app.isPackaged && processArguments?.length > 1) { // 'open with ...' option
-        processArguments?.forEach((arg, idx) => {
-            if(idx === 0) return; // pass the first argument, it is the working directory
-
-            if(arg && arg !== "." && arg !== "./") {
-                if(isFileExists(arg)) result = arg;
-            }
-        });
-    }
-
-    return result;
+function logError(error: unknown) {
+    console.error(`[${new Date().toISOString()}] ${error instanceof Error ? error.stack : error}`);
 }
-
-initLoggingEventHandlers();
-initIpcMainListeners();

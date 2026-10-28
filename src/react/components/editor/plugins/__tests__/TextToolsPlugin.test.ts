@@ -49,7 +49,7 @@ describe("TextToolsPlugin", () => {
     it("applies to the whole document when nothing is selected", () => {
         const editor = new FakeEditorWrapper("c\nb\na", undefined, [{start: 0, end: 0}]);
 
-        run("TextTools_sortAscending", editor);
+        run("textTools.sortAscending", editor);
 
         expect(editor.getValue()).toBe("a\nb\nc");
     });
@@ -57,7 +57,7 @@ describe("TextToolsPlugin", () => {
     it("applies only to the selections", () => {
         const editor = new FakeEditorWrapper("keep\nc\nb\nkeep x y", undefined, [{start: 5, end: 9}, {start: 14, end: 17}]);
 
-        run("TextTools_upperCase", editor);
+        run("textTools.upperCase", editor);
 
         expect(editor.getValue()).toBe("keep\nC\nB\nkeep X Y");
     });

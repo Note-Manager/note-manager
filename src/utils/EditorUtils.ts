@@ -4,48 +4,47 @@ import {EditorTab} from "../domain/EditorTab";
 import {documentHash, hash, shortenTabName} from "./TextUtils";
 import * as Environment from "./EnvironmentUtils";
 import {EditorState} from "../domain/EditorState";
-import electron, {BrowserWindow, dialog} from "electron";
+import {BrowserWindow, dialog} from "electron";
 import {EventType} from "../enums";
 import {findLanguageByFileName} from "../domain/SupportedLanguage";
 import {addRecentFile} from "./RecentFiles";
-import {decodeText, DecodedText} from "./EncodingUtils";
+import {decodeText} from "./EncodingUtils";
 import {getDetectionOptions} from "../domain/Settings";
-import {detectEol, EolType, isKnownEncoding, isKnownEol, toEditorText} from "../domain/Encoding";
+import {DecodedText, detectEol, isKnownEncoding, isKnownEol, toEditorText} from "../domain/Encoding";
+import {openLargeOrBinaryFileDialog} from "./DialogUtils";
+import {send} from "./WindowUtils";
 
 export async function readTextFile(file: string, preferredEncoding?: string): Promise<DecodedText> {
     const settings = Environment.getSettings();
 
-    return decodeText(await readFileBytes(file), getDetectionOptions(settings), preferredEncoding, settings?.files?.defaultEol || EolType.LF);
+    return decodeText(await readFileBytes(file), getDetectionOptions(settings), preferredEncoding, settings.files.defaultEol);
 }
 
-export async function fileToTab(file: string) {
-    if (!isFileExists(file)) throw new Error("Cannot found file for open: " + file);
+export async function fileToTab(file: string): Promise<EditorTab> {
+    if (!isFileExists(file)) throw new Error("Cannot find the file to open: " + file);
 
-    const fileName = path.basename(file);
-
+    const name = path.basename(file);
     const {content, encoding, eol} = await readTextFile(file);
 
     return {
         id: crypto.randomUUID(),
-        name: fileName,
-        hash: await documentHash(content, encoding, eol),
-        encoding: encoding,
-        eol: eol,
-        displayName: shortenTabName(fileName),
+        name: name,
+        displayName: shortenTabName(name),
         file: file,
         isTemp: false,
         isChanged: false,
         content: content,
-        language: findLanguageByFileName(fileName)
-    } as EditorTab;
+        hash: await documentHash(content, encoding, eol),
+        encoding: encoding,
+        eol: eol,
+        language: findLanguageByFileName(name),
+    };
 }
 
 export async function readEditorState(): Promise<EditorState | undefined> {
     const stateFile = Environment.getStateFilePath();
 
-    if (!isFileExists(stateFile)) {
-        return undefined;
-    }
+    if (!isFileExists(stateFile)) return undefined;
 
     let editorState: EditorState;
 
@@ -59,53 +58,51 @@ export async function readEditorState(): Promise<EditorState | undefined> {
 
     if (!Array.isArray(editorState?.tabs)) return undefined;
 
-    await Promise.all(editorState.tabs.map(async (t) => {
-        if (t.isTemp || !t.file) {
-            normalizeTempTab(t);
-            return;
-        }
-
-        let decoded: DecodedText;
-
-        try {
-            decoded = await readTextFile(t.file, t.isChanged ? undefined : t.encoding);
-        } catch (ignored) {
-            console.warn(`expected file '${t.file}' is not found on the system.`);
-            t.isTemp = true;
-            t.content = t.content ?? "";
-            normalizeTempTab(t);
-            return;
-        }
-
-        const fileHash = await documentHash(decoded.content, decoded.encoding, decoded.eol);
-
-        if (t.isChanged && t.content !== undefined) {
-            t.hash = fileHash;
-            if (!isKnownEncoding(t.encoding)) t.encoding = decoded.encoding;
-            if (!isKnownEol(t.eol)) t.eol = detectEol(t.content, decoded.eol);
-            t.content = toEditorText(t.content, t.eol);
-            return;
-        }
-
-        const isSameContent = t.hash === fileHash || t.hash === await hash(decoded.content);
-
-        t.content = decoded.content;
-        t.encoding = decoded.encoding;
-        t.eol = decoded.eol;
-        t.isChanged = false;
-        t.hash = fileHash;
-
-        if (!isSameContent) t.state = undefined;
-    }));
+    await Promise.all(editorState.tabs.map(restoreTab));
 
     return editorState;
 }
 
-function normalizeTempTab(tab: EditorTab) {
-    const settings = Environment.getSettings();
+async function restoreTab(tab: EditorTab) {
+    if (tab.isTemp || !tab.file) return normalizeTempTab(tab);
 
-    if (!isKnownEncoding(tab.encoding)) tab.encoding = settings?.files?.defaultEncoding;
-    if (!isKnownEol(tab.eol)) tab.eol = detectEol(tab.content || "", settings?.files?.defaultEol || EolType.LF);
+    let decoded: DecodedText;
+
+    try {
+        decoded = await readTextFile(tab.file, tab.isChanged ? undefined : tab.encoding);
+    } catch {
+        console.warn(`expected file '${tab.file}' is not found on the system.`);
+        tab.isTemp = true;
+        tab.content = tab.content ?? "";
+        return normalizeTempTab(tab);
+    }
+
+    const fileHash = await documentHash(decoded.content, decoded.encoding, decoded.eol);
+
+    if (tab.isChanged && tab.content !== undefined) {
+        tab.hash = fileHash;
+        if (!isKnownEncoding(tab.encoding)) tab.encoding = decoded.encoding;
+        if (!isKnownEol(tab.eol)) tab.eol = detectEol(tab.content, decoded.eol);
+        tab.content = toEditorText(tab.content, tab.eol);
+        return;
+    }
+
+    const isSameContent = tab.hash === fileHash || tab.hash === await hash(decoded.content);
+
+    tab.content = decoded.content;
+    tab.encoding = decoded.encoding;
+    tab.eol = decoded.eol;
+    tab.isChanged = false;
+    tab.hash = fileHash;
+
+    if (!isSameContent) tab.state = undefined;
+}
+
+function normalizeTempTab(tab: EditorTab) {
+    const {defaultEncoding, defaultEol} = Environment.getSettings().files;
+
+    if (!isKnownEncoding(tab.encoding)) tab.encoding = defaultEncoding;
+    if (!isKnownEol(tab.eol)) tab.eol = detectEol(tab.content || "", defaultEol);
     if (tab.content !== undefined) tab.content = toEditorText(tab.content, tab.eol);
 }
 
@@ -130,62 +127,24 @@ export function writeEditorState(state: EditorState, discardUnsaved: boolean) {
     lastWrittenState = serialized;
 }
 
-export function getFocusedWindow() {
-    return BrowserWindow.getFocusedWindow();
-}
-
-export function sendToFocusedWindow(channel: string, data?: any) {
-    const win = getFocusedWindow();
-
-    if(win) sendToWindow(win, channel, data);
-}
-
-export function sendToWindow(window: electron.BrowserWindow, channel: string, data?: any) {
-    window.webContents.send(channel, data);
-}
-
-export function openInFocusedWindow(file: string) {
-    console.log("opening file: " + file);
-
-    const win = getFocusedWindow();
-
-    if(win) openInWindow(win, file);
-}
-
 export const LARGE_FILE_WARNING_SIZE = 50 * 1024 * 1024;
 
 export async function confirmOpen(window: BrowserWindow, file: string) {
     const size = await getFileSize(file);
-    const binary = await isBinaryFile(file);
+    const isBinary = await isBinaryFile(file);
 
-    if (size < LARGE_FILE_WARNING_SIZE && !binary) return true;
+    if (size < LARGE_FILE_WARNING_SIZE && !isBinary) return true;
 
-    const reason = binary
-        ? "This file looks like a binary file."
-        : `This file is ${(size / 1024 / 1024).toFixed(1)} MB. Large files may make the editor slow.`;
-
-    const {response} = await dialog.showMessageBox(window, {
-        type: "warning",
-        buttons: ["Cancel", "Open"],
-        defaultId: 1,
-        cancelId: 0,
-        title: "Open file",
-        message: path.basename(file),
-        detail: reason + "\n\nDo you want to open it anyway?"
-    });
+    const {response} = await dialog.showMessageBox(window, openLargeOrBinaryFileDialog(path.basename(file), size, isBinary));
 
     return response === 1;
 }
 
 export async function openInWindow(window: BrowserWindow, file: string) {
-    console.log("opening file: " + file + " in " + window.id);
-
     try {
-        if (!(await confirmOpen(window, file))) return;
+        if (!await confirmOpen(window, file)) return;
 
-        const tab = await fileToTab(file);
-
-        sendToWindow(window, EventType.OPEN_TAB, tab);
+        send(window.webContents, EventType.OPEN_TAB, await fileToTab(file));
 
         addRecentFile(file);
     } catch (err) {

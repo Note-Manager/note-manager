@@ -2,7 +2,7 @@ import {EditorTab} from "../domain/EditorTab";
 import {fireEvent} from "./ApplicationEvents";
 import {EventType, UnsavedChangesChoice} from "../enums";
 import {applySavedFile} from "../utils/TabUtils";
-import * as TextUtils from "../utils/TextUtils";
+import {documentHash} from "../utils/TextUtils";
 import {markStateChanged} from "./StateChangeTracker";
 
 export async function saveTab(tab: EditorTab): Promise<boolean> {
@@ -29,7 +29,7 @@ export async function saveTab(tab: EditorTab): Promise<boolean> {
 
     if (!tab.file) applySavedFile(tab, targetFile);
 
-    tab.hash = await TextUtils.documentHash(content, tab.encoding, tab.eol);
+    tab.hash = await documentHash(content, tab.encoding, tab.eol);
     tab.isChanged = tab.content !== undefined && tab.content !== content;
 
     markStateChanged();

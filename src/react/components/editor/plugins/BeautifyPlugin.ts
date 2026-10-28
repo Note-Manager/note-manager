@@ -1,87 +1,48 @@
-import {EditorAction, EditorMenuItem, EditorPlugin} from "./index";
+import {EditorMenuItem} from "./index";
+import {BasePlugin} from "./BasePlugin";
 import {LanguageName} from "../../../../domain/SupportedLanguage";
 import {EditorWrapper} from "../../../../domain/EditorWrapper";
 import {formatCode, isFormattable} from "../../../../utils/Formatter";
+import {getNonEmptySelections} from "../../../../utils/EditorTransforms";
+import {logError} from "../../../../utils/Log";
 
 enum Keys {
     FORMAT = "beautify.format",
 }
 
-export default class BeautifyPlugin implements EditorPlugin{
-    name: string = "Beautify";
-
-    applicationMenuItems: Array<EditorMenuItem> = [
-        {
-            label: this.name,
-            actions: [
-                {
-                    label: "Format",
-                    code: Keys.FORMAT,
-                    accelerator: "CmdOrCtrl+Shift+F"
-                }
-            ]
-        }
-    ];
-
-    contextMenuItems: Array<EditorMenuItem> = [
-        {
-            label: this.name,
-            actions: [
-                {
-                    label: "Format",
-                    code: Keys.FORMAT,
-                    isAvailable: (editor: EditorWrapper) => isFormattable(editor.getLanguage() || LanguageName.TEXT)
-                }
-            ]
-        }
-    ];
-
-    editor?: EditorWrapper;
-
-    actionMap?: Map<string, EditorAction>;
+export default class BeautifyPlugin extends BasePlugin {
+    readonly name = "Beautify";
 
     pendingFormat?: Promise<void>;
 
-    doAction(code: string): void {
-        if(!this.editor || !this.actionMap) throw Error("Plugin not initialized !");
-        if(!code) return;
+    readonly applicationMenuItems: Array<EditorMenuItem> = [
+        {
+            label: this.name,
+            actions: [
+                {
+                    label: "Format",
+                    code: Keys.FORMAT,
+                    accelerator: "CmdOrCtrl+Shift+F",
+                    isAvailable: editor => isFormattable(getLanguage(editor)),
+                    perform: editor => {
+                        this.pendingFormat = formatEditor(editor).catch(logError("cannot format"));
+                    }
+                }
+            ]
+        }
+    ];
+}
 
-        const action = this.actionMap.get(code);
-
-        action?.perform && action.perform(this.editor);
-    }
-
-    getAvailableActions(): Array<string> {
-        if(!this.editor || !this.actionMap) throw Error("Plugin not initialized !");
-
-        return Array.from(this.actionMap.keys());
-    }
-
-    initializePlugin(editor: EditorWrapper): void {
-        this.editor = editor;
-
-        this.initializeActionMap();
-    }
-
-    initializeActionMap() {
-        this.actionMap = new Map();
-
-        this.actionMap.set(Keys.FORMAT, {
-            label: "Format",
-            code: Keys.FORMAT,
-            perform: (editor: EditorWrapper) => {
-                this.pendingFormat = formatEditor(editor).catch(err => console.error("cannot format: " + err));
-            }
-        });
-    }
+function getLanguage(editor: EditorWrapper) {
+    return editor.getLanguage() || LanguageName.TEXT;
 }
 
 async function formatEditor(editor: EditorWrapper) {
-    const language = editor.getLanguage() || LanguageName.TEXT;
+    const language = getLanguage(editor);
 
     if (!isFormattable(language)) return;
 
-    const ranges = (editor.getAllSelectionRanges() || []).filter(r => editor.getTextRange(r).length > 0);
+    const ranges = getNonEmptySelections(editor);
 
     if (ranges.length === 0) {
         const value = editor.getValue();

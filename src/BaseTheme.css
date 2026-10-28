@@ -157,7 +157,6 @@ button {
     background-color: var(--selection-bg);
 }
 
-/* TOP BAR */
 .cet-titlebar {
     background-color: var(--secondary-bg) !important;
     color: var(--color) !important;
@@ -251,7 +250,6 @@ body .cet-menubar-menu-container .cet-action-menu-item {
     background-color: var(--negative-color) !important;
 }
 
-/* EDITOR */
 .ace_content {
     color: var(--color);
     background-color: var(--primary-bg);
@@ -369,7 +367,6 @@ body .cet-menubar-menu-container .cet-action-menu-item {
     background-color: var(--selected-highlight-color) !important;
 }
 
-/* SYNTAX HIGHLIGHTING */
 .ace_keyword {
     color: var(--keyword-color) !important;
 }

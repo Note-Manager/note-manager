@@ -1,6 +1,6 @@
 import * as ace from "ace-builds";
 
-type Tokenizer = { getLineTokens: (line: string, state: unknown) => { tokens: Array<{ type: string, value: string }>, state: unknown } };
+type Tokenizer = {getLineTokens: (line: string, state: unknown) => {tokens: Array<{type: string, value: string}>, state: unknown}};
 
 const tokenizers = new Map<string, Promise<Tokenizer | undefined>>();
 
@@ -8,7 +8,7 @@ function loadTokenizer(language: string): Promise<Tokenizer | undefined> {
     let tokenizer = tokenizers.get(language);
 
     if (!tokenizer) {
-        tokenizer = import('ace-builds/src-noconflict/mode-' + language)
+        tokenizer = import("ace-builds/src-noconflict/mode-" + language)
             .then(() => {
                 const Mode = ace.require("ace/mode/" + language)?.Mode;
 

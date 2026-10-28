@@ -1,5 +1,9 @@
 import React, {useEffect, useState} from "react";
-import {fireEvent, off, on} from "../ApplicationEvents";
+import {fireEvent} from "../ApplicationEvents";
+import {useIpcEvents} from "../hooks/useIpcEvents";
+import {classNames} from "../ClassNames";
+import {ThemeInfo} from "../../domain/ThemeInfo";
+import {logError} from "../../utils/Log";
 import {EventType} from "../../enums";
 import {
     DEFAULT_SETTINGS,
@@ -19,10 +23,12 @@ import {getShortcutDefinitions, ShortcutDefinition} from "../../utils/Shortcuts"
 import {isValidThemeName, isValidVariableValue, ThemeVariable} from "../../utils/ThemeVariables";
 import {CHARACTER_SET_GROUPS, EOL_TYPES, EolType, UNICODE_ENCODINGS} from "../../domain/Encoding";
 
-interface ThemeInfo {
-    name: string,
-    file: string,
-    isUser: boolean,
+interface KeyPress {
+    code: string,
+    ctrlKey: boolean,
+    metaKey: boolean,
+    altKey: boolean,
+    shiftKey: boolean,
 }
 
 enum Section {
@@ -76,44 +82,59 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
         return () => window.removeEventListener("keydown", onKeyDown);
     }, [recordingId]);
 
-    useEffect(() => {
+    const setKeyBinding = (id: string, accelerator: string | undefined) => {
+        setDraft(current => {
+            if (!current) return current;
+
+            const keyBindings = {...current.keyBindings};
+
+            if (accelerator === undefined) delete keyBindings[id];
+            else keyBindings[id] = accelerator;
+
+            return {...current, keyBindings: keyBindings};
+        });
+    };
+
+    const recordKey = (key: KeyPress) => {
         if (!recordingId) return;
 
-        const onShortcutKey = (event: any, key: {code: string, ctrlKey: boolean, metaKey: boolean, altKey: boolean, shiftKey: boolean}) => {
-            if (key.code === "Escape") {
-                setRecordingId(undefined);
-                return;
-            }
+        if (key.code === "Escape") {
+            setRecordingId(undefined);
+            return;
+        }
 
-            if ((key.code === "Backspace" || key.code === "Delete") && !key.ctrlKey && !key.metaKey && !key.altKey && !key.shiftKey) {
-                setKeyBinding(recordingId, "");
-                setRecordingId(undefined);
-                return;
-            }
+        if ((key.code === "Backspace" || key.code === "Delete") && !key.ctrlKey && !key.metaKey && !key.altKey && !key.shiftKey) {
+            setKeyBinding(recordingId, "");
+            setRecordingId(undefined);
+            return;
+        }
 
-            const accelerator = keyEventToAccelerator(key);
+        const accelerator = keyEventToAccelerator(key);
 
-            if (accelerator) {
-                setKeyBinding(recordingId, accelerator);
-                setRecordingId(undefined);
-            }
-        };
+        if (accelerator) {
+            setKeyBinding(recordingId, accelerator);
+            setRecordingId(undefined);
+        }
+    };
+
+    useIpcEvents(recordingId ? {[EventType.SHORTCUT_KEY]: (key) => recordKey(key)} : {}, [recordingId, draft]);
+
+    useEffect(() => {
+        if (!recordingId) return;
 
         const onKeyDown = (event: KeyboardEvent) => {
             event.preventDefault();
             event.stopPropagation();
 
-            onShortcutKey(undefined, event);
+            recordKey(event);
         };
 
-        on(EventType.SHORTCUT_KEY, onShortcutKey);
         window.addEventListener("keydown", onKeyDown, true);
-        fireEvent(EventType.RECORD_SHORTCUT, {active: true}).catch(err => console.error(err));
+        fireEvent(EventType.RECORD_SHORTCUT, {active: true}).catch(logError("cannot start recording the shortcut"));
 
         return () => {
-            off(EventType.SHORTCUT_KEY, onShortcutKey);
             window.removeEventListener("keydown", onKeyDown, true);
-            fireEvent(EventType.RECORD_SHORTCUT, {active: false}).catch(err => console.error(err));
+            fireEvent(EventType.RECORD_SHORTCUT, {active: false}).catch(logError("cannot stop recording the shortcut"));
         };
     }, [recordingId, draft]);
 
@@ -129,19 +150,6 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
     const setInterface = (changes: Partial<InterfaceSettings>) => setDraft({...draft, ui: {...draft.ui, ...changes}});
     const setFiles = (changes: Partial<FileSettings>) => setDraft({...draft, files: {...draft.files, ...changes}});
 
-    function setKeyBinding(id: string, accelerator: string | undefined) {
-        setDraft(current => {
-            if (!current) return current;
-
-            const keyBindings = {...current.keyBindings};
-
-            if (accelerator === undefined) delete keyBindings[id];
-            else keyBindings[id] = accelerator;
-
-            return {...current, keyBindings: keyBindings};
-        });
-    }
-
     const shortcutRows = shortcuts.map(s => ({...s, accelerator: resolveAccelerator(draft, s.id, s.defaultAccelerator)}));
     const conflicts = findShortcutConflicts(shortcutRows);
     const invalidVariables = Object.entries(changedVariables).filter(([, value]) => !isValidVariableValue(value)).map(([name]) => name);
@@ -149,7 +157,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
     const selectTheme = (file: string) => {
         setChangedVariables({});
         setThemeFile(file);
-    }
+    };
 
     const createTheme = () => {
         if (!themeFile) return;
@@ -161,7 +169,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
             selectTheme(result.file);
             setNewThemeName("");
         }).catch(err => setError("Cannot create theme: " + err));
-    }
+    };
 
     const save = () => {
         if (conflicts.size > 0 || invalidVariables.length > 0) return;
@@ -171,16 +179,16 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
         fireEvent(EventType.SAVE_SETTINGS, {
             settings: draft,
             themeFile: themeFile,
-            themeVariables: selectedTheme?.isUser && Object.keys(changedVariables).length > 0 ? {file: themeFile, values: changedVariables} : undefined,
+            themeVariables: selectedTheme?.isUser && Object.keys(changedVariables).length > 0 ? {file: selectedTheme.file, values: changedVariables} : undefined,
         }).then(onClose).catch(err => setError("Cannot save settings: " + err));
-    }
+    };
 
     return (
         <div id={"settingsOverlay"} onMouseDown={event => event.target === event.currentTarget && onClose()}>
             <div id={"settingsDialog"} role={"dialog"} aria-label={"Settings"}>
                 <div id={"settingsNav"}>
                     {Object.values(Section).map(s => (
-                        <button type={"button"} key={s} className={"settingsNavItem" + (s === section ? " selected" : "")} aria-current={s === section} onClick={() => setSection(s)}>{s}</button>
+                        <button type={"button"} key={s} className={classNames("settingsNavItem", s === section && "selected")} aria-current={s === section} onClick={() => setSection(s)}>{s}</button>
                     ))}
                 </div>
                 <div id={"settingsBody"}>
@@ -195,7 +203,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                 <label className={"settingsRow"}>
                                     <span>Font size</span>
                                     <input type={"number"} min={FONT_SIZE_RANGE.min} max={FONT_SIZE_RANGE.max} value={draft.editor.fontSize}
-                                           onChange={e => setEditor({fontSize: Number(e.target.value)})}/>
+                                        onChange={e => setEditor({fontSize: Number(e.target.value)})}/>
                                 </label>
 
                                 <h3>Theme</h3>
@@ -220,15 +228,15 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                         const value = changedVariables[v.name] ?? v.value;
 
                                         return (
-                                            <label key={v.name} className={"settingsRow" + (invalidVariables.includes(v.name) ? " invalid" : "")}>
+                                            <label key={v.name} className={classNames("settingsRow", invalidVariables.includes(v.name) && "invalid")}>
                                                 <span>{v.name}</span>
                                                 <div className={"settingsInline"}>
                                                     {HEX_COLOR.test(value) &&
                                                         <input type={"color"} value={value} disabled={!selectedTheme?.isUser}
-                                                               onChange={e => setChangedVariables({...changedVariables, [v.name]: e.target.value})}/>
+                                                            onChange={e => setChangedVariables({...changedVariables, [v.name]: e.target.value})}/>
                                                     }
                                                     <input type={"text"} value={value} disabled={!selectedTheme?.isUser}
-                                                           onChange={e => setChangedVariables({...changedVariables, [v.name]: e.target.value})}/>
+                                                        onChange={e => setChangedVariables({...changedVariables, [v.name]: e.target.value})}/>
                                                 </div>
                                             </label>
                                         );
@@ -251,7 +259,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                 <label className={"settingsRow"}>
                                     <span>Tab size</span>
                                     <input type={"number"} min={TAB_SIZE_RANGE.min} max={TAB_SIZE_RANGE.max} value={draft.editor.tabSize}
-                                           onChange={e => setEditor({tabSize: Number(e.target.value)})}/>
+                                        onChange={e => setEditor({tabSize: Number(e.target.value)})}/>
                                 </label>
                                 <label className={"settingsRow"}>
                                     <span>Show line numbers</span>
@@ -275,7 +283,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                     <label key={layout} className={"settingsRow"}>
                                         <span>{label}</span>
                                         <input type={"radio"} name={"tabLayout"} checked={draft.ui.tabLayout === layout}
-                                               onChange={() => setInterface({tabLayout: layout as TabLayout})}/>
+                                            onChange={() => setInterface({tabLayout: layout as TabLayout})}/>
                                     </label>
                                 ))}
                                 <h3>Window</h3>
@@ -310,13 +318,13 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                 <label className={"settingsRow"}>
                                     <span>Guess the encoding of files without a BOM</span>
                                     <input type={"checkbox"} checked={draft.files.autodetectEncoding}
-                                           onChange={e => setFiles({autodetectEncoding: e.target.checked})}/>
+                                        onChange={e => setFiles({autodetectEncoding: e.target.checked})}/>
                                 </label>
                                 <div className={"settingsHint"}>Files that are not valid UTF-8 are matched against the known character sets. When this is off, or the guess is unsure, the system code page (ANSI) is used.</div>
                                 <label className={"settingsRow"}>
                                     <span>Treat plain ASCII files as UTF-8</span>
                                     <input type={"checkbox"} checked={draft.files.asciiAsUtf8}
-                                           onChange={e => setFiles({asciiAsUtf8: e.target.checked})}/>
+                                        onChange={e => setFiles({asciiAsUtf8: e.target.checked})}/>
                                 </label>
                                 <div className={"settingsHint"}>When this is off, files with only ASCII characters are shown as ANSI. The bytes are the same either way; it only changes the encoding used once you type other characters.</div>
                             </>
@@ -327,7 +335,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                 <h3>Keyboard shortcuts</h3>
                                 <div className={"settingsHint"}>Click a shortcut and press the new keys. Backspace removes it, Escape cancels.</div>
                                 {shortcutRows.map(s => (
-                                    <div key={s.id} className={"settingsRow" + (conflicts.has(s.id) ? " invalid" : "")}>
+                                    <div key={s.id} className={classNames("settingsRow", conflicts.has(s.id) && "invalid")}>
                                         <span>{s.label}</span>
                                         <div className={"settingsInline"}>
                                             <button className={"shortcutButton"} onClick={() => setRecordingId(recordingId === s.id ? undefined : s.id)}>

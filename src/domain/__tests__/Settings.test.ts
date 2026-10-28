@@ -49,6 +49,12 @@ describe("Settings", () => {
         expect(settings.keyBindings).toEqual({a: "CmdOrCtrl+K", b: ""});
     });
 
+    it("moves key bindings of renamed plugin actions to the new codes", () => {
+        const settings = normalizeSettings({keyBindings: {"Base64_base64Encode": "CmdOrCtrl+K", "TextTools_upperCase": "CmdOrCtrl+U", "textTools.upperCase": "CmdOrCtrl+J"}});
+
+        expect(settings.keyBindings).toEqual({"base64.encode": "CmdOrCtrl+K", "textTools.upperCase": "CmdOrCtrl+J"});
+    });
+
     it("validates accelerators", () => {
         expect(isValidAccelerator("CmdOrCtrl+Shift+T")).toBe(true);
         expect(isValidAccelerator("CmdOrCtrl+,")).toBe(true);

@@ -18,8 +18,11 @@ export function getFileName(filePath: string): string {
     return filePath.split(/[\\/]/).pop() || filePath;
 }
 
+const MAX_TAB_NAME_LENGTH = 28;
+const ELLIPSIS = "...";
+
 export function shortenTabName(name: string): string {
-    return (name?.length || 0) > 28
-        ? (name?.substring(0, 25) + "...")
+    return name.length > MAX_TAB_NAME_LENGTH
+        ? name.substring(0, MAX_TAB_NAME_LENGTH - ELLIPSIS.length) + ELLIPSIS
         : name;
 }

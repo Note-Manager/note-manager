@@ -3,85 +3,71 @@ import {Ace} from "ace-builds";
 import {LanguageName} from "./SupportedLanguage";
 
 export class AceEditorWrapper implements EditorWrapper {
-    private _editor: Ace.Editor;
+    private readonly editor: Ace.Editor;
 
     constructor(editor: Ace.Editor) {
-        this._editor = editor;
-    }
-
-    getAllSelectionRanges(): Array<Ace.Range> {
-        const multiCursorRanges = this._editor?.getSelection().getAllRanges();
-
-        if(multiCursorRanges?.length > 0) {
-            return multiCursorRanges;
-        } else {
-            const singleSelectionRange = this.getSingleSelectionRange();
-
-            return singleSelectionRange ? [singleSelectionRange] : [];
-        }
+        this.editor = editor;
     }
 
     getSingleSelectionRange(): Ace.Range {
-        return this._editor.getSelectionRange();
+        return this.editor.getSelectionRange();
     }
 
-    replaceRange(range: Ace.Range, text: string): void {
-        if(!range) return;
+    getAllSelectionRanges(): Array<Ace.Range> {
+        const ranges = this.editor.getSelection().getAllRanges();
 
-        this._editor.session.replace(range, text);
-    }
-
-    getSelectedText() {
-        return this._editor.getSelectedText() || "";
-    }
-
-    replaceAllSelectionRanges(text: string): void {
-        const ranges = this.getAllSelectionRanges();
-
-        if(ranges?.length > 0) { // multi cursor
-            for(const range of ranges) {
-                this.replaceRange(range, text);
-            }
-        }
+        return ranges.length > 0 ? ranges : [this.getSingleSelectionRange()];
     }
 
     replaceSelection(text: string): void {
-        const selectionRange = this.getSingleSelectionRange();
+        this.replaceRange(this.getSingleSelectionRange(), text);
+    }
 
-        this.replaceRange(selectionRange, text);
+    replaceRange(range: Ace.Range, text: string): void {
+        if (!range) return;
+
+        this.editor.session.replace(range, text);
+    }
+
+    replaceAllSelectionRanges(text: string): void {
+        [...this.getAllSelectionRanges()].reverse().forEach(range => this.replaceRange(range, text));
+    }
+
+    getSelectedText() {
+        return this.editor.getSelectedText() || "";
     }
 
     getLanguage(): LanguageName {
-        const mode = this._editor.getOption("mode"); // may be a mode id string or a SyntaxMode object
+        const mode = this.editor.getOption("mode");
         const modeId = typeof mode === "string" ? mode : String((mode as any)?.$id || "");
 
         return modeId.split("/").pop() as LanguageName || LanguageName.TEXT;
     }
 
     getTextRange(range: Ace.Range): string {
-        return this._editor.session.getTextRange(range) || "";
+        return this.editor.session.getTextRange(range) || "";
     }
 
     getValue(): string {
-        return this._editor.session.getValue();
+        return this.editor.session.getValue();
     }
 
     getFullRange() {
-        const doc = this._editor.session.getDocument();
+        const doc = this.editor.session.getDocument();
         const lastRow = doc.getLength() - 1;
 
         return {start: {row: 0, column: 0}, end: {row: lastRow, column: doc.getLine(lastRow).length}};
     }
 
     onChange(listener: () => void): () => void {
-        this._editor.on("change", listener);
+        this.editor.on("change", listener);
 
-        return () => this._editor.off("change", listener);
+        return () => this.editor.off("change", listener);
     }
 
     onLanguageChange(listener: () => void): () => void {
-        this._editor.on("changeMode", listener);
+        this.editor.on("changeMode", listener);
 
-        return () => this._editor.off("changeMode", listener);
+        return () => this.editor.off("changeMode", listener);
     }
-}
+}

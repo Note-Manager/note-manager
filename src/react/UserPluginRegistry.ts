@@ -3,6 +3,7 @@ import {EditorWrapper} from "../domain/EditorWrapper";
 import {UserPluginInfo} from "../domain/PluginManifest";
 import {fireEvent} from "./ApplicationEvents";
 import {EventType} from "../enums";
+import {bundledPlugins} from "../utils/PluginLoader";
 
 export interface UserPluginImplementation {
     initialize?: (editor: EditorWrapper) => void,
@@ -69,6 +70,10 @@ export async function loadUserPlugins() {
 
 export function getUserPlugins(): Array<EditorPlugin> {
     return userPlugins;
+}
+
+export function getAllPlugins(): Array<EditorPlugin> {
+    return [...bundledPlugins, ...userPlugins];
 }
 
 export function onUserPluginsChanged(listener: () => void) {

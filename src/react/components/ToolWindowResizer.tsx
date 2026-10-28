@@ -29,8 +29,8 @@ function storeToolWindowWidth(width: number) {
     }
 }
 
-export default function ToolWindowResizer({width, onResize}: { width: number, onResize: (width: number) => void }) {
-    const dragRef = useRef<{ startX: number, startWidth: number, width: number }>();
+export default function ToolWindowResizer({width, onResize}: {width: number, onResize: (width: number) => void}) {
+    const dragRef = useRef<{startX: number, startWidth: number, width: number}>();
 
     const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
         if (event.button !== 0) return;
@@ -69,11 +69,11 @@ export default function ToolWindowResizer({width, onResize}: { width: number, on
 
     return (
         <div id={"toolWindowResizer"}
-             title={"Drag to resize, double-click to reset"}
-             onPointerDown={onPointerDown}
-             onPointerMove={onPointerMove}
-             onPointerUp={onPointerUp}
-             onPointerCancel={onPointerUp}
-             onDoubleClick={onDoubleClick}/>
+            title={"Drag to resize, double-click to reset"}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+            onDoubleClick={onDoubleClick}/>
     );
 }

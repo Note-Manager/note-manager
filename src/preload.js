@@ -30,12 +30,11 @@ const INVOKE_CHANNELS = [
 
 let titlebar;
 
-function initCustomTitlebar(event, data) {
-    console.log("initializing titlebar..");
-    if(titlebar) titlebar.dispose();
+function initCustomTitlebar(data) {
+    if (titlebar) titlebar.dispose();
 
     titlebar = new Titlebar({
-        titleHorizontalAlignment: 'center',
+        titleHorizontalAlignment: "center",
         shadow: true,
         icon: data?.icon,
     });
@@ -53,7 +52,7 @@ contextBridge.exposeInMainWorld("noteManager", {
         return ipcRenderer.invoke(channel, data);
     },
     on: (channel, callback) => {
-        const listener = (event, ...args) => callback(undefined, ...args);
+        const listener = (event, ...args) => callback(...args);
 
         ipcRenderer.on(channel, listener);
 
@@ -62,8 +61,8 @@ contextBridge.exposeInMainWorld("noteManager", {
     getPathForFile: (file) => webUtils.getPathForFile(file),
 });
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener("DOMContentLoaded", () => {
     initCustomTitlebar();
 });
 
-ipcRenderer.on("buildMenu", initCustomTitlebar);
+ipcRenderer.on(EventType.BUILD_MENU, (event, data) => initCustomTitlebar(data));

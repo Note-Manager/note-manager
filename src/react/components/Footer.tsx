@@ -1,18 +1,15 @@
-import React, {useEffect, useState} from "react";
+import React from "react";
 import {useEditorContext} from "./editor/EditorContext";
 import {SupportedLanguages} from "../../domain/SupportedLanguage";
 import {EncodingId, getEolLabel, getShortEncodingLabel} from "../../domain/Encoding";
 import {fireEvent} from "../ApplicationEvents";
 import {EncodingAction, EventType} from "../../enums";
-import {getAnsiCodePage} from "../EncodingInfo";
+import {useAnsiCodePage} from "../EncodingInfo";
+import {logError} from "../../utils/Log";
 
 export default function Footer() {
     const {data, activeTab, setEncodingPicker} = useEditorContext();
-    const [ansiCodePage, setAnsiCodePage] = useState<string>();
-
-    useEffect(() => {
-        getAnsiCodePage().then(setAnsiCodePage).catch(err => console.error(err));
-    }, []);
+    const ansiCodePage = useAnsiCodePage();
 
     const showEolMenu = (event: React.MouseEvent<HTMLElement>) => {
         event.preventDefault();
@@ -21,14 +18,14 @@ export default function Footer() {
 
         const rect = event.currentTarget.getBoundingClientRect();
 
-        fireEvent(EventType.SHOW_STATUS_MENU, {eol: activeTab.eol, x: rect.left, y: rect.top}).catch(err => console.error(err));
-    }
+        fireEvent(EventType.SHOW_STATUS_MENU, {eol: activeTab.eol, x: rect.left, y: rect.top}).catch(logError("cannot show the line ending menu"));
+    };
 
     const openEncodingPicker = (event: React.MouseEvent<HTMLElement>) => {
         event.preventDefault();
 
         setEncodingPicker(EncodingAction.REINTERPRET);
-    }
+    };
 
     const encodingLabel = activeTab?.encoding === EncodingId.ANSI && ansiCodePage
         ? `ANSI (${getShortEncodingLabel(ansiCodePage)})`
@@ -59,11 +56,11 @@ export default function Footer() {
                 {activeTab &&
                     <>
                         <button id={"footerEol"} className={"statusChip chip"} title={"Line endings: click to change"}
-                                onClick={showEolMenu} onContextMenu={showEolMenu}>
+                            onClick={showEolMenu} onContextMenu={showEolMenu}>
                             {getEolLabel(activeTab.eol)}
                         </button>
                         <button id={"footerEncoding"} className={"statusChip chip"} title={"Encoding: click to reopen or convert"}
-                                onClick={openEncodingPicker} onContextMenu={openEncodingPicker}>
+                            onClick={openEncodingPicker} onContextMenu={openEncodingPicker}>
                             {encodingLabel}
                         </button>
                     </>

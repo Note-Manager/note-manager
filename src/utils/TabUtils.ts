@@ -1,14 +1,57 @@
 import {EditorTab} from "../domain/EditorTab";
 import {findLanguageByFileName, LanguageName, SupportedLanguages} from "../domain/SupportedLanguage";
-import {getFileName, shortenTabName} from "./TextUtils";
+import {EolType} from "../domain/Encoding";
+import {documentHash, getFileName, shortenTabName} from "./TextUtils";
+
+export const DEFAULT_TAB_NAME = "New Document.txt";
+
+export function createEmptyTab(name: string, encoding: string, eol: EolType): EditorTab {
+    return {
+        id: crypto.randomUUID(),
+        name: name,
+        displayName: shortenTabName(name),
+        isTemp: true,
+        content: "",
+        encoding: encoding,
+        eol: eol,
+        language: SupportedLanguages[LanguageName.TEXT],
+        state: {scroll: {left: 0, top: 0}},
+    };
+}
+
+export function hashTab(tab: EditorTab) {
+    return documentHash(tab.content || "", tab.encoding, tab.eol);
+}
+
+export async function refreshIsChanged(tab: EditorTab) {
+    tab.isChanged = await hashTab(tab) !== tab.hash;
+}
+
+export function countTabsNamed(tabs: Array<EditorTab>, name: string) {
+    return tabs.filter(tab => tab.name === name).length;
+}
+
+export function generateUniqueName(tabs: Array<EditorTab>, name: string) {
+    let uniqueName = name;
+
+    for (let count = 1; countTabsNamed(tabs, uniqueName) > 0; count++) {
+        uniqueName = `${name} (${count})`;
+    }
+
+    return uniqueName;
+}
+
+export function renameTab(tab: EditorTab, name: string) {
+    tab.name = name;
+    tab.displayName = shortenTabName(name);
+}
 
 export function applySavedFile(tab: EditorTab, file: string): EditorTab {
     const name = getFileName(file);
     const detectedLanguage = findLanguageByFileName(name);
 
+    renameTab(tab, name);
     tab.file = file;
-    tab.name = name;
-    tab.displayName = shortenTabName(name);
     tab.isTemp = false;
 
     if (!tab.language || detectedLanguage !== SupportedLanguages[LanguageName.TEXT]) {

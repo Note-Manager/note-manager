@@ -1,280 +1,86 @@
-import {EditorTab} from "../../domain/EditorTab";
-import Editor from "./editor/Editor";
-import React, {useEffect, useRef, useState} from "react";
-import * as TextUtils from "../../utils/TextUtils";
-import {shortenTabName} from "../../utils/TextUtils";
-import {fireEvent, off, on} from "../ApplicationEvents";
-import {EditorCommand, EncodingAction, EventType} from "../../enums";
+import React, {useRef, useState} from "react";
 import {Ace} from "ace-builds";
-import {LanguageName, SupportedLanguage, SupportedLanguages} from "../../domain/SupportedLanguage";
-import {useEditorContext} from "./editor/EditorContext";
-import {markStateChanged} from "../StateChangeTracker";
-import {allPlugins} from "../../utils/PluginLoader";
-import {ContextMenuGroup, ToolbarMenuItem} from "./editor/plugins";
-import DOMPurify from "dompurify";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faTimesRectangle} from "@fortawesome/free-regular-svg-icons/faTimesRectangle";
-import {saveTab} from "../TabSaver";
-import {EolType, getEditorNewLineMode, isKnownEncoding, isKnownEol} from "../../domain/Encoding";
+import Editor from "./editor/Editor";
 import EncodingPicker from "./EncodingPicker";
-import ToolWindowResizer, {readToolWindowWidth} from "./ToolWindowResizer";
-import {getUserPlugins} from "../UserPluginRegistry";
+import ToolWindow from "./ToolWindow";
+import {readToolWindowWidth} from "./ToolWindowResizer";
+import {useEditorContext} from "./editor/EditorContext";
+import {ContextMenuGroup, ToolbarMenuItem} from "./editor/plugins";
+import {canPreview} from "./editor/plugins/PreviewPlugin";
+import {EditorTab} from "../../domain/EditorTab";
+import {EditorData} from "../../domain/EditorData";
+import {SupportedLanguages} from "../../domain/SupportedLanguage";
 import {AceEditorWrapper} from "../../domain/AceEditorWrapper";
+import {getEditorNewLineMode} from "../../domain/Encoding";
+import {EventType} from "../../enums";
+import {fireEvent} from "../ApplicationEvents";
+import {markStateChanged} from "../StateChangeTracker";
+import {getAllPlugins} from "../UserPluginRegistry";
+import {createDebouncer} from "../Debounce";
+import {classNames} from "../ClassNames";
+import {useActiveTabEditing} from "../hooks/useActiveTabEditing";
+import {useEditorCommands} from "../hooks/useEditorCommands";
+import {previewTool, toolbarItems} from "../../utils/PluginLoader";
+import {refreshIsChanged} from "../../utils/TabUtils";
+import {logError} from "../../utils/Log";
 
-const PREVIEW_LANGUAGES: Array<string> = [LanguageName.MARKDOWN, LanguageName.HTML];
+const DEBOUNCE_DELAY = 200;
 
-const debounceDelay = 200; // Delay in milliseconds
-let changeDebounceTimer: NodeJS.Timeout; // Timer for change event
-let selectionChangeDebounceTimer: NodeJS.Timeout; // Timer for selection event
-let cursorChangeDebounceTimer: NodeJS.Timeout; // Timer for selection event
+const debounceContentChange = createDebouncer(DEBOUNCE_DELAY);
+const debounceCursorChange = createDebouncer(DEBOUNCE_DELAY);
 
 export default function EditorContainer() {
-    const {data, setData, activeTab, encodingPicker, setEncodingPicker} = useEditorContext();
+    const {setData, activeTab, encodingPicker, setEncodingPicker} = useEditorContext();
 
-    const[activeTool, setActiveTool] = useState<ToolbarMenuItem>();
-    const[toolWindowWidth, setToolWindowWidth] = useState<number>(readToolWindowWidth);
+    const [activeTool, setActiveTool] = useState<ToolbarMenuItem>();
+    const [toolWindowWidth, setToolWindowWidth] = useState<number>(readToolWindowWidth);
 
     const editorRef = useRef<Ace.Editor>();
-    const encodingActionRef = useRef<(action: EncodingAction, encoding?: string) => void>();
 
-    const previewTool = allPlugins.flatMap(p => p.toolbarMenuItems || []).find(item => item.label === "Preview");
+    const updateEditorData = () => setData(readEditorData(editorRef.current));
+    const toggleTool = (tool: ToolbarMenuItem) => setActiveTool(current => current === tool ? undefined : tool);
 
-    useEffect(() => {
-        if(!activeTab){
-            return;
-        }
-        const onSetTabLanguage = (event: any, newLang: SupportedLanguage) => {
-            activeTab.language = newLang;
+    const runEncodingAction = useActiveTabEditing(editorRef, updateEditorData);
 
-            markStateChanged();
+    useEditorCommands(editorRef, () => toggleTool(previewTool));
 
-            if(activeTab.isTemp) {
-                activeTab.name = activeTab.name?.substring(0, activeTab.name?.lastIndexOf(".")) + newLang.extensions[0];
-                activeTab.displayName = shortenTabName(activeTab.name);
-            }
+    if (!activeTab) return null;
 
-            setData(getEditorData());
-        }
+    const saveEditorState = () => {
+        const session = editorRef.current?.session;
 
-        const onTabSave = () => {
-            if(!activeTab.isChanged) return;
-
-            saveTab(activeTab).then(isSaved => {
-                if(isSaved) setData(getEditorData());
-            }).catch(err => console.error("cannot save " + activeTab.name + ": " + err));
-        }
-
-        const refreshChangedState = async () => {
-            const editor = editorRef.current;
-
-            if (editor) activeTab.content = editor.getValue();
-
-            activeTab.isChanged = await TextUtils.documentHash(activeTab.content || "", activeTab.encoding, activeTab.eol) !== activeTab.hash;
-
-            markStateChanged();
-            setData(getEditorData());
-        }
-
-        const reinterpret = async (encoding?: string) => {
-            if (!activeTab.file) {
-                if (!encoding) return;
-
-                activeTab.encoding = encoding;
-                await refreshChangedState();
-                return;
-            }
-
-            if (activeTab.isChanged && !await fireEvent(EventType.CONFIRM_REINTERPRET, {name: activeTab.name, encoding: encoding})) return;
-
-            const result = await fireEvent(EventType.READ_FILE_AS, {file: activeTab.file, encoding: encoding, fallbackEol: activeTab.eol});
-
-            activeTab.encoding = result.encoding;
-            activeTab.eol = result.eol;
-            activeTab.content = result.content;
-            activeTab.hash = await TextUtils.documentHash(result.content, result.encoding, result.eol);
-            activeTab.isChanged = false;
-
-            const editor = editorRef.current;
-
-            if (editor) {
-                editor.session.setNewLineMode(getEditorNewLineMode(result.eol));
-                editor.session.setValue(result.content);
-                activeTab.state = {...activeTab.state, undoHistory: undefined};
-            }
-
-            markStateChanged();
-            setData(getEditorData());
-        }
-
-        const convert = async (encoding: string) => {
-            if (encoding === activeTab.encoding) return;
-
-            if (!await fireEvent(EventType.CONFIRM_CONVERSION, {content: editorRef.current?.getValue() ?? activeTab.content ?? "", encoding: encoding})) return;
-
-            activeTab.encoding = encoding;
-
-            await refreshChangedState();
-        }
-
-        const runEncodingAction = (action: EncodingAction, encoding?: string) => {
-            const run = action === EncodingAction.REDETECT
-                ? reinterpret()
-                : isKnownEncoding(encoding) ? (action === EncodingAction.CONVERT ? convert(encoding) : reinterpret(encoding)) : undefined;
-
-            run?.catch(err => console.error("cannot change encoding of " + activeTab.name + ": " + err));
-        }
-
-        encodingActionRef.current = runEncodingAction;
-
-        const onEncodingAction = (event: any, data: {action: EncodingAction, encoding?: string}) => runEncodingAction(data?.action, data?.encoding);
-
-        const onOpenEncodingPicker = (event: any, data: {action: EncodingAction}) => setEncodingPicker(data?.action === EncodingAction.CONVERT ? EncodingAction.CONVERT : EncodingAction.REINTERPRET);
-
-        const onEolAction = (event: any, data: {eol: EolType}) => {
-            if (!isKnownEol(data?.eol) || data.eol === activeTab.eol) return;
-
-            activeTab.eol = data.eol;
-
-            editorRef.current?.session.setNewLineMode(getEditorNewLineMode(data.eol));
-
-            refreshChangedState().catch(err => console.error("cannot change line endings of " + activeTab.name + ": " + err));
-        }
-
-        const onEditorCommand = (event: any, data: {command: EditorCommand}) => {
-            const editor = editorRef.current;
-
-            if (!editor) return;
-
-            switch (data?.command) {
-                case EditorCommand.UNDO:
-                    editor.undo();
-                    break;
-                case EditorCommand.REDO:
-                    editor.redo();
-                    break;
-                case EditorCommand.DELETE:
-                    editor.execCommand("del");
-                    break;
-                case EditorCommand.SELECT_ALL:
-                    editor.selectAll();
-                    break;
-                case EditorCommand.FIND:
-                    editor.execCommand("find");
-                    return;
-                case EditorCommand.REPLACE:
-                    editor.execCommand("replace");
-                    return;
-                case EditorCommand.GO_TO_LINE:
-                    editor.execCommand("gotoline");
-                    return;
-                case EditorCommand.TOGGLE_PREVIEW:
-                    setActiveTool(current => current === previewTool ? undefined : previewTool);
-                    break;
-            }
-
-            editor.focus();
-        }
-
-        on(EventType.SAVE_TAB, onTabSave);
-        on(EventType.EDITOR_COMMAND, onEditorCommand);
-        on(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
-        on(EventType.ENCODING_ACTION, onEncodingAction);
-        on(EventType.EOL_ACTION, onEolAction);
-        on(EventType.OPEN_ENCODING_PICKER, onOpenEncodingPicker);
-
-        return () => {
-            off(EventType.SAVE_TAB, onTabSave);
-            off(EventType.EDITOR_COMMAND, onEditorCommand);
-            off(EventType.SET_TAB_LANGUAGE, onSetTabLanguage);
-            off(EventType.ENCODING_ACTION, onEncodingAction);
-            off(EventType.EOL_ACTION, onEolAction);
-            off(EventType.OPEN_ENCODING_PICKER, onOpenEncodingPicker);
-        }
-    }, [activeTab]);
-
-    useEffect(() => {
-        const toolWindowContent = activeTool?.getToolbarWindowContent();
-        const el = document.getElementById("toolWindowContent");
-        if(el) {
-            const sanitizedContent = toolWindowContent ? DOMPurify.sanitize(toolWindowContent) : toolWindowContent;
-
-            const shadow = el.attachShadow({mode: "open"});
-            shadow.innerHTML = sanitizedContent || "";
-
-            if(activeTool?.onContentMount) activeTool?.onContentMount(shadow, {filePath: activeTab?.file, language: activeTab?.language?.name});
-        }
-    }, [activeTool, activeTab?.id]);
-
-    if(!activeTab) return null;
-
-    const getEditorData = () => {
-        return {
-            ...data,
-            length: editorRef.current?.getValue().length||0,
-            lineCount: editorRef.current?.session.getLength()||0,
-            selection: {
-                selectionLength: editorRef.current?.getSelectedText()?.length||0,
-                selectionRangeCount: editorRef.current?.getSelection().getAllRanges()?.length||0
-            },
-        }
-    }
-
-    const updateTabSelection = () => {
         markStateChanged();
 
         activeTab.state = {
             ...activeTab.state,
-            selection: editorRef.current?.session.selection.toJSON()
+            selection: session?.selection.toJSON(),
+            undoHistory: session?.getUndoManager().toJSON(),
         };
-    }
+    };
 
-    const updateTabUndoHistory = () => {
-        activeTab.state = {
-            ...activeTab.state,
-            undoHistory: editorRef.current?.session.getUndoManager().toJSON()
-        }
-    }
+    const onCursorChange = () => debounceCursorChange(() => {
+        updateEditorData();
+        saveEditorState();
+    });
 
-    const onSelectionChange = () => {
-        clearTimeout(selectionChangeDebounceTimer);
-
-        selectionChangeDebounceTimer = setTimeout(() => {
-            setData(getEditorData());
-
-            updateTabSelection();
-            updateTabUndoHistory();
-
-        }, debounceDelay);
-    }
-
-    const onContentChange = ({value}: { value: string, lineCount: number }) => {
+    const onContentChange = (value: string) => {
         activeTab.content = value;
 
         markStateChanged();
 
-        clearTimeout(changeDebounceTimer);
+        debounceContentChange(() => {
+            refreshIsChanged(activeTab)
+                .then(() => activeTab.state = {...activeTab.state, undoHistory: editorRef.current?.session.getUndoManager().toJSON()})
+                .catch(logError("cannot check changes of " + activeTab.name));
+        });
+    };
 
-        changeDebounceTimer = setTimeout(async () => {
-            TextUtils.documentHash(value, activeTab.encoding, activeTab.eol).then((result: string) => {
-                if (!activeTab) return;
+    const onEditorLoad = (editor: Ace.Editor) => {
+        editorRef.current = editor;
 
-                activeTab.isChanged = result !== activeTab.hash;
-
-                updateTabUndoHistory();
-            });
-        }, debounceDelay);
-    }
-
-    const onCursorChange = () => {
-        clearTimeout(cursorChangeDebounceTimer);
-
-        cursorChangeDebounceTimer = setTimeout(() => {
-            setData(getEditorData());
-
-            updateTabSelection();
-            updateTabUndoHistory();
-        }, debounceDelay);
-    }
+        updateEditorData();
+        restoreEditorState(editor, activeTab);
+    };
 
     const showContextMenu = (event: React.MouseEvent) => {
         const editor = editorRef.current;
@@ -283,38 +89,25 @@ export default function EditorContainer() {
 
         event.preventDefault();
 
-        const wrapper = new AceEditorWrapper(editor);
         const undoManager = editor.session.getUndoManager();
-
-        const groups: Array<ContextMenuGroup> = [...allPlugins, ...getUserPlugins()].flatMap(plugin => plugin.contextMenuItems || []).map(item => ({
-            label: item.label,
-            actions: item.actions.map(action => ({
-                label: action.label,
-                code: action.code,
-                enabled: action.isAvailable ? action.isAvailable(wrapper) : true
-            }))
-        }));
 
         fireEvent(EventType.SHOW_EDITOR_CONTEXT_MENU, {
             hasSelection: !editor.selection.isEmpty(),
             canUndo: undoManager.hasUndo(),
             canRedo: undoManager.hasRedo(),
             file: activeTab.file,
-            canPreview: !!previewTool && PREVIEW_LANGUAGES.includes(activeTab.language?.name || ""),
-            isPreviewOpen: !!previewTool && activeTool === previewTool,
-            groups: groups,
+            canPreview: canPreview(activeTab.language?.name),
+            isPreviewOpen: activeTool === previewTool,
+            groups: getContextMenuGroups(new AceEditorWrapper(editor)),
             x: event.clientX,
             y: event.clientY,
-        }).catch(err => console.error("cannot show editor context menu: " + err));
-    }
+        }).catch(logError("cannot show editor context menu"));
+    };
 
-    const onEditorLoad = (editor: Ace.Editor) => {
-        editorRef.current = editor;
-
-        setData(getEditorData());
-
-        initializeEditor(editor, activeTab);
-    }
+    const closeEncodingPicker = () => {
+        setEncodingPicker(undefined);
+        editorRef.current?.focus();
+    };
 
     return (
         <div id={"editorBody"}>
@@ -324,102 +117,85 @@ export default function EditorContainer() {
                     encoding={activeTab.encoding}
                     hasFile={!!activeTab.file}
                     onActionChange={setEncodingPicker}
-                    onClose={() => {
-                        setEncodingPicker(undefined);
-                        editorRef.current?.focus();
-                    }}
+                    onClose={closeEncodingPicker}
                     onSelect={(action, encoding) => {
-                        setEncodingPicker(undefined);
-                        encodingActionRef.current?.(action, encoding);
-                        editorRef.current?.focus();
+                        closeEncodingPicker();
+                        runEncodingAction(action, encoding);
                     }}/>
             }
-            {activeTab &&
-                <div id={"tabContentWrapper"} key={activeTab.id} onContextMenu={showContextMenu}>
-                    <Editor
-                        content={activeTab.content || ""}
-                        language={activeTab.language || SupportedLanguages.text}
-                        newLineMode={getEditorNewLineMode(activeTab.eol)}
-                        selectionListener={onSelectionChange}
-                        changeListener={onContentChange}
-                        cursorListener={onCursorChange}
-                        onEditorLoad={onEditorLoad}/>
-                </div>
-            }
+            <div id={"tabContentWrapper"} key={activeTab.id} onContextMenu={showContextMenu}>
+                <Editor
+                    content={activeTab.content || ""}
+                    language={activeTab.language || SupportedLanguages.text}
+                    newLineMode={getEditorNewLineMode(activeTab.eol)}
+                    selectionListener={onCursorChange}
+                    changeListener={onContentChange}
+                    cursorListener={onCursorChange}
+                    onEditorLoad={onEditorLoad}/>
+            </div>
             <div id={"editorToolsWrapper"}>
-                { activeTool &&
-                    <ToolWindowResizer width={toolWindowWidth} onResize={setToolWindowWidth}/>
-                }
-                { activeTool &&
-                    <div id={"toolWindow"} style={{width: toolWindowWidth + "px"}}>
-                        <div id={"toolWindowHeader"}>
-                            <div id={"toolWindowButtons"}>
-                                <button type={"button"} className={"iconButton danger"} aria-label={"Close tool window"} title={"Close tool window"} onClick={() => setActiveTool(undefined)}>
-                                    <FontAwesomeIcon icon={faTimesRectangle}/>
-                                </button>
-                            </div>
-                            <div id={"toolWindowTitle"}>
-                                <span>{activeTool.label}</span>
-                            </div>
-                        </div>
-                        <div id={"toolWindowContent"} key={(activeTab?.id || "") + activeTool.label}>
-                        </div>
-                    </div>
+                {activeTool &&
+                    <ToolWindow key={activeTab.id + activeTool.label}
+                        tool={activeTool}
+                        context={{filePath: activeTab.file, language: activeTab.language?.name}}
+                        width={toolWindowWidth}
+                        onResize={setToolWindowWidth}
+                        onClose={() => setActiveTool(undefined)}/>
                 }
                 <div id={"editorTools"}>
-                    {
-                        allPlugins.filter(p => p.toolbarMenuItems && p.toolbarMenuItems.length > 0).flatMap(plugin => plugin.toolbarMenuItems).map((item, idx) => {
-                            return (
-                                <button type={"button"} key={idx} className={"editorToolWrapper" + (activeTool === item ? " selected" : "")} aria-pressed={activeTool === item} onClick={() => setActiveTool(activeTool === item ? undefined : item)}>
-                                    <img className={"editorToolIcon"} src={item?.icon} alt={""}/>
-                                    <span>{item?.label}</span>
-                                </button>
-                            );
-                        })
-                    }
+                    {toolbarItems.map(item => (
+                        <button type={"button"} key={item.label} className={classNames("editorToolWrapper", activeTool === item && "selected")} aria-pressed={activeTool === item} onClick={() => toggleTool(item)}>
+                            <img className={"editorToolIcon"} src={item.icon} alt={""}/>
+                            <span>{item.label}</span>
+                        </button>
+                    ))}
                 </div>
             </div>
         </div>
     );
 }
 
-function initializeEditor(editor: Ace.Editor, activeTab: EditorTab) {
-    if (activeTab.state?.scroll) {
-        editor.session.setScrollTop(activeTab.state.scroll.top);
-        editor.session.setScrollLeft(activeTab.state.scroll.left);
+function readEditorData(editor: Ace.Editor | undefined): EditorData {
+    return {
+        length: editor?.getValue().length || 0,
+        lineCount: editor?.session.getLength() || 0,
+        selection: {
+            selectionLength: editor?.getSelectedText()?.length || 0,
+            selectionRangeCount: editor?.getSelection().getAllRanges()?.length || 0
+        },
+    };
+}
+
+function getContextMenuGroups(editor: AceEditorWrapper): Array<ContextMenuGroup> {
+    return getAllPlugins().flatMap(plugin => plugin.contextMenuItems || []).map(item => ({
+        label: item.label,
+        actions: item.actions.map(action => ({
+            label: action.label,
+            code: action.code,
+            enabled: action.isAvailable ? action.isAvailable(editor) : true
+        }))
+    }));
+}
+
+function restoreEditorState(editor: Ace.Editor, tab: EditorTab) {
+    const {scroll, selection, undoHistory} = tab.state || {};
+
+    if (scroll) {
+        editor.session.setScrollTop(scroll.top);
+        editor.session.setScrollLeft(scroll.left);
     }
 
-    if (activeTab.state?.selection) {
-        editor.session.selection.fromJSON(activeTab.state.selection);
-    }
+    if (selection) editor.session.selection.fromJSON(selection);
+    if (undoHistory) editor.session.getUndoManager().fromJSON(undoHistory);
 
-    if(activeTab.state?.undoHistory) {
-        editor.session.getUndoManager().fromJSON(activeTab.state.undoHistory);
-    }
-
-    editor.session.on("changeScrollLeft", (scrollLeft) => {
+    const saveScroll = () => {
         markStateChanged();
 
-        activeTab.state = {
-            ...activeTab.state,
-            scroll: {
-                left: scrollLeft,
-                top: activeTab.state?.scroll?.top||0
-            }
-        }
-    });
+        tab.state = {...tab.state, scroll: {left: editor.session.getScrollLeft(), top: editor.session.getScrollTop()}};
+    };
 
-    editor.session.on("changeScrollTop", (scrollTop) => {
-        markStateChanged();
-
-        activeTab.state = {
-            ...activeTab.state,
-            scroll: {
-                left: activeTab.state?.scroll?.left||0,
-                top: scrollTop
-            }
-        }
-    });
+    editor.session.on("changeScrollLeft", saveScroll);
+    editor.session.on("changeScrollTop", saveScroll);
 
     editor.focus();
 }

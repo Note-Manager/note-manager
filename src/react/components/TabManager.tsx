@@ -1,13 +1,14 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState} from "react";
 import {TabList} from "./TabList";
-import {EditorTab} from "../../domain/EditorTab";
 import Footer from "./Footer";
 import EditorContainer from "./EditorContainer";
 import {EditorContextProvider, useEditorContext} from "./editor/EditorContext";
-import {fireEvent, getPathForFile, off, on} from "../ApplicationEvents";
+import {fireEvent, getPathForFile} from "../ApplicationEvents";
+import {useIpcEvents} from "../hooks/useIpcEvents";
+import {logError} from "../../utils/Log";
 import {EventType} from "../../enums";
 import SettingsDialog from "./SettingsDialog";
-import {normalizeSettings, Settings} from "../../domain/Settings";
+import {normalizeSettings} from "../../domain/Settings";
 
 export default function TabManager() {
     return (
@@ -23,67 +24,35 @@ function Workbench() {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     useEffect(() => {
-        const onSettingsChanged = (event: any, changed: Settings) => setSettings(normalizeSettings(changed));
-        const onOpenSettings = () => setIsSettingsOpen(true);
-
         fireEvent(EventType.GET_SETTINGS)
             .then(result => setSettings(normalizeSettings(result?.settings)))
-            .catch(err => console.error("cannot load settings: " + err));
-
-        on(EventType.SETTINGS_CHANGED, onSettingsChanged);
-        on(EventType.OPEN_SETTINGS, onOpenSettings);
-
-        return () => {
-            off(EventType.SETTINGS_CHANGED, onSettingsChanged);
-            off(EventType.OPEN_SETTINGS, onOpenSettings);
-        };
+            .catch(logError("cannot load settings"));
     }, []);
 
-    const handleDragEnter = (event: any) => {
-        event.preventDefault();
-    };
+    useIpcEvents({
+        [EventType.SETTINGS_CHANGED]: (changed) => setSettings(normalizeSettings(changed)),
+        [EventType.OPEN_SETTINGS]: () => setIsSettingsOpen(true),
+    }, []);
 
-    const handleDragOver = (event: any) => {
-        event.preventDefault();
-    };
-
-    const handleDragLeave = () => {
-    };
+    const allowDrop = (event: React.DragEvent) => event.preventDefault();
 
     const handleDrop = (event: React.DragEvent) => {
         event.preventDefault();
 
         const droppedFiles = Array.from(event.dataTransfer.files).map(f => getPathForFile(f));
 
-        fireEvent(EventType.FILES_DROPPED, {files: droppedFiles}).then(ignore => ignore);
+        fireEvent(EventType.FILES_DROPPED, {files: droppedFiles}).catch(logError("cannot open dropped files"));
     };
-
-    const onTabSelect = (tab: EditorTab) => {
-        // do nothing
-    }
-
-    const onTabRemove = (tabToRemove: EditorTab) => {
-        // do nothing
-    }
-
-    const onTabAdd = (tabToAdd: EditorTab) => {
-        // do nothing
-    }
 
     return (
         <div id={"tabManager"}
-             className={"tabs-" + settings.ui.tabLayout}
-             onDragEnter={handleDragEnter}
-             onDragOver={handleDragOver}
-             onDragLeave={handleDragLeave}
-             onDrop={handleDrop}>
+            className={"tabs-" + settings.ui.tabLayout}
+            onDragEnter={allowDrop}
+            onDragOver={allowDrop}
+            onDrop={handleDrop}>
 
             <div id={"workspace"}>
-                <TabList
-                    onTabSelect={onTabSelect}
-                    onTabAdd={onTabAdd}
-                    onTabRemove={onTabRemove}
-                />
+                <TabList/>
 
                 <EditorContainer/>
             </div>
