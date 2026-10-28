@@ -22,9 +22,13 @@ export interface EditorAction {
     accelerator?: string,
 }
 
+export interface ToolWindowContext {
+    filePath?: string,
+}
+
 export interface ToolbarMenuItem {
     label: string,
     icon: string,
-    onContentMount?: (parent: ShadowRoot) => void,
+    onContentMount?: (parent: ShadowRoot, context: ToolWindowContext) => void,
     getToolbarWindowContent: () => string
 }

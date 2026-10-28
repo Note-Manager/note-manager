@@ -52,4 +52,6 @@ export interface EditorWrapper {
     getValue: () => string;
 
     getFullRange: () => any;
+
+    onChange: (listener: () => void) => () => void;
 }

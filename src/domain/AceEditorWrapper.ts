@@ -72,4 +72,10 @@ export class AceEditorWrapper implements EditorWrapper {
 
         return {start: {row: 0, column: 0}, end: {row: lastRow, column: doc.getLine(lastRow).length}};
     }
+
+    onChange(listener: () => void): () => void {
+        this._editor.on("change", listener);
+
+        return () => this._editor.off("change", listener);
+    }
 }

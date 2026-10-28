@@ -156,7 +156,7 @@ export default function EditorContainer() {
             const shadow = el.attachShadow({mode: "open"});
             shadow.innerHTML = sanitizedContent || "";
 
-            if(activeTool?.onContentMount) activeTool?.onContentMount(shadow);
+            if(activeTool?.onContentMount) activeTool?.onContentMount(shadow, {filePath: activeTab?.file});
         }
     }, [activeTool, activeTab?.id]);
 
