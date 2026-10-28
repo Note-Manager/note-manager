@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {fireEvent} from "../ApplicationEvents";
 import {useIpcEvents} from "../hooks/useIpcEvents";
+import {classNames} from "../ClassNames";
 import {ThemeInfo} from "../../domain/ThemeInfo";
 import {logError} from "../../utils/Log";
 import {EventType} from "../../enums";
@@ -116,7 +117,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
         }
     };
 
-    useIpcEvents(recordingId ? {[EventType.SHORTCUT_KEY]: (event: unknown, key: KeyPress) => recordKey(key)} : {}, [recordingId, draft]);
+    useIpcEvents(recordingId ? {[EventType.SHORTCUT_KEY]: (key) => recordKey(key)} : {}, [recordingId, draft]);
 
     useEffect(() => {
         if (!recordingId) return;
@@ -178,7 +179,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
         fireEvent(EventType.SAVE_SETTINGS, {
             settings: draft,
             themeFile: themeFile,
-            themeVariables: selectedTheme?.isUser && Object.keys(changedVariables).length > 0 ? {file: themeFile, values: changedVariables} : undefined,
+            themeVariables: selectedTheme?.isUser && Object.keys(changedVariables).length > 0 ? {file: selectedTheme.file, values: changedVariables} : undefined,
         }).then(onClose).catch(err => setError("Cannot save settings: " + err));
     };
 
@@ -187,7 +188,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
             <div id={"settingsDialog"} role={"dialog"} aria-label={"Settings"}>
                 <div id={"settingsNav"}>
                     {Object.values(Section).map(s => (
-                        <button type={"button"} key={s} className={"settingsNavItem" + (s === section ? " selected" : "")} aria-current={s === section} onClick={() => setSection(s)}>{s}</button>
+                        <button type={"button"} key={s} className={classNames("settingsNavItem", s === section && "selected")} aria-current={s === section} onClick={() => setSection(s)}>{s}</button>
                     ))}
                 </div>
                 <div id={"settingsBody"}>
@@ -227,7 +228,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                         const value = changedVariables[v.name] ?? v.value;
 
                                         return (
-                                            <label key={v.name} className={"settingsRow" + (invalidVariables.includes(v.name) ? " invalid" : "")}>
+                                            <label key={v.name} className={classNames("settingsRow", invalidVariables.includes(v.name) && "invalid")}>
                                                 <span>{v.name}</span>
                                                 <div className={"settingsInline"}>
                                                     {HEX_COLOR.test(value) &&
@@ -334,7 +335,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                 <h3>Keyboard shortcuts</h3>
                                 <div className={"settingsHint"}>Click a shortcut and press the new keys. Backspace removes it, Escape cancels.</div>
                                 {shortcutRows.map(s => (
-                                    <div key={s.id} className={"settingsRow" + (conflicts.has(s.id) ? " invalid" : "")}>
+                                    <div key={s.id} className={classNames("settingsRow", conflicts.has(s.id) && "invalid")}>
                                         <span>{s.label}</span>
                                         <div className={"settingsInline"}>
                                             <button className={"shortcutButton"} onClick={() => setRecordingId(recordingId === s.id ? undefined : s.id)}>

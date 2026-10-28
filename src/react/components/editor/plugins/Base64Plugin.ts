@@ -3,8 +3,8 @@ import {BasePlugin} from "./BasePlugin";
 import {transformSelections} from "../../../../utils/EditorTransforms";
 
 enum Keys {
-    ENCODE = "Base64_base64Encode",
-    DECODE = "Base64_base64Decode",
+    ENCODE = "base64.encode",
+    DECODE = "base64.decode",
 }
 
 const CHUNK_SIZE = 0x8000;

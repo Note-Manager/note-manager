@@ -8,7 +8,7 @@ import {useIpcEvents} from "../hooks/useIpcEvents";
 import {logError} from "../../utils/Log";
 import {EventType} from "../../enums";
 import SettingsDialog from "./SettingsDialog";
-import {normalizeSettings, Settings} from "../../domain/Settings";
+import {normalizeSettings} from "../../domain/Settings";
 
 export default function TabManager() {
     return (
@@ -30,7 +30,7 @@ function Workbench() {
     }, []);
 
     useIpcEvents({
-        [EventType.SETTINGS_CHANGED]: (event: unknown, changed: Settings) => setSettings(normalizeSettings(changed)),
+        [EventType.SETTINGS_CHANGED]: (changed) => setSettings(normalizeSettings(changed)),
         [EventType.OPEN_SETTINGS]: () => setIsSettingsOpen(true),
     }, []);
 

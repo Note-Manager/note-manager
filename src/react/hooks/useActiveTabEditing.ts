@@ -110,10 +110,10 @@ export function useActiveTabEditing(editorRef: MutableRefObject<Ace.Editor | und
 
     useIpcEvents(activeTab ? {
         [EventType.SAVE_TAB]: () => save(activeTab),
-        [EventType.SET_TAB_LANGUAGE]: (event: unknown, language: SupportedLanguage) => setLanguage(activeTab, language),
-        [EventType.ENCODING_ACTION]: (event: unknown, data: {action: EncodingAction, encoding?: string}) => runEncodingAction(data?.action, data?.encoding),
-        [EventType.EOL_ACTION]: (event: unknown, data: {eol: EolType}) => changeEol(activeTab, data?.eol),
-        [EventType.OPEN_ENCODING_PICKER]: (event: unknown, data: {action: EncodingAction}) => setEncodingPicker(data?.action === EncodingAction.CONVERT ? EncodingAction.CONVERT : EncodingAction.REINTERPRET),
+        [EventType.SET_TAB_LANGUAGE]: (language) => setLanguage(activeTab, language),
+        [EventType.ENCODING_ACTION]: (data) => runEncodingAction(data?.action, data?.encoding),
+        [EventType.EOL_ACTION]: (data) => changeEol(activeTab, data?.eol),
+        [EventType.OPEN_ENCODING_PICKER]: (data) => setEncodingPicker(data?.action === EncodingAction.CONVERT ? EncodingAction.CONVERT : EncodingAction.REINTERPRET),
     } : {}, [activeTab]);
 
     return runEncodingAction;

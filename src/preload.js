@@ -30,7 +30,7 @@ const INVOKE_CHANNELS = [
 
 let titlebar;
 
-function initCustomTitlebar(event, data) {
+function initCustomTitlebar(data) {
     if (titlebar) titlebar.dispose();
 
     titlebar = new Titlebar({
@@ -52,7 +52,7 @@ contextBridge.exposeInMainWorld("noteManager", {
         return ipcRenderer.invoke(channel, data);
     },
     on: (channel, callback) => {
-        const listener = (event, ...args) => callback(undefined, ...args);
+        const listener = (event, ...args) => callback(...args);
 
         ipcRenderer.on(channel, listener);
 
@@ -65,4 +65,4 @@ window.addEventListener("DOMContentLoaded", () => {
     initCustomTitlebar();
 });
 
-ipcRenderer.on(EventType.BUILD_MENU, initCustomTitlebar);
+ipcRenderer.on(EventType.BUILD_MENU, (event, data) => initCustomTitlebar(data));

@@ -1,4 +1,5 @@
-import {BrowserWindow, dialog, ipcMain} from "electron";
+import {BrowserWindow, dialog} from "electron";
+import {handle} from "./IpcMain";
 import {EventType, UnsavedChangesChoice} from "../enums";
 import {conversionDialog, reinterpretDialog, UNSAVED_CHANGES_BUTTONS, unsavedChangesDialog} from "../utils/DialogUtils";
 import {findUnencodableCharacters} from "../utils/EncodingUtils";
@@ -8,7 +9,7 @@ import {showMessageBox} from "../utils/WindowUtils";
 const CONFIRM_BUTTON = 0;
 
 export function registerDialogHandlers() {
-    ipcMain.handle(EventType.SHOW_SAVE_DIALOG, (event, data: {title?: string, defaultName?: string}) => {
+    handle(EventType.SHOW_SAVE_DIALOG, (event, data) => {
         const win = BrowserWindow.fromWebContents(event.sender);
 
         if (!win) return;
@@ -19,7 +20,7 @@ export function registerDialogHandlers() {
         });
     });
 
-    ipcMain.handle(EventType.SHOW_UNSAVED_CHANGES_DIALOG, (event, data: {names?: Array<string>}) => {
+    handle(EventType.SHOW_UNSAVED_CHANGES_DIALOG, (event, data) => {
         if (!BrowserWindow.fromWebContents(event.sender)) return UnsavedChangesChoice.CANCEL;
 
         const names = Array.isArray(data?.names) ? data.names : [];
@@ -27,13 +28,13 @@ export function registerDialogHandlers() {
         return UNSAVED_CHANGES_BUTTONS[showMessageBox(event.sender, unsavedChangesDialog(names))]?.choice ?? UnsavedChangesChoice.CANCEL;
     });
 
-    ipcMain.handle(EventType.CONFIRM_REINTERPRET, (event, data: {name?: string, encoding?: string}) => {
+    handle(EventType.CONFIRM_REINTERPRET, (event, data) => {
         const encodingLabel = isKnownEncoding(data?.encoding) ? getEncodingLabel(data.encoding) : undefined;
 
         return showMessageBox(event.sender, reinterpretDialog(data?.name, encodingLabel)) === CONFIRM_BUTTON;
     });
 
-    ipcMain.handle(EventType.CONFIRM_CONVERSION, (event, data: {content: string, encoding: string}) => {
+    handle(EventType.CONFIRM_CONVERSION, (event, data) => {
         if (!isKnownEncoding(data?.encoding)) return false;
 
         const unencodable = findUnencodableCharacters(typeof data.content === "string" ? data.content : "", data.encoding);

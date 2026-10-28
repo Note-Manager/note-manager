@@ -12,10 +12,10 @@ describe("Base64Plugin", () => {
     it("encodes and decodes UTF-8 text", () => {
         const editor = new FakeEditorWrapper("Merhaba dünya ğüşiöç 🚀");
 
-        run("Base64_base64Encode", editor);
+        run("base64.encode", editor);
         expect(editor.getValue()).toBe(Buffer.from("Merhaba dünya ğüşiöç 🚀").toString("base64"));
 
-        run("Base64_base64Decode", editor);
+        run("base64.decode", editor);
         expect(editor.getValue()).toBe("Merhaba dünya ğüşiöç 🚀");
     });
 
@@ -23,8 +23,8 @@ describe("Base64Plugin", () => {
         const text = "abcğ".repeat(100000);
         const editor = new FakeEditorWrapper(text);
 
-        run("Base64_base64Encode", editor);
-        run("Base64_base64Decode", editor);
+        run("base64.encode", editor);
+        run("base64.decode", editor);
 
         expect(editor.getValue()).toBe(text);
     });
@@ -32,7 +32,7 @@ describe("Base64Plugin", () => {
     it("only changes the selected ranges", () => {
         const editor = new FakeEditorWrapper("keep aGk= keep", undefined, [{start: 5, end: 9}]);
 
-        run("Base64_base64Decode", editor);
+        run("base64.decode", editor);
 
         expect(editor.getValue()).toBe("keep hi keep");
     });
@@ -44,7 +44,7 @@ describe("BasePlugin", () => {
 
         plugin.initializePlugin(new FakeEditorWrapper("x"));
 
-        expect(plugin.getAvailableActions()).toEqual(["Base64_base64Encode", "Base64_base64Decode"]);
+        expect(plugin.getAvailableActions()).toEqual(["base64.encode", "base64.decode"]);
         expect(() => plugin.doAction("unknown")).toThrow("Unsupported action");
     });
 });

@@ -1,3 +1,4 @@
+import {LEGACY_ACTION_CODES} from "./LegacyActionCodes";
 import {DEFAULT_ENCODING, EolType, getSystemDefaultEol, isKnownEncoding, isKnownEol} from "./Encoding";
 
 export enum TabLayout {
@@ -147,8 +148,14 @@ export function normalizeSettings(raw: any): Settings {
     const keyBindings: Record<string, string> = {};
 
     if (raw?.keyBindings && typeof raw.keyBindings === "object") {
-        Object.entries(raw.keyBindings).forEach(([id, accelerator]) => {
-            if (typeof accelerator === "string" && (accelerator === "" || isValidAccelerator(accelerator))) keyBindings[id] = accelerator;
+        const entries = Object.entries(raw.keyBindings);
+        const isLegacy = ([id]: [string, unknown]) => LEGACY_ACTION_CODES.has(id);
+
+        [...entries.filter(entry => !isLegacy(entry)), ...entries.filter(isLegacy)].forEach(([id, accelerator]) => {
+            const code = LEGACY_ACTION_CODES.get(id) ?? id;
+
+            if (Object.prototype.hasOwnProperty.call(keyBindings, code)) return;
+            if (typeof accelerator === "string" && (accelerator === "" || isValidAccelerator(accelerator))) keyBindings[code] = accelerator;
         });
     }
 

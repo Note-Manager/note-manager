@@ -55,16 +55,18 @@ export function TabList() {
 
     useIpcEvents({
         [EventType.NEW_TAB]: actions.openNewTab,
-        [EventType.OPEN_TAB]: (event: unknown, tab: EditorTab) => actions.openTab(tab),
+        [EventType.OPEN_TAB]: (tab) => actions.openTab(tab),
         [EventType.CLOSE_TAB]: () => actions.closeTab(activeTab),
         [EventType.CLOSE_WINDOW]: () => actions.closeWindow().catch(logError("cannot close the window")),
-        [EventType.INIT_WITH_STATE]: (event: unknown, state: EditorState) => initializeWithState(state),
-        [EventType.TAB_ACTION]: (event: unknown, data: {action: TabAction, tabId?: string}) => runTabAction(data?.action, data?.tabId),
+        [EventType.INIT_WITH_STATE]: (state) => initializeWithState(state),
+        [EventType.TAB_ACTION]: (data) => runTabAction(data?.action, data?.tabId),
     }, [activeTab, tabs, settings]);
 
     const showContextMenu = (event: React.MouseEvent, tab: EditorTab) => {
         event.preventDefault();
         event.stopPropagation();
+
+        if (!tab.id) return;
 
         fireEvent(EventType.SHOW_TAB_CONTEXT_MENU, {
             tabId: tab.id,

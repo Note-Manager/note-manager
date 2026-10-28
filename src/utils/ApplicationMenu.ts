@@ -16,12 +16,15 @@ import {getAccelerator} from "./Accelerators";
 import {getUserPluginManifests, getUserPluginPath, loadUserPluginManifests} from "./UserPlugins";
 import {createEncodingMenu} from "./EncodingMenu";
 import {missingRecentFileDialog} from "./DialogUtils";
-import {broadcast, sendToFocusedWindow} from "./WindowUtils";
+import {broadcast, sendPluginAction, sendToFocusedWindow} from "./WindowUtils";
+import {RendererChannel, RendererPayload} from "../domain/IpcContract";
 import {logError} from "./Log";
 
 const appIcon = nativeImage.createFromPath(path.join(getSystemPath(SystemPaths.resources), "Icons/note-manager.png"));
 
-const sendAction = (channel: string, data?: any) => () => sendToFocusedWindow(channel, data);
+function sendAction<C extends RendererChannel>(channel: C, ...data: RendererPayload<C>) {
+    return () => sendToFocusedWindow(channel, ...data);
+}
 
 export function initApplicationMenu() {
     Menu.setApplicationMenu(createApplicationMenu());
@@ -149,7 +152,7 @@ function createPluginsMenu(): Array<MenuItemConstructorOptions> {
 }
 
 function createPluginActionItem(label: string, code: string): MenuItemConstructorOptions {
-    return {label: label, accelerator: getAccelerator(code), click: sendAction(code)};
+    return {label: label, accelerator: getAccelerator(code), click: () => sendPluginAction(BrowserWindow.getFocusedWindow()?.webContents, code)};
 }
 
 function createDeveloperMenu(): Array<MenuItemConstructorOptions> {

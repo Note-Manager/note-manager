@@ -1,34 +1,13 @@
-import {BrowserWindow, clipboard, ipcMain, MenuItemConstructorOptions, WebContents} from "electron";
+import {BrowserWindow, clipboard, MenuItemConstructorOptions, WebContents} from "electron";
 import {EditorCommand, EventType, TabAction} from "../enums";
-import {isKnownEol, EolType} from "../domain/Encoding";
+import {isKnownEol} from "../domain/Encoding";
 import {createEolMenu} from "../utils/EncodingMenu";
 import {ShortcutId} from "../utils/Shortcuts";
 import {getAccelerator} from "../utils/Accelerators";
-import {popupMenu} from "../utils/WindowUtils";
+import {popupMenu, send, Sender, sendPluginAction} from "../utils/WindowUtils";
 import {ContextMenuGroup} from "../react/components/editor/plugins";
-import {optionalFile} from "./IpcPayload";
-
-interface TabMenuRequest {
-    tabId: string,
-    isPinned: boolean,
-    hasOtherTabs: boolean,
-    hasUnmodifiedTabs: boolean,
-    hasClosableTabs: boolean,
-    hasFile: boolean,
-    canReopen: boolean,
-}
-
-interface EditorMenuRequest {
-    hasSelection: boolean,
-    canUndo: boolean,
-    canRedo: boolean,
-    file?: string,
-    canPreview: boolean,
-    isPreviewOpen: boolean,
-    groups: Array<ContextMenuGroup>,
-    x?: number,
-    y?: number,
-}
+import {EditorMenuRequest, TabMenuRequest} from "../domain/IpcContract";
+import {handle, optionalFile} from "./IpcMain";
 
 const EDITOR_ACCELERATORS = {
     UNDO: "CmdOrCtrl+Z",
@@ -41,17 +20,17 @@ const EDITOR_ACCELERATORS = {
 };
 
 export function registerContextMenuHandlers() {
-    ipcMain.handle(EventType.SHOW_STATUS_MENU, (event, data: {eol?: EolType, x?: number, y?: number}) => {
+    handle(EventType.SHOW_STATUS_MENU, (event, data) => {
         const win = BrowserWindow.fromWebContents(event.sender);
 
         if (!win) return;
 
-        const send = (channel: string, payload: any) => event.sender.send(channel, payload);
+        const sendToSender: Sender = (channel, ...payload) => send(event.sender, channel, ...payload);
 
-        popupMenu(createEolMenu(send, isKnownEol(data?.eol) ? data.eol : undefined), win, data);
+        popupMenu(createEolMenu(sendToSender, isKnownEol(data?.eol) ? data.eol : undefined), win, data);
     });
 
-    ipcMain.handle(EventType.SHOW_TAB_CONTEXT_MENU, (event, data: TabMenuRequest) => {
+    handle(EventType.SHOW_TAB_CONTEXT_MENU, (event, data) => {
         const win = BrowserWindow.fromWebContents(event.sender);
 
         if (!win || typeof data?.tabId !== "string") return;
@@ -59,7 +38,7 @@ export function registerContextMenuHandlers() {
         popupMenu(createTabMenu(event.sender, data), win);
     });
 
-    ipcMain.handle(EventType.SHOW_EDITOR_CONTEXT_MENU, (event, data: EditorMenuRequest) => {
+    handle(EventType.SHOW_EDITOR_CONTEXT_MENU, (event, data) => {
         const win = BrowserWindow.fromWebContents(event.sender);
 
         if (!win) return;
@@ -69,24 +48,24 @@ export function registerContextMenuHandlers() {
 }
 
 function createTabMenu(sender: WebContents, data: TabMenuRequest): Array<MenuItemConstructorOptions> {
-    const send = (action: TabAction) => () => sender.send(EventType.TAB_ACTION, {action: action, tabId: data.tabId});
+    const tabAction = (action: TabAction) => () => send(sender, EventType.TAB_ACTION, {action: action, tabId: data.tabId});
 
     return [
-        {label: "Close Tab", accelerator: getAccelerator(ShortcutId.CLOSE), click: send(TabAction.CLOSE)},
-        {label: "Close Other Tabs", enabled: data.hasOtherTabs, click: send(TabAction.CLOSE_OTHERS)},
-        {label: "Close Unmodified Tabs", enabled: data.hasUnmodifiedTabs, click: send(TabAction.CLOSE_UNMODIFIED)},
-        {label: "Close All Tabs", enabled: data.hasClosableTabs, click: send(TabAction.CLOSE_ALL)},
+        {label: "Close Tab", accelerator: getAccelerator(ShortcutId.CLOSE), click: tabAction(TabAction.CLOSE)},
+        {label: "Close Other Tabs", enabled: data.hasOtherTabs, click: tabAction(TabAction.CLOSE_OTHERS)},
+        {label: "Close Unmodified Tabs", enabled: data.hasUnmodifiedTabs, click: tabAction(TabAction.CLOSE_UNMODIFIED)},
+        {label: "Close All Tabs", enabled: data.hasClosableTabs, click: tabAction(TabAction.CLOSE_ALL)},
         {type: "separator"},
-        {label: data.isPinned ? "Unpin Tab" : "Pin Tab", click: send(TabAction.TOGGLE_PIN)},
+        {label: data.isPinned ? "Unpin Tab" : "Pin Tab", click: tabAction(TabAction.TOGGLE_PIN)},
         {type: "separator"},
-        {label: "Open Containing Folder", enabled: data.hasFile, click: send(TabAction.REVEAL_IN_FOLDER)},
+        {label: "Open Containing Folder", enabled: data.hasFile, click: tabAction(TabAction.REVEAL_IN_FOLDER)},
         {type: "separator"},
-        {label: "Reopen Closed Tab", accelerator: getAccelerator(ShortcutId.REOPEN_CLOSED), enabled: data.canReopen, click: send(TabAction.REOPEN_CLOSED)},
+        {label: "Reopen Closed Tab", accelerator: getAccelerator(ShortcutId.REOPEN_CLOSED), enabled: data.canReopen, click: tabAction(TabAction.REOPEN_CLOSED)},
     ];
 }
 
 function createEditorMenu(sender: WebContents, data: EditorMenuRequest): Array<MenuItemConstructorOptions> {
-    const command = (cmd: EditorCommand) => () => sender.send(EventType.EDITOR_COMMAND, {command: cmd});
+    const command = (cmd: EditorCommand) => () => send(sender, EventType.EDITOR_COMMAND, {command: cmd});
     const file = optionalFile(data);
     const hasSelection = !!data?.hasSelection;
     const pluginItems = createPluginItems(sender, data?.groups);
@@ -116,7 +95,7 @@ function createEditorMenu(sender: WebContents, data: EditorMenuRequest): Array<M
 
     template.push(
         {type: "separator"},
-        {label: "Open Containing Folder", enabled: !!file, click: () => sender.send(EventType.TAB_ACTION, {action: TabAction.REVEAL_IN_FOLDER})},
+        {label: "Open Containing Folder", enabled: !!file, click: () => send(sender, EventType.TAB_ACTION, {action: TabAction.REVEAL_IN_FOLDER})},
         {label: "Copy File Path", enabled: !!file, click: () => file && clipboard.writeText(file)},
     );
 
@@ -135,7 +114,7 @@ function createPluginItems(sender: WebContents, groups: unknown): Array<MenuItem
                     label: action.label,
                     enabled: action.enabled !== false,
                     accelerator: getAccelerator(action.code),
-                    click: () => sender.send(action.code)
+                    click: () => sendPluginAction(sender, action.code)
                 }));
 
             return actions.length === 1 ? actions[0] : {label: group.label, submenu: actions};

@@ -3,11 +3,13 @@ import {attachTitlebarToWindow, setupTitlebar} from "custom-electron-titlebar/ma
 import {EventType} from "./enums";
 import {EditorState} from "./domain/EditorState";
 import initIpcMainListeners from "./ipc/IpcMainListener";
+import {isClosingWindow} from "./ipc/StateHandlers";
 import {fileToTab, openInWindow, readEditorState} from "./utils/EditorUtils";
 import {initApplicationMenu, refreshTitlebar} from "./utils/ApplicationMenu";
 import {getThemeBackgroundColor, loadThemeToWindow} from "./utils/ThemeLoader";
 import {getSettings, loadPreferences} from "./utils/EnvironmentUtils";
 import {isFileExists} from "./utils/FileUtils";
+import {send} from "./utils/WindowUtils";
 import {createEmptyTab, DEFAULT_TAB_NAME, hashTab} from "./utils/TabUtils";
 import {loadUserPluginManifests, registerUserPluginProtocol, registerUserPluginScheme} from "./utils/UserPlugins";
 
@@ -97,13 +99,15 @@ function createWindow() {
         loadThemeToWindow(win);
         refreshTitlebar();
 
-        win.webContents.send(EventType.INIT_WITH_STATE, await getInitialState());
+        send(win.webContents, EventType.INIT_WITH_STATE, await getInitialState());
     });
 
-    win.on(EventType.CLOSE_WINDOW, (event) => {
+    win.on("close", (event) => {
+        if (isClosingWindow(win.webContents)) return;
+
         event.preventDefault();
 
-        win.webContents.send(EventType.CLOSE_WINDOW);
+        send(win.webContents, EventType.CLOSE_WINDOW);
     });
 }
 

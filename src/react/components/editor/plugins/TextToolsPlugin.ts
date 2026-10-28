@@ -3,15 +3,15 @@ import {BasePlugin} from "./BasePlugin";
 import {TextTransform, transformSelectionsOrDocument} from "../../../../utils/EditorTransforms";
 
 enum Keys {
-    SORT_ASC = "TextTools_sortAscending",
-    SORT_DESC = "TextTools_sortDescending",
-    REVERSE = "TextTools_reverseLines",
-    UNIQUE = "TextTools_removeDuplicateLines",
-    REMOVE_EMPTY = "TextTools_removeEmptyLines",
-    TRIM_TRAILING = "TextTools_trimTrailingWhitespace",
-    UPPER = "TextTools_upperCase",
-    LOWER = "TextTools_lowerCase",
-    TITLE = "TextTools_titleCase",
+    SORT_ASC = "textTools.sortAscending",
+    SORT_DESC = "textTools.sortDescending",
+    REVERSE = "textTools.reverseLines",
+    UNIQUE = "textTools.removeDuplicateLines",
+    REMOVE_EMPTY = "textTools.removeEmptyLines",
+    TRIM_TRAILING = "textTools.trimTrailingWhitespace",
+    UPPER = "textTools.upperCase",
+    LOWER = "textTools.lowerCase",
+    TITLE = "textTools.titleCase",
 }
 
 const collator = new Intl.Collator(undefined, {numeric: true, sensitivity: "base"});

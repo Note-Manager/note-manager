@@ -30,6 +30,6 @@ export function useEditorCommands(editorRef: MutableRefObject<Ace.Editor | undef
     };
 
     useIpcEvents({
-        [EventType.EDITOR_COMMAND]: (event: unknown, data: {command: EditorCommand}) => runCommand(data?.command),
+        [EventType.EDITOR_COMMAND]: (data) => runCommand(data?.command),
     }, []);
 }

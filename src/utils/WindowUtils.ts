@@ -1,11 +1,24 @@
 import {BrowserWindow, dialog, Menu, MenuItemConstructorOptions, MessageBoxSyncOptions, WebContents} from "electron";
+import {RendererChannel, RendererPayload} from "../domain/IpcContract";
 
-export function sendToFocusedWindow(channel: string, data?: any) {
-    BrowserWindow.getFocusedWindow()?.webContents.send(channel, data);
+export type Sender = <C extends RendererChannel>(channel: C, ...data: RendererPayload<C>) => void;
+
+export function send<C extends RendererChannel>(contents: WebContents, channel: C, ...data: RendererPayload<C>) {
+    contents.send(channel, ...data);
 }
 
-export function broadcast(channel: string, data?: any) {
-    BrowserWindow.getAllWindows().forEach(win => win.webContents.send(channel, data));
+export const sendToFocusedWindow: Sender = (channel, ...data) => {
+    const win = BrowserWindow.getFocusedWindow();
+
+    if (win) send(win.webContents, channel, ...data);
+};
+
+export function sendPluginAction(contents: WebContents | undefined, code: string) {
+    contents?.send(code);
+}
+
+export function broadcast<C extends RendererChannel>(channel: C, ...data: RendererPayload<C>) {
+    BrowserWindow.getAllWindows().forEach(win => send(win.webContents, channel, ...data));
 }
 
 export function showMessageBox(contents: WebContents, options: MessageBoxSyncOptions) {

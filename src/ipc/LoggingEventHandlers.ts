@@ -1,8 +1,8 @@
-import {ipcMain} from "electron";
+import {handle} from "./IpcMain";
 import {EventType} from "../enums";
 
 export function registerLoggingHandlers() {
-    ipcMain.handle(EventType.LOG_INFO, (event, message) => console.info(message));
-    ipcMain.handle(EventType.LOG_WARN, (event, message) => console.warn(message));
-    ipcMain.handle(EventType.LOG_ERROR, (event, message) => console.error(message));
+    handle(EventType.LOG_INFO, (event, message) => console.info(message));
+    handle(EventType.LOG_WARN, (event, message) => console.warn(message));
+    handle(EventType.LOG_ERROR, (event, message) => console.error(message));
 }

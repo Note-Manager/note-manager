@@ -1,9 +1,9 @@
-import {EventType} from "../enums";
+import {InvokeChannel, InvokePayload, InvokeResponses, RendererChannel, RendererEvents} from "../domain/IpcContract";
 
-type Listener = (...args: any[]) => any;
+type Listener = (data?: any) => void;
 
 interface NoteManagerBridge {
-    invoke: (channel: string, data?: any) => Promise<any>;
+    invoke: (channel: string, data?: unknown) => Promise<any>;
     on: (channel: string, callback: Listener) => () => void;
     getPathForFile: (file: File) => string;
 }
@@ -16,6 +16,8 @@ declare global {
 
 const subscriptions = new Map<string, Map<Listener, () => void>>();
 
+export function on<C extends RendererChannel>(channel: C, callback: (data: RendererEvents[C]) => void): void;
+export function on(channel: string, callback: () => void): void;
 export function on(channel: string, callback: Listener) {
     off(channel, callback);
 
@@ -33,8 +35,8 @@ export function off(channel: string, callback: Listener) {
     channelSubscriptions?.delete(callback);
 }
 
-export async function fireEvent(channel: EventType, data?: any) {
-    return await window.noteManager.invoke(channel, data);
+export function fireEvent<C extends InvokeChannel>(channel: C, ...data: InvokePayload<C>): Promise<InvokeResponses[C]> {
+    return window.noteManager.invoke(channel, data[0]);
 }
 
 export function getPathForFile(file: File) {

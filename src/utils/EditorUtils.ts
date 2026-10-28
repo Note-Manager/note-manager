@@ -8,10 +8,11 @@ import {BrowserWindow, dialog} from "electron";
 import {EventType} from "../enums";
 import {findLanguageByFileName} from "../domain/SupportedLanguage";
 import {addRecentFile} from "./RecentFiles";
-import {decodeText, DecodedText} from "./EncodingUtils";
+import {decodeText} from "./EncodingUtils";
 import {getDetectionOptions} from "../domain/Settings";
-import {detectEol, isKnownEncoding, isKnownEol, toEditorText} from "../domain/Encoding";
+import {DecodedText, detectEol, isKnownEncoding, isKnownEol, toEditorText} from "../domain/Encoding";
 import {openLargeOrBinaryFileDialog} from "./DialogUtils";
+import {send} from "./WindowUtils";
 
 export async function readTextFile(file: string, preferredEncoding?: string): Promise<DecodedText> {
     const settings = Environment.getSettings();
@@ -143,7 +144,7 @@ export async function openInWindow(window: BrowserWindow, file: string) {
     try {
         if (!await confirmOpen(window, file)) return;
 
-        window.webContents.send(EventType.OPEN_TAB, await fileToTab(file));
+        send(window.webContents, EventType.OPEN_TAB, await fileToTab(file));
 
         addRecentFile(file);
     } catch (err) {

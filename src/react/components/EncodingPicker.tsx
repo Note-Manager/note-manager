@@ -2,6 +2,7 @@ import React, {useEffect, useMemo, useRef, useState} from "react";
 import {EncodingAction} from "../../enums";
 import {buildEncodingChoices, EncodingChoice, filterEncodingChoices} from "../../domain/EncodingChoices";
 import {useAnsiCodePage} from "../EncodingInfo";
+import {classNames} from "../ClassNames";
 
 const MODES = [
     {action: EncodingAction.REINTERPRET, label: "Reopen", hint: "Read the file again from disk with the chosen encoding."},
@@ -80,7 +81,7 @@ export default function EncodingPicker({action, encoding, hasFile, onActionChang
             <div id={"encodingPicker"} role={"dialog"} aria-label={"Encoding"} onKeyDown={onKeyDown}>
                 <div id={"encodingPickerModes"} role={"tablist"}>
                     {MODES.map(m => (
-                        <button key={m.action} role={"tab"} aria-selected={m.action === mode} className={"chip ghost" + (m.action === mode ? " selected" : "")}
+                        <button key={m.action} role={"tab"} aria-selected={m.action === mode} className={classNames("chip ghost", m.action === mode && "selected")}
                             onClick={() => changeMode(m.action)}>{m.label}</button>
                     ))}
                     <span id={"encodingPickerHint"}>{MODES.find(m => m.action === mode)?.hint}</span>
@@ -101,7 +102,7 @@ export default function EncodingPicker({action, encoding, hasFile, onActionChang
                             <React.Fragment key={choice.id || "detect"}>
                                 {header && <div className={"encodingGroup"}>{header}</div>}
                                 <div role={"option"} aria-selected={index === highlighted}
-                                    className={"encodingChoice" + (index === highlighted ? " highlighted" : "")}
+                                    className={classNames("encodingChoice", index === highlighted && "highlighted")}
                                     onMouseMove={() => index !== highlighted && setHighlighted(index)}
                                     onClick={() => choose(choice)}>
                                     <span className={"encodingChoiceLabel"}>{choice.label}</span>

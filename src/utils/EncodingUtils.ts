@@ -1,17 +1,11 @@
 import iconv from "iconv-lite";
 import * as chardet from "chardet";
 import {execFileSync} from "node:child_process";
-import {detectEol, EncodingId, EolType, isKnownEncoding, isUnicodeEncoding, toEditorText, toFileText} from "../domain/Encoding";
+import {DecodedText, detectEol, EncodingId, EolType, isKnownEncoding, isUnicodeEncoding, toEditorText, toFileText} from "../domain/Encoding";
 
 export interface DetectionOptions {
     asciiAsUtf8: boolean,
     autodetect: boolean,
-}
-
-export interface DecodedText {
-    content: string,
-    encoding: string,
-    eol: EolType,
 }
 
 const DETECTION_SAMPLE_SIZE = 64 * 1024;

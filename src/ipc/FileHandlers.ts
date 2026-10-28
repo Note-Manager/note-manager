@@ -1,4 +1,4 @@
-import {BrowserWindow, ipcMain, shell} from "electron";
+import {BrowserWindow, shell} from "electron";
 import {EventType, UnencodableChoice} from "../enums";
 import {openInWindow, readTextFile} from "../utils/EditorUtils";
 import {isFileExists, readFileBytes, writeFile} from "../utils/FileUtils";
@@ -7,10 +7,10 @@ import {UNENCODABLE_SAVE_BUTTONS, unencodableSaveDialog} from "../utils/DialogUt
 import {decodeBuffer, encodeText, findUnencodableCharacters, getAnsiCodePage} from "../utils/EncodingUtils";
 import {DEFAULT_ENCODING, detectEol, EncodingId, EolType, getEncodingLabel, isKnownEncoding, isKnownEol, toEditorText} from "../domain/Encoding";
 import {showMessageBox} from "../utils/WindowUtils";
-import {optionalFile, requireFile} from "./IpcPayload";
+import {handle, optionalFile, requireFile} from "./IpcMain";
 
 export function registerFileHandlers() {
-    ipcMain.handle(EventType.FILES_DROPPED, (event, data: {files?: Array<string>}) => {
+    handle(EventType.FILES_DROPPED, (event, data) => {
         const win = BrowserWindow.fromWebContents(event.sender);
 
         if (!win || !Array.isArray(data?.files)) return;
@@ -18,7 +18,7 @@ export function registerFileHandlers() {
         data.files.forEach(file => openInWindow(win, file));
     });
 
-    ipcMain.handle(EventType.WRITE_FILE, (event, data: {file: string, content: string, encoding?: string, eol?: EolType}) => {
+    handle(EventType.WRITE_FILE, (event, data) => {
         const file = requireFile(data);
         const content = typeof data.content === "string" ? data.content : "";
         const eol = isKnownEol(data.eol) ? data.eol : EolType.LF;
@@ -40,7 +40,7 @@ export function registerFileHandlers() {
         return {saved: true, encoding: encoding};
     });
 
-    ipcMain.handle(EventType.READ_FILE_AS, async (event, data: {file: string, encoding?: string, fallbackEol?: EolType}) => {
+    handle(EventType.READ_FILE_AS, async (event, data) => {
         const file = requireFile(data);
 
         if (!isKnownEncoding(data.encoding)) return readTextFile(file);
@@ -51,7 +51,7 @@ export function registerFileHandlers() {
         return {content: toEditorText(text, eol), encoding: data.encoding, eol: eol};
     });
 
-    ipcMain.handle(EventType.REVEAL_FILE, (event, data: {file: string}) => {
+    handle(EventType.REVEAL_FILE, (event, data) => {
         const file = optionalFile(data);
 
         if (!file || !isFileExists(file)) return false;
@@ -61,5 +61,5 @@ export function registerFileHandlers() {
         return true;
     });
 
-    ipcMain.handle(EventType.GET_ENCODING_INFO, () => ({ansiCodePage: getAnsiCodePage()}));
+    handle(EventType.GET_ENCODING_INFO, () => ({ansiCodePage: getAnsiCodePage()}));
 }
