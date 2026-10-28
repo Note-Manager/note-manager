@@ -1,0 +1,7 @@
+{
+  "name": "rimraf",
+  "version": "2.99.0",
+  "description": "Callback rimraf API for legacy packaging tools, backed by node:fs rm",
+  "main": "index.js",
+  "license": "MIT"
+}
