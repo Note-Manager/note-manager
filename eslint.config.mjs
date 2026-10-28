@@ -3,6 +3,7 @@ import tseslint from "typescript-eslint";
 import eslintReact from "@eslint-react/eslint-plugin";
 import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
+import stylistic from "@stylistic/eslint-plugin";
 
 export default tseslint.config(
     {
@@ -18,13 +19,12 @@ export default tseslint.config(
         files: ["src/**/*.{js,ts,tsx}"],
         plugins: {
             "react-hooks": reactHooks,
+            "@stylistic": stylistic,
         },
         languageOptions: {
             globals: {
                 ...globals.browser,
                 ...globals.node,
-                MAIN_WINDOW_WEBPACK_ENTRY: "readonly",
-                MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: "readonly",
             },
         },
         rules: {
@@ -37,6 +37,16 @@ export default tseslint.config(
             "@typescript-eslint/no-explicit-any": "off",
             "@typescript-eslint/ban-ts-comment": "off",
             "@typescript-eslint/no-unused-vars": ["warn", {args: "none", caughtErrors: "none"}],
+            "@stylistic/quotes": ["error", "double", {avoidEscape: true, allowTemplateLiterals: "always"}],
+            "@stylistic/indent": ["error", 4, {SwitchCase: 1}],
+            "@stylistic/keyword-spacing": "error",
+            "@stylistic/space-before-blocks": "error",
+            "@stylistic/space-infix-ops": "error",
+            "@stylistic/comma-spacing": "error",
+            "@stylistic/semi": ["error", "always"],
+            "@stylistic/no-multiple-empty-lines": ["error", {max: 1, maxEOF: 0}],
+            "@stylistic/no-trailing-spaces": "error",
+            "@stylistic/object-curly-spacing": ["error", "never"],
         },
     },
     {

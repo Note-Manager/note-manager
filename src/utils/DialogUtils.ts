@@ -20,7 +20,6 @@ export function getUnsavedChangesMessage(names: Array<string>): {message: string
     };
 }
 
-
 export const UNENCODABLE_SAVE_BUTTONS = [
     {label: "Convert to UTF-8 and Save", choice: UnencodableChoice.CONVERT_TO_UTF8},
     {label: "Save Anyway", choice: UnencodableChoice.SAVE_ANYWAY},

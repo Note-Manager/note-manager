@@ -10,9 +10,3 @@ export const bundledPlugins: Array<EditorPlugin> = [
     new PreviewPlugin(),
     new TextToolsPlugin()
 ];
-
-export const userPlugins: Array<EditorPlugin> = [
-
-];
-
-export const allPlugins: Array<EditorPlugin> = bundledPlugins.concat(userPlugins);

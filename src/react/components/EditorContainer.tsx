@@ -9,7 +9,7 @@ import {Ace} from "ace-builds";
 import {LanguageName, SupportedLanguage, SupportedLanguages} from "../../domain/SupportedLanguage";
 import {useEditorContext} from "./editor/EditorContext";
 import {markStateChanged} from "../StateChangeTracker";
-import {allPlugins} from "../../utils/PluginLoader";
+import {bundledPlugins} from "../../utils/PluginLoader";
 import {ContextMenuGroup, ToolbarMenuItem} from "./editor/plugins";
 import DOMPurify from "dompurify";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
@@ -31,16 +31,16 @@ let cursorChangeDebounceTimer: NodeJS.Timeout; // Timer for selection event
 export default function EditorContainer() {
     const {data, setData, activeTab, encodingPicker, setEncodingPicker} = useEditorContext();
 
-    const[activeTool, setActiveTool] = useState<ToolbarMenuItem>();
-    const[toolWindowWidth, setToolWindowWidth] = useState<number>(readToolWindowWidth);
+    const [activeTool, setActiveTool] = useState<ToolbarMenuItem>();
+    const [toolWindowWidth, setToolWindowWidth] = useState<number>(readToolWindowWidth);
 
     const editorRef = useRef<Ace.Editor>();
     const encodingActionRef = useRef<(action: EncodingAction, encoding?: string) => void>();
 
-    const previewTool = allPlugins.flatMap(p => p.toolbarMenuItems || []).find(item => item.label === "Preview");
+    const previewTool = bundledPlugins.flatMap(p => p.toolbarMenuItems || []).find(item => item.label === "Preview");
 
     useEffect(() => {
-        if(!activeTab){
+        if (!activeTab) {
             return;
         }
         const onSetTabLanguage = (event: any, newLang: SupportedLanguage) => {
@@ -48,21 +48,21 @@ export default function EditorContainer() {
 
             markStateChanged();
 
-            if(activeTab.isTemp) {
+            if (activeTab.isTemp) {
                 activeTab.name = activeTab.name?.substring(0, activeTab.name?.lastIndexOf(".")) + newLang.extensions[0];
                 activeTab.displayName = shortenTabName(activeTab.name);
             }
 
             setData(getEditorData());
-        }
+        };
 
         const onTabSave = () => {
-            if(!activeTab.isChanged) return;
+            if (!activeTab.isChanged) return;
 
             saveTab(activeTab).then(isSaved => {
-                if(isSaved) setData(getEditorData());
+                if (isSaved) setData(getEditorData());
             }).catch(err => console.error("cannot save " + activeTab.name + ": " + err));
-        }
+        };
 
         const refreshChangedState = async () => {
             const editor = editorRef.current;
@@ -73,7 +73,7 @@ export default function EditorContainer() {
 
             markStateChanged();
             setData(getEditorData());
-        }
+        };
 
         const reinterpret = async (encoding?: string) => {
             if (!activeTab.file) {
@@ -104,7 +104,7 @@ export default function EditorContainer() {
 
             markStateChanged();
             setData(getEditorData());
-        }
+        };
 
         const convert = async (encoding: string) => {
             if (encoding === activeTab.encoding) return;
@@ -114,7 +114,7 @@ export default function EditorContainer() {
             activeTab.encoding = encoding;
 
             await refreshChangedState();
-        }
+        };
 
         const runEncodingAction = (action: EncodingAction, encoding?: string) => {
             const run = action === EncodingAction.REDETECT
@@ -122,7 +122,7 @@ export default function EditorContainer() {
                 : isKnownEncoding(encoding) ? (action === EncodingAction.CONVERT ? convert(encoding) : reinterpret(encoding)) : undefined;
 
             run?.catch(err => console.error("cannot change encoding of " + activeTab.name + ": " + err));
-        }
+        };
 
         encodingActionRef.current = runEncodingAction;
 
@@ -138,7 +138,7 @@ export default function EditorContainer() {
             editorRef.current?.session.setNewLineMode(getEditorNewLineMode(data.eol));
 
             refreshChangedState().catch(err => console.error("cannot change line endings of " + activeTab.name + ": " + err));
-        }
+        };
 
         const onEditorCommand = (event: any, data: {command: EditorCommand}) => {
             const editor = editorRef.current;
@@ -173,7 +173,7 @@ export default function EditorContainer() {
             }
 
             editor.focus();
-        }
+        };
 
         on(EventType.SAVE_TAB, onTabSave);
         on(EventType.EDITOR_COMMAND, onEditorCommand);
@@ -189,35 +189,35 @@ export default function EditorContainer() {
             off(EventType.ENCODING_ACTION, onEncodingAction);
             off(EventType.EOL_ACTION, onEolAction);
             off(EventType.OPEN_ENCODING_PICKER, onOpenEncodingPicker);
-        }
+        };
     }, [activeTab]);
 
     useEffect(() => {
         const toolWindowContent = activeTool?.getToolbarWindowContent();
         const el = document.getElementById("toolWindowContent");
-        if(el) {
+        if (el) {
             const sanitizedContent = toolWindowContent ? DOMPurify.sanitize(toolWindowContent) : toolWindowContent;
 
             const shadow = el.attachShadow({mode: "open"});
             shadow.innerHTML = sanitizedContent || "";
 
-            if(activeTool?.onContentMount) activeTool?.onContentMount(shadow, {filePath: activeTab?.file, language: activeTab?.language?.name});
+            if (activeTool?.onContentMount) activeTool?.onContentMount(shadow, {filePath: activeTab?.file, language: activeTab?.language?.name});
         }
     }, [activeTool, activeTab?.id]);
 
-    if(!activeTab) return null;
+    if (!activeTab) return null;
 
     const getEditorData = () => {
         return {
             ...data,
-            length: editorRef.current?.getValue().length||0,
-            lineCount: editorRef.current?.session.getLength()||0,
+            length: editorRef.current?.getValue().length || 0,
+            lineCount: editorRef.current?.session.getLength() || 0,
             selection: {
-                selectionLength: editorRef.current?.getSelectedText()?.length||0,
-                selectionRangeCount: editorRef.current?.getSelection().getAllRanges()?.length||0
+                selectionLength: editorRef.current?.getSelectedText()?.length || 0,
+                selectionRangeCount: editorRef.current?.getSelection().getAllRanges()?.length || 0
             },
-        }
-    }
+        };
+    };
 
     const updateTabSelection = () => {
         markStateChanged();
@@ -226,14 +226,14 @@ export default function EditorContainer() {
             ...activeTab.state,
             selection: editorRef.current?.session.selection.toJSON()
         };
-    }
+    };
 
     const updateTabUndoHistory = () => {
         activeTab.state = {
             ...activeTab.state,
             undoHistory: editorRef.current?.session.getUndoManager().toJSON()
-        }
-    }
+        };
+    };
 
     const onSelectionChange = () => {
         clearTimeout(selectionChangeDebounceTimer);
@@ -245,9 +245,9 @@ export default function EditorContainer() {
             updateTabUndoHistory();
 
         }, debounceDelay);
-    }
+    };
 
-    const onContentChange = ({value}: { value: string, lineCount: number }) => {
+    const onContentChange = (value: string) => {
         activeTab.content = value;
 
         markStateChanged();
@@ -263,7 +263,7 @@ export default function EditorContainer() {
                 updateTabUndoHistory();
             });
         }, debounceDelay);
-    }
+    };
 
     const onCursorChange = () => {
         clearTimeout(cursorChangeDebounceTimer);
@@ -274,7 +274,7 @@ export default function EditorContainer() {
             updateTabSelection();
             updateTabUndoHistory();
         }, debounceDelay);
-    }
+    };
 
     const showContextMenu = (event: React.MouseEvent) => {
         const editor = editorRef.current;
@@ -286,7 +286,7 @@ export default function EditorContainer() {
         const wrapper = new AceEditorWrapper(editor);
         const undoManager = editor.session.getUndoManager();
 
-        const groups: Array<ContextMenuGroup> = [...allPlugins, ...getUserPlugins()].flatMap(plugin => plugin.contextMenuItems || []).map(item => ({
+        const groups: Array<ContextMenuGroup> = [...bundledPlugins, ...getUserPlugins()].flatMap(plugin => plugin.contextMenuItems || []).map(item => ({
             label: item.label,
             actions: item.actions.map(action => ({
                 label: action.label,
@@ -306,7 +306,7 @@ export default function EditorContainer() {
             x: event.clientX,
             y: event.clientY,
         }).catch(err => console.error("cannot show editor context menu: " + err));
-    }
+    };
 
     const onEditorLoad = (editor: Ace.Editor) => {
         editorRef.current = editor;
@@ -314,7 +314,7 @@ export default function EditorContainer() {
         setData(getEditorData());
 
         initializeEditor(editor, activeTab);
-    }
+    };
 
     return (
         <div id={"editorBody"}>
@@ -368,7 +368,7 @@ export default function EditorContainer() {
                 }
                 <div id={"editorTools"}>
                     {
-                        allPlugins.filter(p => p.toolbarMenuItems && p.toolbarMenuItems.length > 0).flatMap(plugin => plugin.toolbarMenuItems).map((item, idx) => {
+                        bundledPlugins.filter(p => p.toolbarMenuItems && p.toolbarMenuItems.length > 0).flatMap(plugin => plugin.toolbarMenuItems).map((item, idx) => {
                             return (
                                 <button type={"button"} key={idx} className={"editorToolWrapper" + (activeTool === item ? " selected" : "")} aria-pressed={activeTool === item} onClick={() => setActiveTool(activeTool === item ? undefined : item)}>
                                     <img className={"editorToolIcon"} src={item?.icon} alt={""}/>
@@ -393,7 +393,7 @@ function initializeEditor(editor: Ace.Editor, activeTab: EditorTab) {
         editor.session.selection.fromJSON(activeTab.state.selection);
     }
 
-    if(activeTab.state?.undoHistory) {
+    if (activeTab.state?.undoHistory) {
         editor.session.getUndoManager().fromJSON(activeTab.state.undoHistory);
     }
 
@@ -404,9 +404,9 @@ function initializeEditor(editor: Ace.Editor, activeTab: EditorTab) {
             ...activeTab.state,
             scroll: {
                 left: scrollLeft,
-                top: activeTab.state?.scroll?.top||0
+                top: activeTab.state?.scroll?.top || 0
             }
-        }
+        };
     });
 
     editor.session.on("changeScrollTop", (scrollTop) => {
@@ -415,10 +415,10 @@ function initializeEditor(editor: Ace.Editor, activeTab: EditorTab) {
         activeTab.state = {
             ...activeTab.state,
             scroll: {
-                left: activeTab.state?.scroll?.left||0,
+                left: activeTab.state?.scroll?.left || 0,
                 top: scrollTop
             }
-        }
+        };
     });
 
     editor.focus();

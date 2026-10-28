@@ -28,11 +28,11 @@ export default class Base64Plugin implements EditorPlugin {
         }
     ];
     contextMenuItems: Array<EditorMenuItem> = this.applicationMenuItems;
-    editor?: EditorWrapper
+    editor?: EditorWrapper;
 
     doAction(code: string): void {
-        if(!this.editor) throw new Error("Plugin not initialized !");
-        if(!code || !this.actionMap.has(code)) throw new Error(`Unsupported operation ! (${code})`);
+        if (!this.editor) throw new Error("Plugin not initialized !");
+        if (!code || !this.actionMap.has(code)) throw new Error(`Unsupported operation ! (${code})`);
 
         const action = this.actionMap.get(code);
 
@@ -56,8 +56,8 @@ export default class Base64Plugin implements EditorPlugin {
             perform: (editor: EditorWrapper) => {
                 const selectionRanges = editor.getAllSelectionRanges();
 
-                if(selectionRanges && selectionRanges.length > 0 && (editor.getSelectedText() || "").length > 0) {
-                    for(const range of selectionRanges) {
+                if (selectionRanges && selectionRanges.length > 0 && (editor.getSelectedText() || "").length > 0) {
+                    for (const range of selectionRanges) {
                         const target = editor.getTextRange(range);
 
                         target && editor.replaceRange(range, encode(target));
@@ -74,8 +74,8 @@ export default class Base64Plugin implements EditorPlugin {
             perform: (editor: EditorWrapper) => {
                 const selectionRanges = editor.getAllSelectionRanges();
 
-                if(selectionRanges && selectionRanges.length > 0 && (editor.getSelectedText() || "").length > 0) {
-                    for(const range of selectionRanges) {
+                if (selectionRanges && selectionRanges.length > 0 && (editor.getSelectedText() || "").length > 0) {
+                    for (const range of selectionRanges) {
                         const target = editor.getTextRange(range);
 
                         target && editor.replaceRange(range, decode(target));

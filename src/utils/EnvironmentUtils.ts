@@ -10,7 +10,7 @@ import {isValidThemeName, parseThemeVariables, ThemeVariable, updateThemeVariabl
 
 const _ENV = {
     preferences: new Preferences.Preferences(new Theme.Theme(path.join(getBundledThemePath(), "Dark.css")))
-}
+};
 
 export function init() {
     ensureExists(getSystemPath(SystemPaths.data), "preferences.json", JSON.stringify(_ENV.preferences, null, 2));
@@ -65,10 +65,6 @@ export function loadPreferences() {
 
 export function getPreferences() {
     return _ENV.preferences;
-}
-
-export function setPreferences(preferences:Preferences.IPreferences) {
-    return _ENV.preferences = preferences;
 }
 
 export function getSettings(): Settings {

@@ -18,7 +18,6 @@ interface IEditorContext {
     setTabs: (activeTabs: EditorTab[]) => void;
 }
 
-// Initial values for the context
 export const initial = {
     data: {
         length: 0,
@@ -27,12 +26,10 @@ export const initial = {
             selectionLength: 0,
             selectionRangeCount: 0,
         },
-        openedFile: "",
     },
     tabs: []
 };
 
-// Create the context
 export const EditorContext = createContext<IEditorContext>({
     ...initial,
     activeTab: initial.tabs[0],
@@ -49,8 +46,7 @@ export const EditorContext = createContext<IEditorContext>({
     }
 });
 
-// Create a Provider component
-export const EditorContextProvider: React.FC<{ children: ReactNode }> = ({children}) => {
+export const EditorContextProvider: React.FC<{children: ReactNode}> = ({children}) => {
     const [data, setData] = useState<EditorData>(initial.data);
     const [activeTab, setActiveTab] = useState<EditorTab>(initial.tabs[0]);
     const [tabs, setTabs] = useState<Array<EditorTab>>(initial.tabs);
@@ -64,7 +60,6 @@ export const EditorContextProvider: React.FC<{ children: ReactNode }> = ({childr
     );
 };
 
-// Custom hook for accessing the context
 export const useEditorContext = () => {
     const context = useContext(EditorContext);
 

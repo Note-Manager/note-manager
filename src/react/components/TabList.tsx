@@ -24,11 +24,7 @@ const AUTOSAVE_INTERVAL = 5000;
 const MAX_CLOSED_TABS = 20;
 const TAB_DRAG_TYPE = "application/x-note-manager-tab";
 
-export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
-    onTabSelect: (tab: EditorTab) => void,
-    onTabAdd: (tab: EditorTab) => void,
-    onTabRemove: (tab: EditorTab) => void
-}) {
+export function TabList() {
     const {tabs, setTabs, activeTab, setActiveTab, settings} = useEditorContext();
 
     const isStateInitialized = useRef(false);
@@ -62,19 +58,17 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
     }, []);
 
     useEffect(() => {
-        if(activeTab?.id) document.getElementById(activeTab.id)?.scrollIntoView();
+        if (activeTab?.id) document.getElementById(activeTab.id)?.scrollIntoView();
     }, [activeTab]);
 
     const tabSelect = (tabToSelect: EditorTab) => {
         setActiveTab(tabToSelect);
-
-        if (onTabSelect) onTabSelect(tabToSelect);
-    }
+    };
 
     const addTab = ({isTemp, name, file, content, encoding, eol}: EditorTab) => {
         if (file && tabs.some(t => t.file === file)) {
             const existing = tabs.find(t => t.file === file);
-            if(existing) tabSelect(existing);
+            if (existing) tabSelect(existing);
             return;
         }
 
@@ -90,7 +84,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
             state: {scroll: {left: 0, top: 0}, selection: undefined}
         };
 
-        tab.displayName = shortenTabName(tab.name||"");
+        tab.displayName = shortenTabName(tab.name || "");
 
         const newTabs = [...tabs, tab];
 
@@ -101,15 +95,13 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         TextUtils.documentHash(tab.content || "", tab.encoding, tab.eol).then((result) => {
             tab.hash = result;
         });
-
-        if (onTabAdd) onTabAdd(tab);
-    }
+    };
 
     const rememberClosedTab = (tab: EditorTab) => {
         closedTabs.current.push({...tab});
 
         if (closedTabs.current.length > MAX_CLOSED_TABS) closedTabs.current.shift();
-    }
+    };
 
     const removeTabsFromList = (tabsToRemove: Array<EditorTab>) => {
         if (tabsToRemove.length === 0) return;
@@ -121,13 +113,11 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         setTabs(newTabs);
 
         if (!activeTab || tabsToRemove.includes(activeTab)) tabSelect(newTabs[newTabs.length - 1]);
-
-        if (onTabRemove) tabsToRemove.forEach(onTabRemove);
-    }
+    };
 
     const removeTabFromList = (tabToRemove: EditorTab) => {
         removeTabsFromList([tabToRemove]);
-    }
+    };
 
     const closeTabs = async (tabsToClose: Array<EditorTab>) => {
         if (tabsToClose.length === 0) return;
@@ -140,7 +130,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         }
 
         removeTabsFromList(tabsToClose);
-    }
+    };
 
     const reopenClosedTab = () => {
         const closedTab = closedTabs.current.pop();
@@ -165,7 +155,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
 
         setTabs(orderByPinned([...tabs, restoredTab]));
         tabSelect(restoredTab);
-    }
+    };
 
     const togglePin = (tab: EditorTab) => {
         tab.isPinned = !tab.isPinned;
@@ -173,7 +163,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         const others = tabs.filter(t => t !== tab);
 
         setTabs([...others.filter(t => t.isPinned), tab, ...others.filter(t => !t.isPinned)]);
-    }
+    };
 
     const revealInFolder = (tab: EditorTab | undefined) => {
         if (!tab?.file) return;
@@ -181,7 +171,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         fireEvent(EventType.REVEAL_FILE, {file: tab.file}).then(isRevealed => {
             if (!isRevealed) console.warn("cannot reveal missing file " + tab.file);
         }).catch(err => console.error(err));
-    }
+    };
 
     const showTabContextMenu = (event: React.MouseEvent, tab: EditorTab) => {
         event.preventDefault();
@@ -196,10 +186,10 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
             hasFile: !!tab.file,
             canReopen: closedTabs.current.length > 0
         }).catch(err => console.error(err));
-    }
+    };
 
     const closeTab = (tabToRemove: EditorTab) => {
-        if(!tabToRemove){
+        if (!tabToRemove) {
             return;
         }
         if (tabToRemove.isChanged) {
@@ -214,9 +204,9 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         } else {
             removeTabFromList(tabToRemove);
         }
-    }
+    };
 
-    useEffect(() => { // listen for menu accelerators
+    useEffect(() => {
         const onNewTab = (event: IpcRendererEvent, data: any) => {
             addTab(
                 generateTempTab(
@@ -236,7 +226,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         const onCloseWindow = async () => {
             const approved = await resolveUnsavedChanges(tabs.filter(t => !t.isTemp && t.file && t.isChanged));
 
-            if(!approved) {
+            if (!approved) {
                 setTabs([...tabs]);
                 return;
             }
@@ -280,10 +270,10 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         const initializeWithState = (event: any, data: EditorState) => {
             isStateInitialized.current = true;
             setTabs(data.tabs);
-            if(data.tabs?.length>0){
+            if (data.tabs?.length > 0) {
                 setActiveTab(data.tabs.find(t => t.id === data.activeTabId) || tabs[tabs.length - 1]);
             }
-        }
+        };
 
         on(EventType.NEW_TAB, onNewTab);
         on(EventType.OPEN_TAB, handleTabOpen);
@@ -313,7 +303,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         } else {
             tabSelect(tabs[tabIdx]);
         }
-    }
+    };
 
     const isTabDrag = (event: React.DragEvent) => event.dataTransfer.types.includes(TAB_DRAG_TYPE);
 
@@ -323,7 +313,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         return settings.ui.tabLayout === TabLayout.VERTICAL
             ? event.clientY > rect.top + rect.height / 2
             : event.clientX > rect.left + rect.width / 2;
-    }
+    };
 
     const handleTabDragStart = (event: React.DragEvent<HTMLDivElement>, tab: EditorTab) => {
         if (!tab.id) return;
@@ -332,7 +322,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         event.dataTransfer.effectAllowed = "move";
 
         setDraggedTabId(tab.id);
-    }
+    };
 
     const handleTabDragOver = (event: React.DragEvent<HTMLDivElement>, tab: EditorTab) => {
         if (!isTabDrag(event) || !tab.id) return;
@@ -344,7 +334,7 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         const placeAfter = isDropAfter(event);
 
         if (dropTarget?.id !== tab.id || dropTarget.placeAfter !== placeAfter) setDropTarget({id: tab.id, placeAfter: placeAfter});
-    }
+    };
 
     const handleTabDrop = (event: React.DragEvent<HTMLDivElement>, tab: EditorTab) => {
         if (!isTabDrag(event)) return;
@@ -358,18 +348,18 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
         if (reordered !== tabs) setTabs(reordered);
 
         handleTabDragEnd();
-    }
+    };
 
     const handleTabDragEnd = () => {
         setDraggedTabId(undefined);
         setDropTarget(undefined);
-    }
+    };
 
     const getDropClass = (tab: EditorTab) => {
         if (!dropTarget || dropTarget.id !== tab.id || draggedTabId === tab.id) return "";
 
         return dropTarget.placeAfter ? " dropAfter" : " dropBefore";
-    }
+    };
 
     return (
         <div id={"tabListWrapper"}>
@@ -377,12 +367,12 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
                 {tabs && tabs.length > 0 &&
                     tabs.map((tab, idx) => (
                         <div id={tab.id} key={tab.id} className={"editorTabHeader" + getOrEmptyString(tab.id === activeTab?.id, " selected") + getOrEmptyString(tab.isChanged || false, " changed") + getOrEmptyString(!!tab.isPinned, " pinned") + getOrEmptyString(draggedTabId === tab.id, " dragging") + getDropClass(tab)}
-                             draggable={true}
-                             onDragStart={(event) => handleTabDragStart(event, tab)}
-                             onDragOver={(event) => handleTabDragOver(event, tab)}
-                             onDrop={(event) => handleTabDrop(event, tab)}
-                             onDragEnd={handleTabDragEnd}
-                             onMouseUp={(event) => handleTabClick(event, idx)} onContextMenu={(event) => showTabContextMenu(event, tab)}>
+                            draggable={true}
+                            onDragStart={(event) => handleTabDragStart(event, tab)}
+                            onDragOver={(event) => handleTabDragOver(event, tab)}
+                            onDrop={(event) => handleTabDrop(event, tab)}
+                            onDragEnd={handleTabDragEnd}
+                            onMouseUp={(event) => handleTabClick(event, idx)} onContextMenu={(event) => showTabContextMenu(event, tab)}>
                             <div>
                                 <FontAwesomeIcon className={"tabFileIcon"} icon={faFileText}/>
                                 <span className={"tabHeaderName"} title={tab.file || tab.name}>{countByName(tabs, tab.name || DEFAULT_TAB_NAME) > 1 ? (tab.file || tab.displayName) : tab.displayName}</span>
@@ -447,5 +437,5 @@ function generateTempTab(name:string): EditorTab {
         name: name,
         isTemp: true,
         state: {scroll: {left: 0, top: 0}, selection: undefined}
-    }
+    };
 }

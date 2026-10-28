@@ -29,7 +29,7 @@ export default class PreviewPlugin implements EditorPlugin {
                 const refreshButton = parent.getElementById("previewRefresh");
                 const content = parent.getElementById("previewContent");
 
-                if(!refreshButton || !content) return;
+                if (!refreshButton || !content) return;
 
                 const shadow = content.attachShadow({mode: "open"});
                 const style = document.createElement("style");
@@ -48,7 +48,7 @@ export default class PreviewPlugin implements EditorPlugin {
                     body.className = language === LanguageName.MARKDOWN ? "markdown-body editor" : "html-body";
                     body.innerHTML = preview(this.editor?.getValue(), language, context.filePath) || getEmptyPreviewResult();
 
-                    if(language === LanguageName.MARKDOWN) {
+                    if (language === LanguageName.MARKDOWN) {
                         highlightCodeBlocks(body, () => current === generation && parent.host.isConnected)
                             .catch(err => console.error("cannot highlight code blocks: " + err));
                     }
@@ -61,14 +61,14 @@ export default class PreviewPlugin implements EditorPlugin {
                 };
 
                 const unsubscribeContent = this.editor?.onChange(() => {
-                    if(!parent.host.isConnected) return unsubscribeAll();
+                    if (!parent.host.isConnected) return unsubscribeAll();
 
                     clearTimeout(timer);
                     timer = setTimeout(render, LIVE_PREVIEW_DELAY);
                 });
 
                 const unsubscribeLanguage = this.editor?.onLanguageChange(() => {
-                    if(!parent.host.isConnected) return unsubscribeAll();
+                    if (!parent.host.isConnected) return unsubscribeAll();
 
                     language = this.editor?.getLanguage();
                     clearTimeout(timer);
@@ -79,12 +79,12 @@ export default class PreviewPlugin implements EditorPlugin {
                     const anchor = (event.target as Element)?.closest?.("a");
                     const href = anchor?.getAttribute("href");
 
-                    if(!anchor || !href) return;
+                    if (!anchor || !href) return;
 
-                    if(href.startsWith("#")) {
+                    if (href.startsWith("#")) {
                         event.preventDefault();
                         shadow.getElementById(decodeURIComponent(href.substring(1)))?.scrollIntoView({block: "start"});
-                    } else if(!/^https?:/i.test(href)) {
+                    } else if (!/^https?:/i.test(href)) {
                         event.preventDefault();
                     }
                 });
@@ -191,9 +191,9 @@ export default class PreviewPlugin implements EditorPlugin {
     private refresh?: () => void;
 
     doAction(code: string): void {
-        if(!this.editor) throw new Error("Plugin not initialized !");
+        if (!this.editor) throw new Error("Plugin not initialized !");
 
-        if(code === Keys.REFRESH) this.refresh?.();
+        if (code === Keys.REFRESH) this.refresh?.();
     }
 
     getAvailableActions(): Array<string> {
@@ -206,9 +206,9 @@ export default class PreviewPlugin implements EditorPlugin {
 }
 
 export function preview(content?: string, lang?: string, filePath?: string) {
-    if(!content || !lang) return "";
+    if (!content || !lang) return "";
 
-    if(lang === LanguageName.MARKDOWN) {
+    if (lang === LanguageName.MARKDOWN) {
         return DOMPurify.sanitize(markdownToHtml(content, {filePath}), {ALLOWED_URI_REGEXP});
     }
 

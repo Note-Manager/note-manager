@@ -1,6 +1,4 @@
 export enum SystemPaths {
-    temp = "tempDir",
-    home = "homeDir",
     data = "dataPath",
     resources = "resources"
 }
@@ -11,8 +9,6 @@ export enum EventType {
     OPEN_TAB = "openTab",
     CLOSE_TAB = "closeTab",
     SET_TAB_LANGUAGE = "setTabLanguage",
-    UNDO_TAB = "undoTab",
-    REDO_TAB = "redoTab",
     BUILD_MENU = "buildMenu",
     SHOW_SAVE_DIALOG = "showSaveDialog",
     SHOW_UNSAVED_CHANGES_DIALOG = "showUnsavedChangesDialog",

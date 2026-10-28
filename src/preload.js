@@ -31,11 +31,10 @@ const INVOKE_CHANNELS = [
 let titlebar;
 
 function initCustomTitlebar(event, data) {
-    console.log("initializing titlebar..");
-    if(titlebar) titlebar.dispose();
+    if (titlebar) titlebar.dispose();
 
     titlebar = new Titlebar({
-        titleHorizontalAlignment: 'center',
+        titleHorizontalAlignment: "center",
         shadow: true,
         icon: data?.icon,
     });
@@ -62,8 +61,8 @@ contextBridge.exposeInMainWorld("noteManager", {
     getPathForFile: (file) => webUtils.getPathForFile(file),
 });
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener("DOMContentLoaded", () => {
     initCustomTitlebar();
 });
 
-ipcRenderer.on("buildMenu", initCustomTitlebar);
+ipcRenderer.on(EventType.BUILD_MENU, initCustomTitlebar);

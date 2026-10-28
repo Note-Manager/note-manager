@@ -4,7 +4,7 @@ import {EventType, SystemPaths, TabAction} from "../enums";
 import {SupportedLanguages} from "../domain/SupportedLanguage";
 import * as Environment from "./EnvironmentUtils";
 import {getBundledThemes, getUserThemePath, getUserThemes} from "./EnvironmentUtils";
-import {allPlugins} from "./PluginLoader";
+import {bundledPlugins} from "./PluginLoader";
 import path from "node:path";
 import {getSystemPath, isFileExists} from "./FileUtils";
 import {clearRecentFiles, getRecentFiles, onRecentFilesChanged, removeRecentFile} from "./RecentFiles";
@@ -15,23 +15,22 @@ import {getUserPluginManifests, getUserPluginPath, loadUserPluginManifests} from
 import {createEncodingMenu} from "./EncodingMenu";
 import {parseThemeVariables} from "./ThemeVariables";
 
-
 export const appIcon = electron.nativeImage.createFromPath(path.join(getSystemPath(SystemPaths.resources), "Icons/note-manager.png"));
 
 export function createApplicationMenu() {
     const menu = electron.Menu.buildFromTemplate([
         {
-            label: 'File',
+            label: "File",
             submenu: [
                 {
-                    label: 'New',
+                    label: "New",
                     accelerator: shortcut(ShortcutId.NEW),
                     click: () => {
                         sendToFocusedWindow(EventType.NEW_TAB);
                     }
                 },
                 {
-                    label: 'Open',
+                    label: "Open",
                     accelerator: shortcut(ShortcutId.OPEN),
                     click: () => {
                         const focusedWindow = getFocusedWindow();
@@ -43,7 +42,7 @@ export function createApplicationMenu() {
                             message: "Select file to open",
                             buttonLabel: "Open",
                             filters: [{extensions: ["*"], name: "All Files"}],
-                            properties: ['openFile'],
+                            properties: ["openFile"],
                         });
 
                         if (file?.length === 1) {
@@ -54,31 +53,31 @@ export function createApplicationMenu() {
                     },
                 },
                 {
-                    label: 'Open Recent',
+                    label: "Open Recent",
                     submenu: createRecentFilesMenu()
                 },
                 {
-                    label: 'Save',
+                    label: "Save",
                     accelerator: shortcut(ShortcutId.SAVE),
                     click: () => {
                         sendToFocusedWindow(EventType.SAVE_TAB);
                     }
                 },
                 {
-                    label: 'Open Containing Folder',
+                    label: "Open Containing Folder",
                     click: () => {
                         sendToFocusedWindow(EventType.TAB_ACTION, {action: TabAction.REVEAL_IN_FOLDER});
                     }
                 },
                 {
-                    label: 'Reopen Closed Tab',
+                    label: "Reopen Closed Tab",
                     accelerator: shortcut(ShortcutId.REOPEN_CLOSED),
                     click: () => {
                         sendToFocusedWindow(EventType.TAB_ACTION, {action: TabAction.REOPEN_CLOSED});
                     }
                 },
                 {
-                    label: 'Close',
+                    label: "Close",
                     accelerator: shortcut(ShortcutId.CLOSE),
                     click: () => {
                         sendToFocusedWindow(EventType.CLOSE_TAB);
@@ -87,25 +86,25 @@ export function createApplicationMenu() {
             ],
         },
         {
-            label: 'Edit',
+            label: "Edit",
             submenu: [
-                {role: 'undo'},
-                {role: 'redo'},
-                {type: 'separator'},
-                {role: 'cut'},
-                {role: 'copy'},
-                {role: 'paste'},
-                {role: 'pasteAndMatchStyle'},
-                {role: 'delete'},
-                {role: 'selectAll'}
+                {role: "undo"},
+                {role: "redo"},
+                {type: "separator"},
+                {role: "cut"},
+                {role: "copy"},
+                {role: "paste"},
+                {role: "pasteAndMatchStyle"},
+                {role: "delete"},
+                {role: "selectAll"}
             ]
         },
         {
-            label: 'Encoding',
+            label: "Encoding",
             submenu: createEncodingMenu(sendToFocusedWindow)
         },
         {
-            label: 'Language',
+            label: "Language",
             submenu: Object.entries(SupportedLanguages).map(([, value]) => {
                 return {
                     label: value.label,
@@ -116,23 +115,23 @@ export function createApplicationMenu() {
             })
         },
         {
-            label: 'Preferences',
+            label: "Preferences",
             submenu: [
                 {
-                    label: 'Settings...',
+                    label: "Settings...",
                     accelerator: shortcut(ShortcutId.SETTINGS),
                     click: () => {
                         sendToFocusedWindow(EventType.OPEN_SETTINGS);
                     }
                 },
                 {
-                    type: 'separator'
+                    type: "separator"
                 },
                 {
-                    label: 'Theme',
+                    label: "Theme",
                     submenu: [
-                        ...getBundledThemes().map(css => cssFileToMenuItem(css, false)), // bundled themes
-                        ...getUserThemes().map(css => cssFileToMenuItem(css, true)), // user themes
+                        ...getBundledThemes().map(css => cssFileToMenuItem(css, false)),
+                        ...getUserThemes().map(css => cssFileToMenuItem(css, true)),
                         {
                             type: "separator"
                         },
@@ -146,7 +145,7 @@ export function createApplicationMenu() {
                         {
                             label: "Open Themes Folder",
                             click: () => {
-                                electron.shell.openPath(getUserThemePath()).then(() => console.log("path opened"))
+                                electron.shell.openPath(getUserThemePath()).catch(err => console.error(err));
                             }
                         }
                     ]
@@ -156,19 +155,19 @@ export function createApplicationMenu() {
         {
             label: "Plugins",
             submenu: [
-                ...allPlugins.filter(p => (p.applicationMenuItems?.length || 0) > 0).flatMap(plugin => plugin.applicationMenuItems).filter(el => el !== undefined).map(menuItem => {
+                ...bundledPlugins.filter(p => (p.applicationMenuItems?.length || 0) > 0).flatMap(plugin => plugin.applicationMenuItems).filter(el => el !== undefined).map(menuItem => {
                     return {
                         label: menuItem.label,
                         submenu: menuItem.actions.map(action => {
                             return {
                                 label: action.label,
                                 click: () => {
-                                    sendToFocusedWindow(action.code)
+                                    sendToFocusedWindow(action.code);
                                 },
                                 accelerator: shortcut(action.code)
-                            }
+                            };
                         })
-                    }
+                    };
                 }),
                 ...getUserPluginManifests().map(plugin => ({
                     label: plugin.name,
@@ -202,18 +201,18 @@ export function createApplicationMenu() {
 
     if (!app.isPackaged) {
         const menuItem = new electron.MenuItem({
-            label: 'Developer',
+            label: "Developer",
             submenu: [
                 {
-                    label: 'Reload',
-                    accelerator: 'CmdOrCtrl+R',
+                    label: "Reload",
+                    accelerator: "CmdOrCtrl+R",
                     click: () => {
                         getFocusedWindow()?.webContents.reload();
                     }
                 },
                 {
-                    label: 'Developer Tools',
-                    accelerator: 'F12',
+                    label: "Developer Tools",
+                    accelerator: "F12",
                     click: () => {
                         getFocusedWindow()?.webContents.toggleDevTools();
                     }
@@ -275,7 +274,7 @@ function cssFileToMenuItem(cssFile: string, isUserTheme: boolean) {
         type: "radio",
         sublabel: isUserTheme ? "User Theme" : "Bundled Theme",
         checked: Environment.getPreferences().theme.file === cssFile
-    } as Electron.MenuItemConstructorOptions
+    } as Electron.MenuItemConstructorOptions;
 }
 
 export function refreshTitlebar() {

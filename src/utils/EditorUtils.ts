@@ -137,19 +137,11 @@ export function getFocusedWindow() {
 export function sendToFocusedWindow(channel: string, data?: any) {
     const win = getFocusedWindow();
 
-    if(win) sendToWindow(win, channel, data);
+    if (win) sendToWindow(win, channel, data);
 }
 
 export function sendToWindow(window: electron.BrowserWindow, channel: string, data?: any) {
     window.webContents.send(channel, data);
-}
-
-export function openInFocusedWindow(file: string) {
-    console.log("opening file: " + file);
-
-    const win = getFocusedWindow();
-
-    if(win) openInWindow(win, file);
 }
 
 export const LARGE_FILE_WARNING_SIZE = 50 * 1024 * 1024;

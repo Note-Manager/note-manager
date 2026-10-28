@@ -4,7 +4,7 @@ import {pathToFileURL} from "node:url";
 import {net, protocol} from "electron";
 import {ensureExists, getSystemPath} from "./FileUtils";
 import {EventType, SystemPaths} from "../enums";
-import {allPlugins} from "./PluginLoader";
+import {bundledPlugins} from "./PluginLoader";
 import {
     getPluginScriptUrl,
     PLUGIN_MANIFEST_FILE,
@@ -42,11 +42,11 @@ export function loadUserPluginManifests(): Array<PluginManifest> {
 
     ensureExists(folder);
 
-    const bundledCodes = allPlugins.flatMap(p => (p.applicationMenuItems || []).flatMap(item => item.actions.map(a => a.code)));
+    const bundledCodes = bundledPlugins.flatMap(p => (p.applicationMenuItems || []).flatMap(item => item.actions.map(a => a.code)));
     const reservedCodes = new Set<string>([...Object.values(EventType), ...bundledCodes]);
     const reservedPrefixes = new Set([
         ...bundledCodes.map(code => code.split(/[._]/)[0].toLowerCase()),
-        ...allPlugins.map(p => p.name.replace(/\s+/g, "").toLowerCase()),
+        ...bundledPlugins.map(p => p.name.replace(/\s+/g, "").toLowerCase()),
     ]);
 
     const loaded: Array<PluginManifest> = [];

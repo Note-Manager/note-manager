@@ -22,13 +22,13 @@ const shortcutListeners = new WeakSet<electron.WebContents>();
 
 export default function initIpcMainListeners() {
     ipcMain.handle(EventType.FILES_DROPPED, (event, data: any) => {
-        if(!data?.files || !Array.isArray(data.files)) return;
+        if (!data?.files || !Array.isArray(data.files)) return;
 
         try {
             for (const file of data.files) {
                 try {
                     const win = BrowserWindow.fromWebContents(event.sender);
-                    if(win) openInWindow(win, file);
+                    if (win) openInWindow(win, file);
                 } catch(err) {
                     console.error(err);
                 }
@@ -348,7 +348,7 @@ export default function initIpcMainListeners() {
     ipcMain.handle(EventType.CLOSE_WITH_STATE, (event, data: EditorState) => {
         const sender = BrowserWindow.fromWebContents(event.sender);
 
-        if(sender) {
+        if (sender) {
             closingWindows.add(event.sender.id);
 
             console.log("saving state to '" + Environment.getStateFilePath() + "'");

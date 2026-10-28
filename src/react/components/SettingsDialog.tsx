@@ -149,7 +149,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
     const selectTheme = (file: string) => {
         setChangedVariables({});
         setThemeFile(file);
-    }
+    };
 
     const createTheme = () => {
         if (!themeFile) return;
@@ -161,7 +161,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
             selectTheme(result.file);
             setNewThemeName("");
         }).catch(err => setError("Cannot create theme: " + err));
-    }
+    };
 
     const save = () => {
         if (conflicts.size > 0 || invalidVariables.length > 0) return;
@@ -173,7 +173,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
             themeFile: themeFile,
             themeVariables: selectedTheme?.isUser && Object.keys(changedVariables).length > 0 ? {file: themeFile, values: changedVariables} : undefined,
         }).then(onClose).catch(err => setError("Cannot save settings: " + err));
-    }
+    };
 
     return (
         <div id={"settingsOverlay"} onMouseDown={event => event.target === event.currentTarget && onClose()}>
@@ -195,7 +195,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                 <label className={"settingsRow"}>
                                     <span>Font size</span>
                                     <input type={"number"} min={FONT_SIZE_RANGE.min} max={FONT_SIZE_RANGE.max} value={draft.editor.fontSize}
-                                           onChange={e => setEditor({fontSize: Number(e.target.value)})}/>
+                                        onChange={e => setEditor({fontSize: Number(e.target.value)})}/>
                                 </label>
 
                                 <h3>Theme</h3>
@@ -225,10 +225,10 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                                 <div className={"settingsInline"}>
                                                     {HEX_COLOR.test(value) &&
                                                         <input type={"color"} value={value} disabled={!selectedTheme?.isUser}
-                                                               onChange={e => setChangedVariables({...changedVariables, [v.name]: e.target.value})}/>
+                                                            onChange={e => setChangedVariables({...changedVariables, [v.name]: e.target.value})}/>
                                                     }
                                                     <input type={"text"} value={value} disabled={!selectedTheme?.isUser}
-                                                           onChange={e => setChangedVariables({...changedVariables, [v.name]: e.target.value})}/>
+                                                        onChange={e => setChangedVariables({...changedVariables, [v.name]: e.target.value})}/>
                                                 </div>
                                             </label>
                                         );
@@ -251,7 +251,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                 <label className={"settingsRow"}>
                                     <span>Tab size</span>
                                     <input type={"number"} min={TAB_SIZE_RANGE.min} max={TAB_SIZE_RANGE.max} value={draft.editor.tabSize}
-                                           onChange={e => setEditor({tabSize: Number(e.target.value)})}/>
+                                        onChange={e => setEditor({tabSize: Number(e.target.value)})}/>
                                 </label>
                                 <label className={"settingsRow"}>
                                     <span>Show line numbers</span>
@@ -275,7 +275,7 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                     <label key={layout} className={"settingsRow"}>
                                         <span>{label}</span>
                                         <input type={"radio"} name={"tabLayout"} checked={draft.ui.tabLayout === layout}
-                                               onChange={() => setInterface({tabLayout: layout as TabLayout})}/>
+                                            onChange={() => setInterface({tabLayout: layout as TabLayout})}/>
                                     </label>
                                 ))}
                                 <h3>Window</h3>
@@ -310,13 +310,13 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
                                 <label className={"settingsRow"}>
                                     <span>Guess the encoding of files without a BOM</span>
                                     <input type={"checkbox"} checked={draft.files.autodetectEncoding}
-                                           onChange={e => setFiles({autodetectEncoding: e.target.checked})}/>
+                                        onChange={e => setFiles({autodetectEncoding: e.target.checked})}/>
                                 </label>
                                 <div className={"settingsHint"}>Files that are not valid UTF-8 are matched against the known character sets. When this is off, or the guess is unsure, the system code page (ANSI) is used.</div>
                                 <label className={"settingsRow"}>
                                     <span>Treat plain ASCII files as UTF-8</span>
                                     <input type={"checkbox"} checked={draft.files.asciiAsUtf8}
-                                           onChange={e => setFiles({asciiAsUtf8: e.target.checked})}/>
+                                        onChange={e => setFiles({asciiAsUtf8: e.target.checked})}/>
                                 </label>
                                 <div className={"settingsHint"}>When this is off, files with only ASCII characters are shown as ANSI. The bytes are the same either way; it only changes the encoding used once you type other characters.</div>
                             </>

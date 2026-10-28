@@ -1,6 +1,5 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState} from "react";
 import {TabList} from "./TabList";
-import {EditorTab} from "../../domain/EditorTab";
 import Footer from "./Footer";
 import EditorContainer from "./EditorContainer";
 import {EditorContextProvider, useEditorContext} from "./editor/EditorContext";
@@ -39,51 +38,25 @@ function Workbench() {
         };
     }, []);
 
-    const handleDragEnter = (event: any) => {
-        event.preventDefault();
-    };
-
-    const handleDragOver = (event: any) => {
-        event.preventDefault();
-    };
-
-    const handleDragLeave = () => {
-    };
+    const allowDrop = (event: React.DragEvent) => event.preventDefault();
 
     const handleDrop = (event: React.DragEvent) => {
         event.preventDefault();
 
         const droppedFiles = Array.from(event.dataTransfer.files).map(f => getPathForFile(f));
 
-        fireEvent(EventType.FILES_DROPPED, {files: droppedFiles}).then(ignore => ignore);
+        fireEvent(EventType.FILES_DROPPED, {files: droppedFiles}).catch(err => console.error(err));
     };
-
-    const onTabSelect = (tab: EditorTab) => {
-        // do nothing
-    }
-
-    const onTabRemove = (tabToRemove: EditorTab) => {
-        // do nothing
-    }
-
-    const onTabAdd = (tabToAdd: EditorTab) => {
-        // do nothing
-    }
 
     return (
         <div id={"tabManager"}
-             className={"tabs-" + settings.ui.tabLayout}
-             onDragEnter={handleDragEnter}
-             onDragOver={handleDragOver}
-             onDragLeave={handleDragLeave}
-             onDrop={handleDrop}>
+            className={"tabs-" + settings.ui.tabLayout}
+            onDragEnter={allowDrop}
+            onDragOver={allowDrop}
+            onDrop={handleDrop}>
 
             <div id={"workspace"}>
-                <TabList
-                    onTabSelect={onTabSelect}
-                    onTabAdd={onTabAdd}
-                    onTabRemove={onTabRemove}
-                />
+                <TabList/>
 
                 <EditorContainer/>
             </div>

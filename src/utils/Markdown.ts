@@ -105,7 +105,7 @@ function stripTags(html: string): string {
         .replace(/&#39;/g, "'");
 }
 
-export function markdownToHtml(source: string, options: { filePath?: string } = {}): string {
+export function markdownToHtml(source: string, options: {filePath?: string} = {}): string {
     const baseUrl = fileDirectoryUrl(options.filePath);
     const usedSlugs = new Map<string, number>();
 

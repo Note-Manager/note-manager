@@ -40,7 +40,7 @@ export default function EncodingPicker({action, encoding, hasFile, onActionChang
     const changeMode = (next: EncodingAction) => {
         setCursor(undefined);
         onActionChange(next);
-    }
+    };
 
     useEffect(() => {
         listRef.current?.querySelector(".encodingChoice.highlighted")?.scrollIntoView({block: "nearest"});
@@ -50,7 +50,7 @@ export default function EncodingPicker({action, encoding, hasFile, onActionChang
         if (!choice) return;
 
         onSelect(choice.id ? mode : EncodingAction.REDETECT, choice.id);
-    }
+    };
 
     const onKeyDown = (event: React.KeyboardEvent) => {
         switch (event.key) {
@@ -75,7 +75,7 @@ export default function EncodingPicker({action, encoding, hasFile, onActionChang
                 changeMode(mode === EncodingAction.CONVERT ? EncodingAction.REINTERPRET : EncodingAction.CONVERT);
                 break;
         }
-    }
+    };
 
     let lastGroup: string | undefined;
 
@@ -85,15 +85,15 @@ export default function EncodingPicker({action, encoding, hasFile, onActionChang
                 <div id={"encodingPickerModes"} role={"tablist"}>
                     {MODES.map(m => (
                         <button key={m.action} role={"tab"} aria-selected={m.action === mode} className={"chip ghost" + (m.action === mode ? " selected" : "")}
-                                onClick={() => changeMode(m.action)}>{m.label}</button>
+                            onClick={() => changeMode(m.action)}>{m.label}</button>
                     ))}
                     <span id={"encodingPickerHint"}>{MODES.find(m => m.action === mode)?.hint}</span>
                 </div>
                 <input id={"encodingPickerSearch"} type={"text"} autoFocus={true} placeholder={"Search, e.g. 1254, latin, cyrillic"}
-                       value={query} onChange={e => {
-                           setCursor(undefined);
-                           setQuery(e.target.value);
-                       }}/>
+                    value={query} onChange={e => {
+                        setCursor(undefined);
+                        setQuery(e.target.value);
+                    }}/>
                 <div id={"encodingPickerList"} ref={listRef} role={"listbox"}>
                     {choices.length === 0 && <div className={"encodingPickerEmpty"}>No matching encoding</div>}
                     {choices.map((choice, index) => {
@@ -105,9 +105,9 @@ export default function EncodingPicker({action, encoding, hasFile, onActionChang
                             <React.Fragment key={choice.id || "detect"}>
                                 {header && <div className={"encodingGroup"}>{header}</div>}
                                 <div role={"option"} aria-selected={index === highlighted}
-                                     className={"encodingChoice" + (index === highlighted ? " highlighted" : "")}
-                                     onMouseMove={() => index !== highlighted && setHighlighted(index)}
-                                     onClick={() => choose(choice)}>
+                                    className={"encodingChoice" + (index === highlighted ? " highlighted" : "")}
+                                    onMouseMove={() => index !== highlighted && setHighlighted(index)}
+                                    onClick={() => choose(choice)}>
                                     <span className={"encodingChoiceLabel"}>{choice.label}</span>
                                     {choice.id === encoding && <span className={"encodingChoiceCurrent chip current"}>current</span>}
                                     <span className={"encodingChoiceDescription"}>{choice.description}</span>

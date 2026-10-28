@@ -22,13 +22,13 @@ export default function Footer() {
         const rect = event.currentTarget.getBoundingClientRect();
 
         fireEvent(EventType.SHOW_STATUS_MENU, {eol: activeTab.eol, x: rect.left, y: rect.top}).catch(err => console.error(err));
-    }
+    };
 
     const openEncodingPicker = (event: React.MouseEvent<HTMLElement>) => {
         event.preventDefault();
 
         setEncodingPicker(EncodingAction.REINTERPRET);
-    }
+    };
 
     const encodingLabel = activeTab?.encoding === EncodingId.ANSI && ansiCodePage
         ? `ANSI (${getShortEncodingLabel(ansiCodePage)})`
@@ -59,11 +59,11 @@ export default function Footer() {
                 {activeTab &&
                     <>
                         <button id={"footerEol"} className={"statusChip chip"} title={"Line endings: click to change"}
-                                onClick={showEolMenu} onContextMenu={showEolMenu}>
+                            onClick={showEolMenu} onContextMenu={showEolMenu}>
                             {getEolLabel(activeTab.eol)}
                         </button>
                         <button id={"footerEncoding"} className={"statusChip chip"} title={"Encoding: click to reopen or convert"}
-                                onClick={openEncodingPicker} onContextMenu={openEncodingPicker}>
+                            onClick={openEncodingPicker} onContextMenu={openEncodingPicker}>
                             {encodingLabel}
                         </button>
                     </>

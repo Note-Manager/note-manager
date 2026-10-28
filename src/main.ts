@@ -1,4 +1,4 @@
-import {app, BrowserWindow, shell} from 'electron';
+import {app, BrowserWindow, shell} from "electron";
 
 import initLoggingEventHandlers from "./ipc/LoggingEventHandlers";
 import {EventType} from "./enums";
@@ -7,18 +7,19 @@ import {fileToTab, openInWindow, readEditorState} from "./utils/EditorUtils";
 import initIpcMainListeners from "./ipc/IpcMainListener";
 import {getThemeBackgroundColor, initApplicationMenu, loadThemeToWindow, refreshTitlebar} from "./utils/ElectronUtils";
 import {EditorState} from "./domain/EditorState";
-import {SupportedLanguages} from './domain/SupportedLanguage';
+import {SupportedLanguages} from "./domain/SupportedLanguage";
 import {documentHash} from "./utils/TextUtils";
 import {isFileExists} from "./utils/FileUtils";
 import {getSettings} from "./utils/EnvironmentUtils";
 import {loadUserPluginManifests, registerUserPluginProtocol, registerUserPluginScheme} from "./utils/UserPlugins";
 
+declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
+declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 setupTitlebar();
 registerUserPluginScheme();
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
+if (require("electron-squirrel-startup")) {
     app.quit();
 }
 
@@ -27,13 +28,11 @@ const logError = (error: Error | any) => {
     console.error(logMessage);
 };
 
-// Catch uncaught exceptions
-process.on('uncaughtException', (error) => {
+process.on("uncaughtException", (error) => {
     logError(error);
 });
 
-// Catch unhandled promise rejections
-process.on('unhandledRejection', (reason: any) => {
+process.on("unhandledRejection", (reason: any) => {
     logError(reason);
 });
 
@@ -47,7 +46,6 @@ const createWindow = () => {
         titleBarOverlay: false,
         backgroundColor: getThemeBackgroundColor(),
         webPreferences: {
-            // @ts-ignore
             preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
             nodeIntegration: false,
             contextIsolation: true,
@@ -72,8 +70,6 @@ const createWindow = () => {
 
     initApplicationMenu();
 
-    // load index.html
-    // @ts-ignore
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
     attachTitlebarToWindow(mainWindow);
@@ -91,7 +87,7 @@ const createWindow = () => {
         event.preventDefault();
 
         mainWindow.webContents.send(EventType.CLOSE_WINDOW);
-    })
+    });
 };
 
 async function getEditorState() {
@@ -110,11 +106,11 @@ async function getEditorState() {
             language: SupportedLanguages.text,
         }],
         activeTabId: tempTabId
-    }
+    };
 
-        const persistentState = await readEditorState();
+    const persistentState = await readEditorState();
 
-    if (persistentState) { // restore the state
+    if (persistentState) {
         initialState = persistentState;
     }
 
@@ -131,16 +127,13 @@ async function getEditorState() {
 }
 
 if (!app.requestSingleInstanceLock()) {
-    app.quit(); // Quit if another instance is already running
+    app.quit();
 } else {
-    app.on('second-instance', (_, argv) => {
-        // When a second instance is launched
+    app.on("second-instance", (_, argv) => {
         if (mainWindow) {
-            // Focus the existing window
             if (mainWindow.isMinimized()) mainWindow.restore();
             mainWindow.focus();
 
-            // Pass the file argument (e.g., argv[2] on Windows, argv[1] on macOS)
             const fileArg = getFileArgument(argv);
             if (fileArg) {
                 openInWindow(mainWindow, fileArg);
@@ -148,16 +141,13 @@ if (!app.requestSingleInstanceLock()) {
         }
     });
 
-    // This method will be called when Electron has finished
-    // initialization and is ready to create browser windows.
-    // Some APIs can only be used after this event occurs.
     app.whenReady().then(() => {
         registerUserPluginProtocol();
         loadUserPluginManifests();
 
-        const arg = getFileArgument(); // open with...
+        const arg = getFileArgument();
 
-        if(arg && mainWindow) {
+        if (arg && mainWindow) {
             const targetWindow = mainWindow;
 
             openInWindow(targetWindow, arg);
@@ -168,9 +158,7 @@ if (!app.requestSingleInstanceLock()) {
             createWindow();
         }
 
-        // On OS X it's common to re-create a window in the app when the
-        // dock icon is clicked and there are no other windows open.
-        app.on('activate', () => {
+        app.on("activate", () => {
             if (BrowserWindow.getAllWindows().length === 0) {
                 createWindow();
             }
@@ -178,11 +166,8 @@ if (!app.requestSingleInstanceLock()) {
     });
 }
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
+app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
         app.quit();
     }
 });
@@ -201,12 +186,12 @@ function getFileArgument(args?: string[]) {
 
     const processArguments = args || process.argv;
 
-    if (app.isPackaged && processArguments?.length > 1) { // 'open with ...' option
+    if (app.isPackaged && processArguments?.length > 1) {
         processArguments?.forEach((arg, idx) => {
-            if(idx === 0) return; // pass the first argument, it is the working directory
+            if (idx === 0) return;
 
-            if(arg && arg !== "." && arg !== "./") {
-                if(isFileExists(arg)) result = arg;
+            if (arg && arg !== "." && arg !== "./") {
+                if (isFileExists(arg)) result = arg;
             }
         });
     }

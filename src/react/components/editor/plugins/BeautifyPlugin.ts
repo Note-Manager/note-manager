@@ -7,7 +7,7 @@ enum Keys {
     FORMAT = "beautify.format",
 }
 
-export default class BeautifyPlugin implements EditorPlugin{
+export default class BeautifyPlugin implements EditorPlugin {
     name: string = "Beautify";
 
     applicationMenuItems: Array<EditorMenuItem> = [
@@ -43,8 +43,8 @@ export default class BeautifyPlugin implements EditorPlugin{
     pendingFormat?: Promise<void>;
 
     doAction(code: string): void {
-        if(!this.editor || !this.actionMap) throw Error("Plugin not initialized !");
-        if(!code) return;
+        if (!this.editor || !this.actionMap) throw Error("Plugin not initialized !");
+        if (!code) return;
 
         const action = this.actionMap.get(code);
 
@@ -52,7 +52,7 @@ export default class BeautifyPlugin implements EditorPlugin{
     }
 
     getAvailableActions(): Array<string> {
-        if(!this.editor || !this.actionMap) throw Error("Plugin not initialized !");
+        if (!this.editor || !this.actionMap) throw Error("Plugin not initialized !");
 
         return Array.from(this.actionMap.keys());
     }

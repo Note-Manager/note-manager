@@ -1,5 +1,5 @@
-import * as React from 'react';
-import {createRoot} from 'react-dom/client';
+import * as React from "react";
+import {createRoot} from "react-dom/client";
 import TabManager from "./components/TabManager";
 import {installUserPluginApi, loadUserPlugins} from "./UserPluginRegistry";
 import {on} from "./ApplicationEvents";
@@ -16,7 +16,7 @@ reloadUserPlugins();
 
 const reactRoot = document.getElementById("root");
 
-if(reactRoot) {
+if (reactRoot) {
     const root = createRoot(reactRoot);
 
     root.render(
