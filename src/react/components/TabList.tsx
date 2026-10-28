@@ -4,6 +4,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faFileText} from "@fortawesome/free-regular-svg-icons";
 import {faRectangleTimes} from "@fortawesome/free-regular-svg-icons/faRectangleTimes";
 import {faPlusSquare} from "@fortawesome/free-regular-svg-icons/faPlusSquare";
+import {faBookmark} from "@fortawesome/free-regular-svg-icons/faBookmark";
 import {EditorTab} from "../../domain/EditorTab";
 import {fireEvent, off, on} from "../ApplicationEvents";
 import {EventType, TabAction} from "../../enums";
@@ -383,15 +384,22 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
                              onDragEnd={handleTabDragEnd}
                              onMouseUp={(event) => handleTabClick(event, idx)} onContextMenu={(event) => showTabContextMenu(event, tab)}>
                             <div>
-                                <FontAwesomeIcon icon={faFileText}/>
-                                <span className={"tabHeaderName"} style={{marginLeft: "5px"}} title={tab.file || tab.name}>{countByName(tabs, tab.name || DEFAULT_TAB_NAME) > 1 ? (tab.file || tab.displayName) : tab.displayName}</span>
+                                <FontAwesomeIcon className={"tabFileIcon"} icon={faFileText}/>
+                                <span className={"tabHeaderName"} title={tab.file || tab.name}>{countByName(tabs, tab.name || DEFAULT_TAB_NAME) > 1 ? (tab.file || tab.displayName) : tab.displayName}</span>
                             </div>
-                            {!tab.isPinned &&
+                            {tab.isPinned ?
                                 <div>
-                                    <FontAwesomeIcon className={"closeTabButton"} icon={faRectangleTimes} onClick={(e) => {
+                                    <span className={"tabPinIcon"} title={"Pinned"} aria-label={"Pinned"}>
+                                        <FontAwesomeIcon icon={faBookmark}/>
+                                    </span>
+                                </div> :
+                                <div>
+                                    <button type={"button"} className={"iconButton danger closeTabButton"} aria-label={"Close tab"} title={"Close tab"} onClick={(e) => {
                                         e.stopPropagation();
                                         closeTab(tab);
-                                    }}/>
+                                    }}>
+                                        <FontAwesomeIcon icon={faRectangleTimes}/>
+                                    </button>
                                 </div>
                             }
                         </div>
@@ -399,7 +407,9 @@ export function TabList({onTabSelect, onTabAdd, onTabRemove}: {
                 }
             </div>
             <div id={"newTabPanel"}>
-                <FontAwesomeIcon icon={faPlusSquare} className={"iconButton"} onClick={() => addTab(generateTempTab(generateUniqueName(tabs, DEFAULT_TAB_NAME)))}/>
+                <button type={"button"} className={"iconButton"} aria-label={"New tab"} title={"New tab"} onClick={() => addTab(generateTempTab(generateUniqueName(tabs, DEFAULT_TAB_NAME)))}>
+                    <FontAwesomeIcon icon={faPlusSquare}/>
+                </button>
             </div>
         </div>
     );

@@ -279,7 +279,9 @@ export default function EditorContainer() {
                     <div id={"toolWindow"} style={{width: toolWindowWidth + "px"}}>
                         <div id={"toolWindowHeader"}>
                             <div id={"toolWindowButtons"}>
-                                <FontAwesomeIcon className={"iconButton"} icon={faTimesRectangle} onClick={() => setActiveTool(undefined)} />
+                                <button type={"button"} className={"iconButton danger"} aria-label={"Close tool window"} title={"Close tool window"} onClick={() => setActiveTool(undefined)}>
+                                    <FontAwesomeIcon icon={faTimesRectangle}/>
+                                </button>
                             </div>
                             <div id={"toolWindowTitle"}>
                                 <span>{activeTool.label}</span>
@@ -293,14 +295,10 @@ export default function EditorContainer() {
                     {
                         allPlugins.filter(p => p.toolbarMenuItems && p.toolbarMenuItems.length > 0).flatMap(plugin => plugin.toolbarMenuItems).map((item, idx) => {
                             return (
-                                <div key={idx} className={"editorToolWrapper" + (activeTool === item ? " selected" : "")} onClick={() => setActiveTool(activeTool === item ? undefined : item)}>
-                                    <img src={item?.icon} style={{
-                                        width: '20px',
-                                        fill: "white",
-                                        color: "white"
-                                    }} alt={"img"}/>
+                                <button type={"button"} key={idx} className={"editorToolWrapper" + (activeTool === item ? " selected" : "")} aria-pressed={activeTool === item} onClick={() => setActiveTool(activeTool === item ? undefined : item)}>
+                                    <img className={"editorToolIcon"} src={item?.icon} alt={""}/>
                                     <span>{item?.label}</span>
-                                </div>
+                                </button>
                             );
                         })
                     }

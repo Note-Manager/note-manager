@@ -46,7 +46,7 @@ export default class PreviewPlugin implements EditorPlugin {
                 const render = () => {
                     const current = ++generation;
 
-                    body.className = language === LanguageName.MARKDOWN ? "markdown-body" : "html-body";
+                    body.className = language === LanguageName.MARKDOWN ? "markdown-body editor" : "html-body";
                     body.innerHTML = preview(this.editor?.getValue(), language, context.filePath) || getEmptyPreviewResult();
 
                     if(language === LanguageName.MARKDOWN) {
@@ -109,37 +109,46 @@ export default class PreviewPlugin implements EditorPlugin {
                             #previewButtons {
                                 display: flex;
                                 align-items: center;
-                                padding: 4px 6px;
-                                border-bottom: 1px solid var(--border-color);
+                                height: var(--control-height-lg);
+                                padding: 0 var(--space-2);
+                                background-color: var(--secondary-bg);
+                                border-bottom: 1px solid var(--border-subtle-color);
                             }
 
                             #previewRefresh {
                                 display: flex;
                                 align-items: center;
-                                gap: 6px;
-                                padding: 3px 8px;
+                                gap: var(--space-1);
+                                height: var(--control-height-sm);
+                                padding: 0 var(--space-2);
                                 border: 1px solid var(--border-color);
-                                border-radius: 4px;
-                                background-color: var(--action-bg);
+                                border-radius: var(--radius-sm);
+                                background-color: var(--secondary-bg);
                                 color: var(--color);
-                                font-size: 12px;
-                                cursor: pointer;
-                                transition: 0.2s background-color ease;
+                                font: inherit;
+                                font-size: var(--font-size-xs);
+                                font-weight: var(--font-weight-medium);
+                                cursor: default;
+                                transition: background-color var(--duration-fast) var(--easing-standard);
                             }
 
                             #previewRefresh:hover {
-                                background-color: var(--positive-color);
+                                background-color: var(--hover-bg);
+                            }
+
+                            #previewRefresh:active {
+                                background-color: var(--action-bg);
                             }
 
                             #previewRefresh img {
-                                width: 12px;
-                                height: 12px;
+                                width: var(--font-size-sm);
+                                height: var(--font-size-sm);
                                 filter: invert(0.6);
                             }
 
                             ::-webkit-scrollbar {
-                                width: 8px;
-                                height: 8px;
+                                width: var(--space-2);
+                                height: var(--space-2);
                             }
 
                             ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner {
@@ -147,8 +156,8 @@ export default class PreviewPlugin implements EditorPlugin {
                             }
 
                             ::-webkit-scrollbar-thumb {
-                                background: var(--scrollbar-thumb-color);
-                                border-radius: 5px;
+                                background-color: var(--scrollbar-thumb-color);
+                                border-radius: var(--radius-pill);
                             }
 
                             #previewContent {
@@ -158,10 +167,10 @@ export default class PreviewPlugin implements EditorPlugin {
                             }
                         </style>
                         <div id="previewButtons">
-                            <div id="previewRefresh" title="The preview follows your changes, refresh redraws it now">
+                            <button type="button" id="previewRefresh" title="The preview follows your changes, refresh redraws it now">
                                 <img src="${refreshIcon}" alt=""/>
                                 <span>Refresh</span>
-                            </div>
+                            </button>
                         </div>
                         <div id="previewContent"></div>
                     </div>

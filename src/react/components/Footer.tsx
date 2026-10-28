@@ -58,11 +58,11 @@ export default function Footer() {
                 }
                 {activeTab &&
                     <>
-                        <button id={"footerEol"} className={"statusChip"} title={"Line endings: click to change"}
+                        <button id={"footerEol"} className={"statusChip chip"} title={"Line endings: click to change"}
                                 onClick={showEolMenu} onContextMenu={showEolMenu}>
                             {getEolLabel(activeTab.eol)}
                         </button>
-                        <button id={"footerEncoding"} className={"statusChip"} title={"Encoding: click to reopen or convert"}
+                        <button id={"footerEncoding"} className={"statusChip chip"} title={"Encoding: click to reopen or convert"}
                                 onClick={openEncodingPicker} onContextMenu={openEncodingPicker}>
                             {encodingLabel}
                         </button>

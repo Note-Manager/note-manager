@@ -2,12 +2,22 @@
     /* content related */
     --color: #000000;
     --border-color: #736565;
+    --border-subtle-color: #a9bfba;
+    --elevated-bg: #eefaf7;
+    --hover-bg: rgba(0, 0, 0, 0.06);
+    --overlay-bg: rgba(0, 0, 0, 0.25);
+    --shadow-color: rgba(0, 0, 0, 0.2);
+    --muted-color: #4a5553;
     --primary-bg: #dbf3ed;
     --secondary-bg: #c3d8d4;
 
     /* misc */
     --negative-color: #bf0000;
     --positive-color: dodgerblue;
+    --warning-color: #8a5a00;
+    --success-color: #1a7f37;
+    --on-accent-color: #ffffff;
+    --focus-ring-color: #1d59c3;
 
     /* editor related */
     --selected-highlight-color: #1d59c3;
@@ -25,4 +35,14 @@
     --comment-color: #635f5f;
     --number-color: #165caf;
     --xml-tag-color: #d32424;
+
+    /* tags */
+    --tag-1-color: #cf222e;
+    --tag-2-color: #b54c17;
+    --tag-3-color: #8a5a00;
+    --tag-4-color: #1a7f37;
+    --tag-5-color: #1b7c83;
+    --tag-6-color: #165caf;
+    --tag-7-color: #8955fb;
+    --tag-8-color: #bf3989;
 }
