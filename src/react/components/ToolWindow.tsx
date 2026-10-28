@@ -3,7 +3,8 @@ import DOMPurify from "dompurify";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTimesRectangle} from "@fortawesome/free-regular-svg-icons/faTimesRectangle";
 import {ToolbarMenuItem, ToolWindowContext} from "./editor/plugins";
-import ToolWindowResizer from "./ToolWindowResizer";
+import PanelResizer, {ResizeAxis} from "./PanelResizer";
+import {TOOL_WINDOW_PANEL} from "./PanelSizes";
 
 export default function ToolWindow({tool, context, width, onResize, onClose}: {
     tool: ToolbarMenuItem,
@@ -28,7 +29,7 @@ export default function ToolWindow({tool, context, width, onResize, onClose}: {
 
     return (
         <>
-            <ToolWindowResizer width={width} onResize={onResize}/>
+            <PanelResizer panel={TOOL_WINDOW_PANEL} axis={ResizeAxis.HORIZONTAL} size={width} onResize={onResize}/>
             <div id={"toolWindow"} style={{width: width + "px"}}>
                 <div id={"toolWindowHeader"}>
                     <div id={"toolWindowButtons"}>

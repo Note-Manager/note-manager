@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {getFileName, hash, shortenTabName} from "../TextUtils";
+import {countOf, getFileName, hash, shortenTabName} from "../TextUtils";
 
 describe("TextUtils", () => {
     it("hashes content with SHA-256", async () => {
@@ -16,5 +16,11 @@ describe("TextUtils", () => {
         expect(getFileName("C:\\Users\\me\\notes.md")).toBe("notes.md");
         expect(getFileName("/home/me/notes.md")).toBe("notes.md");
         expect(getFileName("notes.md")).toBe("notes.md");
+    });
+
+    it("writes a count with the singular or plural noun", () => {
+        expect(countOf(1, "hit")).toBe("1 hit");
+        expect(countOf(0, "hit")).toBe("0 hits");
+        expect(countOf(3, "match", "matches")).toBe("3 matches");
     });
 });

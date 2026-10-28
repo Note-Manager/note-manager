@@ -22,6 +22,9 @@ const KEEPS_FOCUS = [
     EditorCommand.SELECT_AND_FIND_PREVIOUS,
     EditorCommand.GO_TO,
     EditorCommand.SEARCH_ON_WEB,
+    EditorCommand.FIND_ALL_IN_DOCUMENT,
+    EditorCommand.FIND_ALL_IN_OPEN_DOCUMENTS,
+    EditorCommand.TOGGLE_SEARCH_RESULTS,
 ];
 
 export function useEditorCommands(editorRef: MutableRefObject<Ace.Editor | undefined>, handlers: EditorCommandHandlers) {

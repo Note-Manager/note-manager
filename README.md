@@ -48,6 +48,9 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - Replace supports `$1`, `\1`, `$<name>` and `$&` in regular expression mode and the escape sequences above in extended mode. Replace All in a document or a selection is a single undo step.
 - The last 20 search and replace terms are kept: press Up/Down in the field or open the clock list.
 - `F3` / `Shift+F3` find the next and previous match without opening the bar; `Ctrl+F3` / `Ctrl+Shift+F3` search for the selection or the word at the cursor.
+- Find All (Alt+Enter in the search field) lists every match in a results panel at the bottom, either in this file or in all open tabs (pick "This file" or "Open tabs" in the bar). Each search stays in the panel, grouped by tab, with the line number and the matched text highlighted. Click a result or press Enter to jump to it, even in another tab; Up/Down, Left/Right (collapse/expand), Delete (remove a search) and Escape work in the panel. The panel can be resized and handles over a million results.
+- `F4` / `Shift+F4` go to the next and previous result of the newest search, and `F7` shows or hides the panel.
+- With "Open tabs" chosen, Replace All changes every open tab. Tabs in the background can be undone with `Ctrl+Z` when you switch to them.
 - Go To (`Ctrl+G`) jumps to a line (`120`), a line and column (`120:15`) or a character offset (`#3456`). Go to Matching Brace is `Ctrl+B`.
 - Search on the Web opens the selection in your browser; the search address is set in Settings > Search.
 
@@ -90,6 +93,8 @@ On macOS, use `Cmd` instead of `Ctrl`. All of these can be changed in Settings >
 | Find / Replace | `Ctrl+F` / `Ctrl+H` |
 | Find next / previous | `F3` / `Shift+F3` |
 | Select and find next / previous | `Ctrl+F3` / `Ctrl+Shift+F3` |
+| Next / previous search result | `F4` / `Shift+F4` |
+| Show or hide search results | `F7` |
 | Go to line, column or offset | `Ctrl+G` |
 | Go to matching brace | `Ctrl+B` |
 | Format | `Ctrl+Shift+F` |

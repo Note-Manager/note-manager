@@ -15,11 +15,18 @@ const SEARCH_ITEMS: Partial<Record<EditorCommand, {label: string, shortcut: Shor
     [EditorCommand.GO_TO]: {label: "Go To...", shortcut: ShortcutId.GO_TO},
     [EditorCommand.GO_TO_MATCHING_BRACE]: {label: "Go to Matching Brace", shortcut: ShortcutId.GO_TO_MATCHING_BRACE},
     [EditorCommand.SEARCH_ON_WEB]: {label: "Search on the Web", shortcut: ShortcutId.SEARCH_ON_WEB},
+    [EditorCommand.FIND_ALL_IN_DOCUMENT]: {label: "Find All in Current Document", shortcut: ShortcutId.FIND_ALL_IN_DOCUMENT},
+    [EditorCommand.FIND_ALL_IN_OPEN_DOCUMENTS]: {label: "Find All in Open Documents", shortcut: ShortcutId.FIND_ALL_IN_OPEN_DOCUMENTS},
+    [EditorCommand.NEXT_SEARCH_RESULT]: {label: "Next Search Result", shortcut: ShortcutId.NEXT_SEARCH_RESULT},
+    [EditorCommand.PREVIOUS_SEARCH_RESULT]: {label: "Previous Search Result", shortcut: ShortcutId.PREVIOUS_SEARCH_RESULT},
+    [EditorCommand.TOGGLE_SEARCH_RESULTS]: {label: "Search Results", shortcut: ShortcutId.TOGGLE_SEARCH_RESULTS},
 };
 
 const SEARCH_MENU_GROUPS = [
     [EditorCommand.FIND, EditorCommand.REPLACE],
     [EditorCommand.FIND_NEXT, EditorCommand.FIND_PREVIOUS, EditorCommand.SELECT_AND_FIND_NEXT, EditorCommand.SELECT_AND_FIND_PREVIOUS],
+    [EditorCommand.FIND_ALL_IN_DOCUMENT, EditorCommand.FIND_ALL_IN_OPEN_DOCUMENTS],
+    [EditorCommand.NEXT_SEARCH_RESULT, EditorCommand.PREVIOUS_SEARCH_RESULT, EditorCommand.TOGGLE_SEARCH_RESULTS],
     [EditorCommand.GO_TO, EditorCommand.GO_TO_MATCHING_BRACE],
     [EditorCommand.SEARCH_ON_WEB],
 ];

@@ -3,6 +3,7 @@ import {DEFAULT_SEARCH_OPTIONS, SearchMode, SearchQuery} from "../../domain/Sear
 import {
     buildMatcher,
     createLineStarts,
+    createSearchDocument,
     execAt,
     expandReplacement,
     findAll,
@@ -10,7 +11,10 @@ import {
     findNextIndex,
     offsetToPosition,
     positionToOffset,
+    readLine,
     replaceMatches,
+    searchText,
+    splitLines,
     unescapeExtended,
 } from "../TextSearch";
 
@@ -131,5 +135,22 @@ describe("TextSearch", () => {
         expect(offsetToPosition(starts, 3)).toEqual({row: 1, column: 0});
         expect(offsetToPosition(starts, 6)).toEqual({row: 2, column: 2});
         expect(positionToOffset(starts, {row: 2, column: 1})).toBe(5);
+    });
+
+    it("builds a search document from lines of any line ending", () => {
+        const document = createSearchDocument(splitLines("ab\r\ncd\re\n"));
+
+        expect(document.text).toBe("ab\ncd\ne\n");
+        expect(readLine(document, 1)).toBe("cd");
+        expect(readLine(document, 3)).toBe("");
+    });
+
+    it("searches a document and reports errors", () => {
+        const document = createSearchDocument(["a b", "b"]);
+
+        expect(searchText(document, query("b")).matches).toEqual([{start: 2, end: 3}, {start: 4, end: 5}]);
+        expect(searchText(document, query("b"), {start: 0, end: 3}).matches).toEqual([{start: 2, end: 3}]);
+        expect(searchText(document, query("(", {mode: SearchMode.REGEX})).error).toBeTruthy();
+        expect(searchText(document, query("")).matches).toEqual([]);
     });
 });

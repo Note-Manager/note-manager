@@ -1,26 +1,16 @@
 import {Ace, Range} from "ace-builds";
 import {GoToTarget, SearchQuery} from "../domain/Search";
 import {
-    buildMatcher,
-    createLineStarts,
-    findAll,
+    createSearchDocument,
     findFirstAtOrAfter,
     offsetToPosition,
     positionToOffset,
+    SearchDocument,
+    SearchResult,
+    searchText,
+    TextPosition,
     TextSpan,
 } from "../utils/TextSearch";
-
-export interface SearchDocument {
-    text: string,
-    lineStarts: Array<number>,
-}
-
-export interface SearchResult {
-    document: SearchDocument,
-    regex?: RegExp,
-    matches: Array<TextSpan>,
-    error?: string,
-}
 
 export interface MatchHighlight {
     marker: Ace.MarkerLike,
@@ -37,18 +27,13 @@ export function removeBuiltInSearchCommands(editor: Ace.Editor) {
 }
 
 export function readSearchDocument(session: Ace.EditSession): SearchDocument {
-    const lines = session.getDocument().getAllLines();
-
-    return {text: lines.join("\n"), lineStarts: createLineStarts(lines)};
+    return createSearchDocument(session.getDocument().getAllLines());
 }
 
-export function searchDocument(document: SearchDocument, query: SearchQuery, scope?: Ace.Range): SearchResult {
-    const matcher = buildMatcher(query);
+export function searchSession(session: Ace.EditSession, query: SearchQuery, scope?: Ace.Range): SearchResult {
+    const document = readSearchDocument(session);
 
-    if (!matcher) return {document: document, matches: []};
-    if ("error" in matcher) return {document: document, matches: [], error: matcher.error};
-
-    return {document: document, regex: matcher.regex, matches: findAll(document.text, matcher.regex, scope && toSpan(document, scope))};
+    return searchText(document, query, scope && toSpan(document, scope));
 }
 
 export function toRange(document: SearchDocument, span: TextSpan): Ace.Range {
@@ -65,6 +50,14 @@ export function toSpan(document: SearchDocument, range: Ace.Range): TextSpan {
 export function selectRange(editor: Ace.Editor, range: Ace.Range) {
     editor.selection.setSelectionRange(range);
     editor.renderer.scrollSelectionIntoView(range.start, range.end, CENTER);
+}
+
+export function selectPositions(editor: Ace.Editor, start: TextPosition, end: TextPosition) {
+    const document = editor.session.getDocument();
+    const from = document.clippedPos(start.row, start.column);
+    const to = document.clippedPos(end.row, end.column);
+
+    selectRange(editor, new Range(from.row, from.column, to.row, to.column));
 }
 
 export function readSearchTerm(editor: Ace.Editor): {text: string, range: Ace.Range} {

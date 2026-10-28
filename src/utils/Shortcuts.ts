@@ -22,6 +22,11 @@ export enum ShortcutId {
     GO_TO = "search.goTo",
     GO_TO_MATCHING_BRACE = "search.goToMatchingBrace",
     SEARCH_ON_WEB = "search.searchOnWeb",
+    FIND_ALL_IN_DOCUMENT = "search.findAllInDocument",
+    FIND_ALL_IN_OPEN_DOCUMENTS = "search.findAllInOpenDocuments",
+    NEXT_SEARCH_RESULT = "search.nextResult",
+    PREVIOUS_SEARCH_RESULT = "search.previousResult",
+    TOGGLE_SEARCH_RESULTS = "search.toggleResults",
     SETTINGS = "preferences.settings",
 }
 
@@ -42,6 +47,11 @@ const BUILT_IN_SHORTCUTS: Array<ShortcutDefinition> = [
     {id: ShortcutId.GO_TO, label: "Search > Go To", defaultAccelerator: "CmdOrCtrl+G"},
     {id: ShortcutId.GO_TO_MATCHING_BRACE, label: "Search > Go to Matching Brace", defaultAccelerator: "CmdOrCtrl+B"},
     {id: ShortcutId.SEARCH_ON_WEB, label: "Search > Search on the Web"},
+    {id: ShortcutId.FIND_ALL_IN_DOCUMENT, label: "Search > Find All in Current Document"},
+    {id: ShortcutId.FIND_ALL_IN_OPEN_DOCUMENTS, label: "Search > Find All in Open Documents"},
+    {id: ShortcutId.NEXT_SEARCH_RESULT, label: "Search > Next Search Result", defaultAccelerator: "F4"},
+    {id: ShortcutId.PREVIOUS_SEARCH_RESULT, label: "Search > Previous Search Result", defaultAccelerator: "Shift+F4"},
+    {id: ShortcutId.TOGGLE_SEARCH_RESULTS, label: "Search > Search Results", defaultAccelerator: "F7"},
     {id: ShortcutId.SETTINGS, label: "Preferences > Settings", defaultAccelerator: "CmdOrCtrl+,"},
 ];
 

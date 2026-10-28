@@ -4,6 +4,11 @@ export enum SearchMode {
     REGEX = "regex",
 }
 
+export enum SearchTarget {
+    DOCUMENT = "document",
+    OPEN_DOCUMENTS = "open-documents",
+}
+
 export interface SearchOptions {
     mode: SearchMode,
     matchCase: boolean,
