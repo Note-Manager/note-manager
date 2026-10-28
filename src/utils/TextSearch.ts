@@ -12,6 +12,18 @@ export interface TextPosition {
 
 export type MatcherResult = {regex: RegExp} | {error: string};
 
+export interface SearchDocument {
+    text: string,
+    lineStarts: Array<number>,
+}
+
+export interface SearchResult {
+    document: SearchDocument,
+    regex?: RegExp,
+    matches: Array<TextSpan>,
+    error?: string,
+}
+
 export interface SpanReplacement extends TextSpan {
     text: string,
 }
@@ -24,6 +36,7 @@ const NUMERIC_ESCAPES: Record<string, {radix: number, pattern: RegExp}> = {
     o: {radix: 8, pattern: /^[0-7]{3}/},
     b: {radix: 2, pattern: /^[01]{8}/},
 };
+const LINE_BREAK = /\r\n|\r|\n/;
 const REGEX_SPECIAL_CHARACTERS = /[.*+?^${}()|[\]\\]/g;
 const UNICODE_WORD_BOUNDARY = {before: "(?<![\\p{L}\\p{N}_])", after: "(?![\\p{L}\\p{N}_])"};
 const ASCII_WORD_BOUNDARY = {before: "(?<!\\w)", after: "(?!\\w)"};
@@ -80,6 +93,29 @@ export function buildMatcher(query: SearchQuery): MatcherResult | undefined {
     } catch (error) {
         return {error: errorMessage(error)};
     }
+}
+
+export function createSearchDocument(lines: Array<string>): SearchDocument {
+    return {text: lines.join("\n"), lineStarts: createLineStarts(lines)};
+}
+
+export function splitLines(text: string): Array<string> {
+    return text.split(LINE_BREAK);
+}
+
+export function readLine(document: SearchDocument, row: number): string {
+    const end = row + 1 < document.lineStarts.length ? document.lineStarts[row + 1] - 1 : document.text.length;
+
+    return document.text.substring(document.lineStarts[row], end);
+}
+
+export function searchText(document: SearchDocument, query: SearchQuery, scope?: TextSpan): SearchResult {
+    const matcher = buildMatcher(query);
+
+    if (!matcher) return {document: document, matches: []};
+    if ("error" in matcher) return {document: document, matches: [], error: matcher.error};
+
+    return {document: document, regex: matcher.regex, matches: findAll(document.text, matcher.regex, scope)};
 }
 
 export function findAll(text: string, regex: RegExp, scope?: TextSpan): Array<TextSpan> {

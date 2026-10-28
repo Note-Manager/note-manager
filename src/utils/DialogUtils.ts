@@ -1,5 +1,6 @@
 import {MessageKind, DialogRole, UnencodableChoice, UnsavedChangesChoice} from "../enums";
 import {DialogAction, MessageDialog, Notice} from "../domain/Dialog";
+import {countOf} from "./TextUtils";
 
 const BYTES_PER_MEGABYTE = 1024 * 1024;
 
@@ -27,7 +28,7 @@ export function getUnsavedChangesMessage(names: Array<string>): {message: string
 export function getUnencodableMessage(encodingLabel: string, count: number, samples: Array<string>): string {
     const characters = samples.map(c => `"${c}"`).join(" ");
 
-    return `${count} character${count === 1 ? "" : "s"} cannot be represented in ${encodingLabel} and will be replaced with "?": ${characters}${count > samples.length ? " ..." : ""}`;
+    return `${countOf(count, "character")} cannot be represented in ${encodingLabel} and will be replaced with "?": ${characters}${count > samples.length ? " ..." : ""}`;
 }
 
 export function unsavedChangesDialog(names: Array<string>): MessageDialog<UnsavedChangesChoice> {

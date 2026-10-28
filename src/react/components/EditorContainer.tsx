@@ -5,7 +5,9 @@ import EncodingPicker from "./EncodingPicker";
 import ToolWindow from "./ToolWindow";
 import SearchBar from "./SearchBar";
 import GoToBox from "./GoToBox";
-import {readToolWindowWidth} from "./ToolWindowResizer";
+import SearchResultsPanel from "./SearchResultsPanel";
+import {readPanelSize} from "./PanelResizer";
+import {SEARCH_RESULTS_PANEL, TOOL_WINDOW_PANEL} from "./PanelSizes";
 import {useEditorContext} from "./editor/EditorContext";
 import {ContextMenuGroup, ToolbarMenuItem} from "./editor/plugins";
 import {canPreview} from "./editor/plugins/PreviewPlugin";
@@ -15,6 +17,7 @@ import {SupportedLanguages} from "../../domain/SupportedLanguage";
 import {AceEditorWrapper} from "../../domain/AceEditorWrapper";
 import {getEditorNewLineMode} from "../../domain/Encoding";
 import {EditorCommand, EventType} from "../../enums";
+import {SearchTarget} from "../../domain/Search";
 import {fireEvent} from "../ApplicationEvents";
 import {markStateChanged} from "../StateChangeTracker";
 import {getAllPlugins} from "../UserPluginRegistry";
@@ -23,6 +26,7 @@ import {classNames} from "../ClassNames";
 import {useActiveTabEditing} from "../hooks/useActiveTabEditing";
 import {useEditorCommands} from "../hooks/useEditorCommands";
 import {useEditorSearch} from "../hooks/useEditorSearch";
+import {useSearchResults} from "../hooks/useSearchResults";
 import {readSearchTerm} from "../EditorSearch";
 import {previewTool, toolbarItems} from "../../utils/PluginLoader";
 import {refreshIsChanged} from "../../utils/TabUtils";
@@ -37,7 +41,8 @@ export default function EditorContainer() {
     const {setData, activeTab, encodingPicker, setEncodingPicker} = useEditorContext();
 
     const [activeTool, setActiveTool] = useState<ToolbarMenuItem>();
-    const [toolWindowWidth, setToolWindowWidth] = useState<number>(readToolWindowWidth);
+    const [toolWindowWidth, setToolWindowWidth] = useState<number>(() => readPanelSize(TOOL_WINDOW_PANEL));
+    const [resultsHeight, setResultsHeight] = useState<number>(() => readPanelSize(SEARCH_RESULTS_PANEL));
     const [isGoToOpen, setIsGoToOpen] = useState(false);
 
     const editorRef = useRef<Ace.Editor>();
@@ -47,7 +52,8 @@ export default function EditorContainer() {
 
     const runEncodingAction = useActiveTabEditing(editorRef, updateEditorData);
 
-    const search = useEditorSearch(editorRef);
+    const results = useSearchResults(editorRef);
+    const search = useEditorSearch(editorRef, results.addRun);
 
     useEditorCommands(editorRef, {
         [EditorCommand.TOGGLE_PREVIEW]: () => toggleTool(previewTool),
@@ -58,6 +64,11 @@ export default function EditorContainer() {
         [EditorCommand.SELECT_AND_FIND_NEXT]: search.selectAndFindNext,
         [EditorCommand.SELECT_AND_FIND_PREVIOUS]: search.selectAndFindPrevious,
         [EditorCommand.GO_TO]: () => setIsGoToOpen(true),
+        [EditorCommand.FIND_ALL_IN_DOCUMENT]: () => search.findAll(SearchTarget.DOCUMENT),
+        [EditorCommand.FIND_ALL_IN_OPEN_DOCUMENTS]: () => search.findAll(SearchTarget.OPEN_DOCUMENTS),
+        [EditorCommand.NEXT_SEARCH_RESULT]: results.nextHit,
+        [EditorCommand.PREVIOUS_SEARCH_RESULT]: results.previousHit,
+        [EditorCommand.TOGGLE_SEARCH_RESULTS]: results.toggle,
         [EditorCommand.SEARCH_ON_WEB]: editor => fireEvent(EventType.SEARCH_ON_WEB, {text: readSearchTerm(editor).text}).catch(logError("cannot search on the web")),
     });
 
@@ -99,6 +110,7 @@ export default function EditorContainer() {
 
         updateEditorData();
         restoreEditorState(editor, activeTab);
+        results.onEditorLoad(editor);
     };
 
     const showContextMenu = (event: React.MouseEvent) => {
@@ -155,6 +167,7 @@ export default function EditorContainer() {
                         cursorListener={onCursorChange}
                         onEditorLoad={onEditorLoad}/>
                 </div>
+                {results.isOpen && <SearchResultsPanel results={results} height={resultsHeight} onResize={setResultsHeight}/>}
             </div>
             <div id={"editorToolsWrapper"}>
                 {activeTool &&

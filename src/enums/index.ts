@@ -105,5 +105,10 @@ export enum EditorCommand {
     GO_TO = "go-to",
     GO_TO_MATCHING_BRACE = "go-to-matching-brace",
     SEARCH_ON_WEB = "search-on-web",
+    FIND_ALL_IN_DOCUMENT = "find-all-in-document",
+    FIND_ALL_IN_OPEN_DOCUMENTS = "find-all-in-open-documents",
+    NEXT_SEARCH_RESULT = "next-search-result",
+    PREVIOUS_SEARCH_RESULT = "previous-search-result",
+    TOGGLE_SEARCH_RESULTS = "toggle-search-results",
     TOGGLE_PREVIEW = "toggle-preview",
 }

@@ -1,23 +1,27 @@
 import {MutableRefObject, useEffect, useRef, useState} from "react";
 import {Ace} from "ace-builds";
-import {addToHistory, SearchMode, SearchOptions, SearchQuery} from "../../domain/Search";
-import {execAt, expandReplacement, findMatchIndex, findNextIndex, positionToOffset, replaceMatches} from "../../utils/TextSearch";
+import {addToHistory, SearchMode, SearchOptions, SearchQuery, SearchTarget} from "../../domain/Search";
+import {execAt, expandReplacement, findMatchIndex, findNextIndex, positionToOffset, SearchResult} from "../../utils/TextSearch";
+import {SearchRun} from "../../utils/SearchResults";
+import {logError} from "../../utils/Log";
+import {countOf} from "../../utils/TextUtils";
 import {
     addMatchHighlight,
     addScopeMarker,
     createAnchoredRange,
     MatchHighlight,
-    readSearchDocument,
     readSearchTerm,
     removeBuiltInSearchCommands,
-    searchDocument,
-    SearchResult,
+    searchSession,
     selectRange,
     toRange,
     toSpan,
 } from "../EditorSearch";
 import {readSearchHistory, readSearchOptions, storeSearchHistory, storeSearchOptions} from "../SearchStorage";
 import {createDebouncer} from "../Debounce";
+import {findInDocuments, replaceInDocuments, ReplaceSummary, SearchSource} from "../OpenDocuments";
+import {markStateChanged} from "../StateChangeTracker";
+import {useEditorContext} from "../components/editor/EditorContext";
 
 export interface SearchStatus {
     count: number,
@@ -30,12 +34,15 @@ const MESSAGES = {
     NO_RESULTS: "No results",
     NO_MORE_RESULTS: "No more results",
     SELECT_TEXT_FIRST: "Select the text to search in first",
-    replaced: (count: number) => `Replaced ${count} ${count === 1 ? "match" : "matches"}`,
+    replaced: ({count, documentCount}: ReplaceSummary, target: SearchTarget) => `Replaced ${countOf(count, "match", "matches")}`
+        + (target === SearchTarget.OPEN_DOCUMENTS ? ` in ${countOf(documentCount, "document")}` : ""),
+    found: ({hitCount, documents}: SearchRun) => `Found ${countOf(hitCount, "match", "matches")} in ${countOf(documents.length, "document")}`,
 };
 
 const debounceRefresh = createDebouncer(REFRESH_DELAY);
 
-export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefined>) {
+export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefined>, onFindAll: (run: SearchRun) => void) {
+    const {tabs, activeTab, setTabs} = useEditorContext();
     const [isOpen, setIsOpen] = useState(false);
     const [isReplace, setIsReplace] = useState(false);
     const [text, setText] = useState("");
@@ -43,6 +50,7 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
     const [options, setOptions] = useState<SearchOptions>(readSearchOptions);
     const [history, setHistory] = useState(readSearchHistory);
     const [scope, setScope] = useState<Ace.Range>();
+    const [target, setTarget] = useState(SearchTarget.DOCUMENT);
     const [message, setMessage] = useState<string>();
     const [focusRequest, setFocusRequest] = useState(0);
     const [revision, setRevision] = useState(0);
@@ -67,7 +75,7 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
 
         if (cached && cached.session === session && cached.version === documentVersion.current && cached.key === key && cached.scope === scope) return cached.result;
 
-        const result = searchDocument(readSearchDocument(session), searchQuery, scope);
+        const result = searchSession(session, searchQuery, scope);
 
         cache.current = {session: session, version: documentVersion.current, key: key, scope: scope, result: result};
 
@@ -258,23 +266,57 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
         navigate(false);
     };
 
+    const createSource = (editor: Ace.Editor, searchTarget: SearchTarget): SearchSource | undefined => activeTab && {
+        tabs: tabs,
+        activeTab: activeTab,
+        editor: editor,
+        scope: searchTarget === SearchTarget.DOCUMENT ? scope : undefined,
+    };
+
     const replaceAll = () => {
         const editor = editorRef.current;
-        const result = resultFor(query);
+        const source = editor && createSource(editor, target);
 
-        if (!editor || !result?.regex) return navigate(false);
-
-        const replaced = replaceMatches(result.document.text, result.regex, result.matches, replacement, options.mode);
+        if (!source || !resultFor(query)?.regex) return navigate(false);
 
         rememberReplace();
 
-        if (!replaced) {
-            setMessage(MESSAGES.NO_RESULTS);
-            return;
-        }
+        replaceInDocuments(source, query, target, replacement)
+            .then(summary => {
+                if (target === SearchTarget.OPEN_DOCUMENTS) {
+                    markStateChanged();
+                    setTabs([...tabs]);
+                }
 
-        editor.session.replace(toRange(result.document, replaced), replaced.text);
-        setMessage(MESSAGES.replaced(result.matches.length));
+                setMessage(summary.count > 0 ? MESSAGES.replaced(summary, target) : MESSAGES.NO_RESULTS);
+            })
+            .catch(logError("cannot replace all"));
+    };
+
+    const findAll = (searchTarget: SearchTarget = target) => {
+        const editor = editorRef.current;
+        const source = editor && createSource(editor, searchTarget);
+        const term = editor && (text || readSearchTerm(editor).text);
+
+        if (!source) return;
+        if (!term) return open(isReplace);
+
+        const run = findInDocuments(source, {...options, text: term}, searchTarget);
+
+        setText(term);
+        setTarget(searchTarget);
+        rememberFind(term);
+
+        if ("error" in run) return showMessage(run.error);
+
+        setMessage(run.hitCount === 0 ? MESSAGES.NO_RESULTS : searchTarget === SearchTarget.OPEN_DOCUMENTS ? MESSAGES.found(run) : undefined);
+        onFindAll(run);
+    };
+
+    const changeTarget = (next: SearchTarget) => {
+        setTarget(next);
+
+        if (next === SearchTarget.OPEN_DOCUMENTS) changeScope(undefined);
     };
 
     const changeText = (next: string) => {
@@ -344,6 +386,9 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
         selectAndFindPrevious: () => selectAndFind(true),
         replace: replace,
         replaceAll: replaceAll,
+        target: target,
+        findAll: findAll,
+        changeTarget: changeTarget,
         changeText: changeText,
         changeReplacement: setReplacement,
         changeOptions: changeOptions,

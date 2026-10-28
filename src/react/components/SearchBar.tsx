@@ -1,9 +1,15 @@
 import React, {RefObject, useEffect, useRef, useState} from "react";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faClock} from "@fortawesome/free-regular-svg-icons/faClock";
-import {SearchMode} from "../../domain/Search";
+import {SearchMode, SearchTarget} from "../../domain/Search";
 import {EditorSearch, SearchStatus} from "../hooks/useEditorSearch";
 import {classNames} from "../ClassNames";
+import {countOf} from "../../utils/TextUtils";
+
+const SEARCH_TARGETS = [
+    {target: SearchTarget.DOCUMENT, label: "This file", title: "Find All and Replace All work in this file"},
+    {target: SearchTarget.OPEN_DOCUMENTS, label: "Open tabs", title: "Find All and Replace All work in every open tab"},
+];
 
 export default function SearchBar({search}: {search: EditorSearch}) {
     const findRef = useRef<HTMLInputElement>(null);
@@ -19,7 +25,8 @@ export default function SearchBar({search}: {search: EditorSearch}) {
 
         event.preventDefault();
 
-        if (event.shiftKey) search.findPrevious();
+        if (event.altKey) search.findAll();
+        else if (event.shiftKey) search.findPrevious();
         else search.findNext();
     };
 
@@ -58,14 +65,24 @@ export default function SearchBar({search}: {search: EditorSearch}) {
                             <OptionToggle label={".⏎"} title={"Let . match line breaks"} isPressed={options.dotAll} onToggle={() => search.changeOptions({dotAll: !options.dotAll})}/>
                         }
                         <span className={"searchDivider"}/>
-                        <OptionToggle label={"⇲"} title={"Search in selection"} isPressed={search.isInSelection} onToggle={search.toggleInSelection}/>
+                        <OptionToggle label={"⇲"} title={"Search in selection"} isPressed={search.isInSelection} onToggle={search.toggleInSelection}
+                            isDisabled={search.target === SearchTarget.OPEN_DOCUMENTS}/>
                         <OptionToggle label={"↻"} title={"Wrap around"} isPressed={options.wrap} onToggle={() => search.changeOptions({wrap: !options.wrap})}/>
+                        <span className={"searchDivider"}/>
+                        <div className={"searchTargets"} role={"radiogroup"} aria-label={"Search in"}>
+                            {SEARCH_TARGETS.map(({target, label, title}) => (
+                                <button key={target} type={"button"} role={"radio"} aria-checked={search.target === target} title={title}
+                                    className={classNames("chip", "ghost", search.target === target && "selected")}
+                                    onMouseDown={event => event.preventDefault()} onClick={() => search.changeTarget(target)}>{label}</button>
+                            ))}
+                        </div>
                     </div>
                     <span className={classNames("searchStatus", (search.status?.error || search.message) && "notice", search.status?.error && "error")} aria-live={"polite"}>
                         {formatStatus(search.text, search.status, search.message)}
                     </span>
                     <button type={"button"} className={"iconButton"} aria-label={"Previous match"} title={"Previous match (Shift+Enter)"} onClick={search.findPrevious}>↑</button>
                     <button type={"button"} className={"iconButton"} aria-label={"Next match"} title={"Next match (Enter)"} onClick={search.findNext}>↓</button>
+                    <button type={"button"} className={"btn"} title={"List every match in the search results (Alt+Enter)"} onClick={() => search.findAll()}>Find All</button>
                     <button type={"button"} className={"iconButton danger"} aria-label={"Close search"} title={"Close (Escape)"} onClick={search.close}>×</button>
                 </div>
                 {search.isReplace &&
@@ -154,16 +171,17 @@ function SearchField({label, inputRef, value, history, isInvalid, onChange, onKe
     );
 }
 
-function OptionToggle({label, title, isPressed, onToggle, className}: {
+function OptionToggle({label, title, isPressed, onToggle, className, isDisabled}: {
     label: string,
     title: string,
     isPressed: boolean,
     onToggle: () => void,
     className?: string,
+    isDisabled?: boolean,
 }) {
     return (
         <button type={"button"} className={classNames("iconButton", "toggle", className)} aria-pressed={isPressed} aria-label={title} title={title}
-            onMouseDown={event => event.preventDefault()} onClick={onToggle}>{label}</button>
+            disabled={isDisabled} onMouseDown={event => event.preventDefault()} onClick={onToggle}>{label}</button>
     );
 }
 
@@ -172,7 +190,7 @@ function formatStatus(text: string, status: SearchStatus | undefined, message: s
     if (message) return message;
     if (!text || !status) return "";
     if (status.count === 0) return "No results";
-    if (status.current < 0) return `${status.count} ${status.count === 1 ? "result" : "results"}`;
+    if (status.current < 0) return countOf(status.count, "result");
 
     return `${status.current + 1} of ${status.count}`;
 }

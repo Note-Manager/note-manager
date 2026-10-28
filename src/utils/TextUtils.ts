@@ -26,3 +26,7 @@ export function shortenTabName(name: string): string {
         ? name.substring(0, MAX_TAB_NAME_LENGTH - ELLIPSIS.length) + ELLIPSIS
         : name;
 }
+
+export function countOf(count: number, singular: string, plural = singular + "s"): string {
+    return `${count} ${count === 1 ? singular : plural}`;
+}
