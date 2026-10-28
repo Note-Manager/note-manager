@@ -152,12 +152,20 @@ export default class PreviewPlugin implements EditorPlugin {
                             }
 
                             ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner {
-                                background: transparent;
+                                background-color: var(--scrollbar-track-color);
                             }
 
                             ::-webkit-scrollbar-thumb {
                                 background-color: var(--scrollbar-thumb-color);
                                 border-radius: var(--radius-pill);
+                            }
+
+                            ::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:active {
+                                background-color: var(--scrollbar-thumb-hover-color);
+                            }
+
+                            ::selection {
+                                background-color: var(--selection-bg);
                             }
 
                             #previewContent {

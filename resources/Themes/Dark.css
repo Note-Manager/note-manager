@@ -7,9 +7,9 @@
     --border-subtle-color: #333333;
     --elevated-bg: #252526;
     --hover-bg: rgba(255, 255, 255, 0.06);
-    --overlay-bg: rgba(0, 0, 0, 0.45);
+    --overlay-bg: rgba(0, 0, 0, 0.5);
     --shadow-color: rgba(0, 0, 0, 0.5);
-    --muted-color: #928e96;
+    --muted-color: #8f8b93;
 
     /* misc */
     --negative-color: #bf0000;
@@ -17,11 +17,14 @@
     --warning-color: #d19a2a;
     --success-color: #3fa45b;
     --on-accent-color: #ffffff;
-    --focus-ring-color: dodgerblue;
+    --focus-ring-color: #4da3ff;
 
     /* editor related */
     --selected-highlight-color: #788cbd;
-    --scrollbar-thumb-color: #757575;
+    --scrollbar-thumb-color: #4a4a4a;
+    --scrollbar-thumb-hover-color: #6a6a6a;
+    --scrollbar-track-color: transparent;
+    --selection-bg: #264f78;
     --active-line-bg: rgba(0, 0, 0, 0.48);
     --action-bg: rgb(57, 57, 57);
 

@@ -2,7 +2,7 @@
     /* content related */
     --color: #191919;
     --border-color: #474747;
-    --border-subtle-color: #c8c8c8;
+    --border-subtle-color: #d4d4d4;
     --elevated-bg: #ffffff;
     --hover-bg: rgba(0, 0, 0, 0.05);
     --overlay-bg: rgba(0, 0, 0, 0.25);
@@ -21,7 +21,10 @@
 
     /* editor related */
     --selected-highlight-color: #1d59c3;
-    --scrollbar-thumb-color: #757575;
+    --scrollbar-thumb-color: #c4c4c4;
+    --scrollbar-thumb-hover-color: #a0a0a0;
+    --scrollbar-track-color: transparent;
+    --selection-bg: #add6ff;
     --active-line-bg: rgba(147, 147, 147, 0.28);
     --action-bg: rgb(220, 220, 220);
 

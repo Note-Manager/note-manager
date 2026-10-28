@@ -65,6 +65,9 @@
     --success-color: #3fa45b;
     --focus-ring-color: var(--positive-color);
     --shadow-color: rgba(0, 0, 0, 0.4);
+    --selection-bg: var(--action-bg);
+    --scrollbar-thumb-hover-color: var(--scrollbar-thumb-color);
+    --scrollbar-track-color: transparent;
 
     --tag-1-color: #e5534b;
     --tag-2-color: #e0823d;
@@ -138,7 +141,7 @@ button {
 }
 
 ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner {
-    background: transparent;
+    background-color: var(--scrollbar-track-color);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -146,8 +149,12 @@ button {
     border-radius: var(--radius-pill);
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background-image: linear-gradient(var(--hover-bg), var(--hover-bg));
+::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:active {
+    background-color: var(--scrollbar-thumb-hover-color);
+}
+
+::selection {
+    background-color: var(--selection-bg);
 }
 
 /* TOP BAR */
@@ -263,8 +270,16 @@ body .cet-menubar-menu-container .cet-action-menu-item {
     background: var(--active-line-bg) !important;
 }
 
-.ace_selection, .ace_selected-word {
+.ace_selection {
+    background-color: var(--selection-bg) !important;
+}
+
+.ace_selected-word {
     background-color: var(--action-bg) !important;
+}
+
+.ace_scrollbar::-webkit-scrollbar-track, .ace_scrollbar::-webkit-scrollbar-corner {
+    background-color: var(--scrollbar-track-color);
 }
 
 .ace_cursor {

@@ -2,28 +2,31 @@
     /* content related */
     --color: #000000;
     --border-color: #736565;
-    --border-subtle-color: #a9bfba;
+    --border-subtle-color: #a9c9c1;
     --elevated-bg: #eefaf7;
-    --hover-bg: rgba(0, 0, 0, 0.06);
-    --overlay-bg: rgba(0, 0, 0, 0.25);
-    --shadow-color: rgba(0, 0, 0, 0.2);
-    --muted-color: #4a5553;
+    --hover-bg: rgba(16, 90, 78, 0.07);
+    --overlay-bg: rgba(20, 50, 45, 0.25);
+    --shadow-color: rgba(20, 60, 50, 0.18);
+    --muted-color: #4a5f5b;
     --primary-bg: #dbf3ed;
     --secondary-bg: #c3d8d4;
 
     /* misc */
     --negative-color: #bf0000;
-    --positive-color: dodgerblue;
+    --positive-color: #1f8a78;
     --warning-color: #8a5a00;
     --success-color: #1a7f37;
     --on-accent-color: #ffffff;
-    --focus-ring-color: #1d59c3;
+    --focus-ring-color: #137264;
 
     /* editor related */
     --selected-highlight-color: #1d59c3;
-    --scrollbar-thumb-color: #757575;
+    --scrollbar-thumb-color: #9cc5bc;
+    --scrollbar-thumb-hover-color: #6fa79b;
+    --scrollbar-track-color: transparent;
+    --selection-bg: #b5e3d8;
     --active-line-bg: rgba(147, 147, 147, 0.28);
-    --action-bg: rgb(193, 193, 193);
+    --action-bg: #b8d8d0;
 
     /* syntax highlighting */
     --variable-color: var(--color);
@@ -37,12 +40,12 @@
     --xml-tag-color: #d32424;
 
     /* tags */
-    --tag-1-color: #cf222e;
+    --tag-1-color: #c4314b;
     --tag-2-color: #b54c17;
     --tag-3-color: #8a5a00;
-    --tag-4-color: #1a7f37;
-    --tag-5-color: #1b7c83;
+    --tag-4-color: #2e7d32;
+    --tag-5-color: #137264;
     --tag-6-color: #165caf;
-    --tag-7-color: #8955fb;
-    --tag-8-color: #bf3989;
+    --tag-7-color: #7b52c9;
+    --tag-8-color: #b03a7a;
 }

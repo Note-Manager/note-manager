@@ -16,6 +16,7 @@ Components never pick their own values. Every color, spacing, radius, font, shad
 - **Color roles** live in every theme file: `resources/Themes/*.css` (Dark, Light, Matrix, Orange Dark, Soft Light), one `:root {}` block each. A theme is injected at runtime with `insertCSS` (`loadThemeToWindow` in `src/utils/ElectronUtils.ts`), which also sets the window background from `--primary-bg`. The Settings page parses and edits these variables (`src/utils/ThemeVariables.ts`). User themes are copies in `%APPDATA%\Note Manager\Themes\`.
 - **Structural tokens** (spacing, radius, type, control height, sidebar width, shadow, motion, z-index, content width, marker width, disabled opacity) do not change per theme. They live in the first `:root {}` block of `src/BaseTheme.css`.
 - **Color defaults** live in the `:where(:root) {}` block of `src/BaseTheme.css`. `:where()` has zero specificity, so any theme value wins, and older user themes that don't define a newer role still render. Inserted theme CSS loses to page CSS on equal specificity, so never move a color default into a plain `:root` block.
+- Each bundled theme picks its colors from its own identity: Dark is neutral graphite with a blue accent, Light is paper white with a blue accent, Matrix is black with a phosphor green accent, Orange Dark is warm charcoal with an orange accent, and Soft Light is mint with a teal accent. New roles follow the same identity, never a generic gray or blue.
 - A new color role is added to **all five** bundled theme files and gets a default in the `:where(:root)` block, in the same change.
 - A new structural token is added to the `:root` block of `src/BaseTheme.css` and to the token map below.
 - The markdown preview and the tool window content render inside shadow roots. Custom properties inherit into them, so `PreviewStyles.ts` and the inline styles in `PreviewPlugin.ts` use the same variables. The preview's local aliases (`--preview-*`, `--alert-*`) point at theme variables, never at literals.
@@ -45,7 +46,8 @@ Components never pick their own values. Every color, spacing, radius, font, shad
 | Shadow tint | `--shadow-color` | theme |
 | Highlighted text (hovered line) | `--selected-highlight-color` | theme |
 | Editor active line | `--active-line-bg` | theme |
-| Scrollbar thumb | `--scrollbar-thumb-color` | theme |
+| Scrollbar | `--scrollbar-thumb-color`, `--scrollbar-thumb-hover-color`, `--scrollbar-track-color` | theme |
+| Text selection (editor, preview, inputs) | `--selection-bg` | theme |
 | Code tokens | `--keyword-color`, `--type-color`, `--attribute-color`, `--string-color`, `--number-color`, `--comment-color`, `--variable-color`, `--block-color`, `--xml-tag-color` | theme |
 | Tag palette | `--tag-1-color` … `--tag-8-color` (theme), `--tag-1-bg` … `--tag-8-bg` (derived in base) | theme + base |
 | Spacing scale | `--space-1` … `--space-6` | base |
