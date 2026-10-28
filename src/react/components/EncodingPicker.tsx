@@ -1,7 +1,7 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {EncodingAction} from "../../enums";
 import {buildEncodingChoices, EncodingChoice, filterEncodingChoices} from "../../domain/EncodingChoices";
-import {getAnsiCodePage} from "../EncodingInfo";
+import {useAnsiCodePage} from "../EncodingInfo";
 
 const MODES = [
     {action: EncodingAction.REINTERPRET, label: "Reopen", hint: "Read the file again from disk with the chosen encoding."},
@@ -17,15 +17,11 @@ export default function EncodingPicker({action, encoding, hasFile, onActionChang
     onClose: () => void,
 }) {
     const [query, setQuery] = useState("");
-    const [ansiCodePage, setAnsiCodePage] = useState<string>();
+    const ansiCodePage = useAnsiCodePage();
     const [cursor, setCursor] = useState<number>();
     const listRef = useRef<HTMLDivElement>(null);
 
     const mode = action === EncodingAction.CONVERT ? EncodingAction.CONVERT : EncodingAction.REINTERPRET;
-
-    useEffect(() => {
-        getAnsiCodePage().then(setAnsiCodePage).catch(err => console.error(err));
-    }, []);
 
     const choices = useMemo(() => {
         const all = buildEncodingChoices(ansiCodePage, mode === EncodingAction.REINTERPRET && hasFile);
