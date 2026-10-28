@@ -17,13 +17,18 @@ export interface MatchHighlight {
     remove: () => void,
 }
 
-const BUILT_IN_SEARCH_COMMANDS = ["find", "replace", "replaceall", "gotoline", "findnext", "findprevious", "selectOrFindNext", "selectOrFindPrevious", "findAll", "jumptomatching", "selecttomatching"];
+export interface MatchLayer {
+    result: SearchResult,
+    className: string,
+}
+
+const OVERRIDDEN_COMMANDS = ["find", "replace", "replaceall", "gotoline", "findnext", "findprevious", "selectOrFindNext", "selectOrFindPrevious", "findAll", "jumptomatching", "selecttomatching", "toggleFoldWidget"];
 const MATCH_CLASS = "searchMatch";
 const SCOPE_CLASS = "searchScope";
 const CENTER = 0.5;
 
-export function removeBuiltInSearchCommands(editor: Ace.Editor) {
-    BUILT_IN_SEARCH_COMMANDS.forEach(name => editor.commands.removeCommand(name));
+export function removeOverriddenCommands(editor: Ace.Editor) {
+    OVERRIDDEN_COMMANDS.forEach(name => editor.commands.removeCommand(name));
 }
 
 export function readSearchDocument(session: Ace.EditSession): SearchDocument {
@@ -106,28 +111,20 @@ export function addScopeMarker(session: Ace.EditSession, scope: Ace.Range): () =
 }
 
 export function addMatchHighlight(editor: Ace.Editor, getResult: () => SearchResult | undefined): MatchHighlight {
+    return addMatchLayers(editor, () => {
+        const result = getResult();
+
+        return result ? [{result: result, className: MATCH_CLASS}] : [];
+    });
+}
+
+export function addMatchLayers(editor: Ace.Editor, getLayers: () => Array<MatchLayer>): MatchHighlight {
     const session = editor.session;
     const marker = session.addDynamicMarker({
-        clazz: MATCH_CLASS,
+        clazz: "",
         type: "text",
         update: (html: Array<string>, markerLayer: any, markerSession: Ace.EditSession, config: any) => {
-            const result = getResult();
-
-            if (!result || result.matches.length === 0) return;
-
-            const {document, matches} = result;
-            const firstVisible = positionToOffset(document.lineStarts, {row: config.firstRow, column: 0});
-            const lastVisibleRow = Math.min(config.lastRow, document.lineStarts.length - 1);
-            const lastVisible = positionToOffset(document.lineStarts, {row: lastVisibleRow, column: markerSession.getLine(lastVisibleRow).length});
-
-            for (let i = findFirstAtOrAfter(matches, firstVisible); i < matches.length && matches[i].start <= lastVisible; i++) {
-                if (matches[i].start === matches[i].end) continue;
-
-                const range = toRange(document, matches[i]).toScreenRange(markerSession);
-
-                if (range.isMultiLine()) markerLayer.drawTextMarker(html, range, MATCH_CLASS, config);
-                else markerLayer.drawSingleLineMarker(html, range, MATCH_CLASS, config);
-            }
+            getLayers().forEach(layer => drawVisibleMatches(html, markerLayer, markerSession, config, layer));
         },
     }, false);
 
@@ -137,4 +134,23 @@ export function addMatchHighlight(editor: Ace.Editor, getResult: () => SearchRes
             if (marker.id !== undefined) session.removeMarker(marker.id);
         },
     };
+}
+
+function drawVisibleMatches(html: Array<string>, markerLayer: any, session: Ace.EditSession, config: any, {result, className}: MatchLayer) {
+    const {document, matches} = result;
+
+    if (matches.length === 0) return;
+
+    const firstVisible = positionToOffset(document.lineStarts, {row: config.firstRow, column: 0});
+    const lastVisibleRow = Math.min(config.lastRow, document.lineStarts.length - 1);
+    const lastVisible = positionToOffset(document.lineStarts, {row: lastVisibleRow, column: session.getLine(lastVisibleRow).length});
+
+    for (let i = findFirstAtOrAfter(matches, firstVisible); i < matches.length && matches[i].start <= lastVisible; i++) {
+        if (matches[i].start === matches[i].end) continue;
+
+        const range = toRange(document, matches[i]).toScreenRange(session);
+
+        if (range.isMultiLine()) markerLayer.drawTextMarker(html, range, className, config);
+        else markerLayer.drawSingleLineMarker(html, range, className, config);
+    }
 }

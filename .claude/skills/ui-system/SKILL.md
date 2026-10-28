@@ -49,6 +49,7 @@ Components never pick their own values. Every color, spacing, radius, font, shad
 | Scrollbar | `--scrollbar-thumb-color`, `--scrollbar-thumb-hover-color`, `--scrollbar-track-color` | theme |
 | Text selection (editor, preview, inputs) | `--selection-bg` | theme |
 | Search match highlight / search-in-selection scope in the editor | `--search-match-bg`, `--search-scope-bg` | theme |
+| Mark All highlight, the five token styles, smart highlighting and the bookmark dot in the gutter | `--mark-found-bg`, `--mark-1-bg` … `--mark-5-bg`, `--smart-highlight-bg`, `--bookmark-color` | theme |
 | Code tokens | `--keyword-color`, `--type-color`, `--attribute-color`, `--string-color`, `--number-color`, `--comment-color`, `--variable-color`, `--block-color`, `--xml-tag-color` | theme |
 | Tag palette | `--tag-1-color` … `--tag-8-color` (theme), `--tag-1-bg` … `--tag-8-bg` (derived in base) | theme + base |
 | Spacing scale | `--space-1` … `--space-6` | base |

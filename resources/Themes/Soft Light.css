@@ -27,6 +27,14 @@
     --selection-bg: #b5e3d8;
     --search-match-bg: rgba(232, 168, 0, 0.4);
     --search-scope-bg: rgba(31, 138, 120, 0.1);
+    --mark-found-bg: rgba(196, 49, 75, 0.3);
+    --mark-1-bg: rgba(19, 114, 100, 0.3);
+    --mark-2-bg: rgba(181, 76, 23, 0.3);
+    --mark-3-bg: rgba(138, 90, 0, 0.3);
+    --mark-4-bg: rgba(123, 82, 201, 0.3);
+    --mark-5-bg: rgba(176, 58, 122, 0.3);
+    --smart-highlight-bg: rgba(46, 125, 50, 0.22);
+    --bookmark-color: #165caf;
     --active-line-bg: rgba(147, 147, 147, 0.28);
     --action-bg: #b8d8d0;
 

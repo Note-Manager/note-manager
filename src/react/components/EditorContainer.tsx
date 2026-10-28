@@ -27,6 +27,7 @@ import {useActiveTabEditing} from "../hooks/useActiveTabEditing";
 import {useEditorCommands} from "../hooks/useEditorCommands";
 import {useEditorSearch} from "../hooks/useEditorSearch";
 import {useSearchResults} from "../hooks/useSearchResults";
+import {useMarks} from "../hooks/useMarks";
 import {readSearchTerm} from "../EditorSearch";
 import {previewTool, toolbarItems} from "../../utils/PluginLoader";
 import {refreshIsChanged} from "../../utils/TabUtils";
@@ -53,7 +54,8 @@ export default function EditorContainer() {
     const runEncodingAction = useActiveTabEditing(editorRef, updateEditorData);
 
     const results = useSearchResults(editorRef);
-    const search = useEditorSearch(editorRef, results.addRun);
+    const marks = useMarks(editorRef);
+    const search = useEditorSearch(editorRef, results.addRun, marks.markAll);
 
     useEditorCommands(editorRef, {
         [EditorCommand.TOGGLE_PREVIEW]: () => toggleTool(previewTool),
@@ -70,6 +72,9 @@ export default function EditorContainer() {
         [EditorCommand.NEXT_SEARCH_RESULT]: results.nextHit,
         [EditorCommand.PREVIOUS_SEARCH_RESULT]: results.previousHit,
         [EditorCommand.TOGGLE_SEARCH_RESULTS]: results.toggle,
+        [EditorCommand.MARK_ALL]: () => search.markAll(false),
+        [EditorCommand.BOOKMARK_MATCHING_LINES]: () => search.markAll(true),
+        ...marks.commands,
         [EditorCommand.SEARCH_ON_WEB]: editor => fireEvent(EventType.SEARCH_ON_WEB, {text: readSearchTerm(editor).text}).catch(logError("cannot search on the web")),
     });
 
@@ -108,6 +113,7 @@ export default function EditorContainer() {
         editorRef.current = editor;
 
         search.onEditorLoad(editor);
+        marks.onEditorLoad(editor, activeTab);
 
         updateEditorData();
         restoreEditorState(editor, activeTab);

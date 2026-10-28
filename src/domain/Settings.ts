@@ -32,6 +32,7 @@ export interface FileSettings {
 
 export interface SearchSettings {
     webSearchUrl: string,
+    smartHighlight: boolean,
 }
 
 export interface Settings {
@@ -67,6 +68,7 @@ export const DEFAULT_SETTINGS: Settings = {
     },
     search: {
         webSearchUrl: DEFAULT_WEB_SEARCH_URL,
+        smartHighlight: true,
     },
     keyBindings: {},
 };
@@ -191,6 +193,7 @@ export function normalizeSettings(raw: any): Settings {
         },
         search: {
             webSearchUrl: isWebSearchTemplate(search.webSearchUrl) ? search.webSearchUrl : defaults.search.webSearchUrl,
+            smartHighlight: toBoolean(search.smartHighlight, defaults.search.smartHighlight),
         },
         keyBindings: keyBindings,
     };

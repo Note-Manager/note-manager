@@ -29,6 +29,8 @@ describe("Settings", () => {
     it("keeps a valid web search address and drops invalid ones", () => {
         expect(normalizeSettings({search: {webSearchUrl: "https://duckduckgo.com/?q=%s"}}).search.webSearchUrl).toBe("https://duckduckgo.com/?q=%s");
         expect(normalizeSettings({search: {webSearchUrl: "javascript:alert(%s)"}}).search).toEqual(DEFAULT_SETTINGS.search);
+        expect(normalizeSettings({search: {smartHighlight: false}}).search.smartHighlight).toBe(false);
+        expect(normalizeSettings({search: {smartHighlight: "no"}}).search.smartHighlight).toBe(true);
     });
 
     it("passes the file options to detection", () => {

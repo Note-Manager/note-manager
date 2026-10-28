@@ -23,7 +23,7 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 
 - Your tabs, including unsaved content, cursor position, scroll position and undo history, are saved automatically and restored on the next start.
 - Right-click a tab for Close, Close Other Tabs, Close Unmodified Tabs, Close All Tabs, Pin/Unpin, Open Containing Folder and Reopen Closed Tab.
-- Right-click in the editor for Undo/Redo, Cut/Copy/Paste/Delete, Select All, Base64, Format, line and case tools, Find, Replace, Go To, Search on the Web, Markdown/HTML preview, Open Containing Folder and Copy File Path. User plugin actions appear there too.
+- Right-click in the editor for Undo/Redo, Cut/Copy/Paste/Delete, Select All, Base64, Format, line and case tools, Find, Replace, Go To, Search on the Web, Markdown/HTML preview, Toggle Bookmark, Style Token / Clear Style, Open Containing Folder and Copy File Path. User plugin actions appear there too.
 - Pinned tabs stay at the front and cannot be closed by accident.
 - Drag tabs to reorder them.
 - Reopen up to 20 recently closed tabs with their content.
@@ -55,6 +55,10 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - Replace All with "Folder" chosen asks first, then changes the files on disk and keeps each file's encoding and line endings. Files that are open in tabs are changed in the editor instead, so the change can still be undone. A file whose encoding cannot hold the replacement is left alone and listed in a notice.
 - Go To (`Ctrl+G`) jumps to a line (`120`), a line and column (`120:15`) or a character offset (`#3456`). Go to Matching Brace is `Ctrl+B`.
 - Search on the Web opens the selection in your browser; the search address is set in Settings > Search.
+- Mark All (in the search bar or the Search menu) highlights every match of the search in the current file and keeps the highlight after the bar is closed; Clear Marks removes it. "Mark All and Bookmark Lines" also bookmarks each matching line.
+- Style Token colors every occurrence of the selection, or the word at the cursor, in one of five styles (Search > Style Token, or right-click). Clear Style removes one style or all of them. Marks and styles follow your edits and are kept with the tab.
+- Bookmarks: `Ctrl+F2` toggles a bookmark on the current line, `F2` / `Shift+F2` go to the next and previous bookmark. Search > Bookmark can also clear or invert them and cut, copy or remove the bookmarked (or the other) lines in a single undo step. Bookmarks move with the text and are kept with the tab.
+- Smart highlighting: select a whole word (for example with a double-click) and its other occurrences are highlighted. It can be turned off in Settings > Search.
 
 **Encoding and line endings**
 
@@ -98,6 +102,8 @@ On macOS, use `Cmd` instead of `Ctrl`. All of these can be changed in Settings >
 | Find in files | `Ctrl+Alt+F` (`Cmd+Alt+Shift+F` on macOS) |
 | Next / previous search result | `F4` / `Shift+F4` |
 | Show or hide search results | `F7` |
+| Toggle bookmark | `Ctrl+F2` |
+| Next / previous bookmark | `F2` / `Shift+F2` |
 | Go to line, column or offset | `Ctrl+G` |
 | Go to matching brace | `Ctrl+B` |
 | Format | `Ctrl+Shift+F` |

@@ -15,17 +15,23 @@ export interface UndoHistory {
 
 export function appendReplacement(history: unknown, start: TextPosition, removed: string, inserted: string): UndoHistory {
     const undoStack = readUndoStack(history);
-    const removedLines = splitLines(removed);
-    const insertedLines = splitLines(inserted);
+    const [removal, insertion] = createReplacementDeltas(start, removed, inserted);
     const id = undoStack.flat().reduce((max, delta) => Math.max(max, delta.id ?? 0), 0) + 1;
 
     return {
-        $undoStack: [...undoStack, [
-            {action: "remove", start: start, end: endOf(start, removedLines), lines: removedLines, id: id},
-            {action: "insert", start: start, end: endOf(start, insertedLines), lines: insertedLines},
-        ]],
+        $undoStack: [...undoStack, [{...removal, id: id}, insertion]],
         $redoStack: [],
     };
+}
+
+export function createReplacementDeltas(start: TextPosition, removed: string, inserted: string): [UndoDelta, UndoDelta] {
+    const removedLines = splitLines(removed);
+    const insertedLines = splitLines(inserted);
+
+    return [
+        {action: "remove", start: start, end: endOf(start, removedLines), lines: removedLines},
+        {action: "insert", start: start, end: endOf(start, insertedLines), lines: insertedLines},
+    ];
 }
 
 function readUndoStack(history: unknown): Array<Array<UndoDelta>> {

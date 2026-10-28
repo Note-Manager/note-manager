@@ -113,7 +113,7 @@ export default function Editor({content, language, newLineMode, onEditorLoad, ch
                     animatedScroll: !isLargeContent,
                     highlightActiveLine: true,
                     highlightGutterLine: true,
-                    highlightSelectedWord: !isLargeContent,
+                    highlightSelectedWord: false,
                     newLineMode: newLineMode,
                     showPrintMargin: false,
                     useWorker: false,

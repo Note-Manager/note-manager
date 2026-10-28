@@ -5,7 +5,8 @@ import {SearchQuery, SearchTarget} from "../domain/Search";
 import {FolderSearch, isSearchedFile, parseFileFilters, relativePath} from "../domain/FindInFiles";
 import {createSearchDocument, offsetToPosition, replaceMatches, SearchResult, searchText, splitLines} from "../utils/TextSearch";
 import {DocumentHits, SearchRun} from "../utils/SearchResults";
-import {appendReplacement} from "../utils/UndoHistory";
+import {appendReplacement, createReplacementDeltas} from "../utils/UndoHistory";
+import {normalizeRows, shiftRows} from "../domain/Bookmarks";
 import {refreshIsChanged} from "../utils/TabUtils";
 import {searchSession, toRange} from "./EditorSearch";
 
@@ -101,11 +102,14 @@ async function replaceInTab(tab: EditorTab, query: SearchQuery, template: string
     if (!replaced) return 0;
 
     const text = result.document.text;
+    const start = offsetToPosition(result.document.lineStarts, replaced.start);
+    const removed = text.substring(replaced.start, replaced.end);
 
     tab.content = toEditorText(text.substring(0, replaced.start) + replaced.text + text.substring(replaced.end), tab.eol ?? EolType.LF);
     tab.state = {
         ...tab.state,
-        undoHistory: appendReplacement(tab.state?.undoHistory, offsetToPosition(result.document.lineStarts, replaced.start), text.substring(replaced.start, replaced.end), replaced.text),
+        undoHistory: appendReplacement(tab.state?.undoHistory, start, removed, replaced.text),
+        bookmarks: createReplacementDeltas(start, removed, replaced.text).reduce(shiftRows, normalizeRows(tab.state?.bookmarks)),
     };
 
     await refreshIsChanged(tab);
