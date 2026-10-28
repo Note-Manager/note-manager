@@ -1,7 +1,7 @@
-import {EditorMenuItem, EditorPlugin, ToolbarMenuItem, ToolWindowContext} from "./index";
+import {EditorMenuItem, ToolbarMenuItem, ToolWindowContext} from "./index";
+import {BasePlugin} from "./BasePlugin";
 import {LanguageName} from "../../../../domain/SupportedLanguage";
 import DOMPurify from "dompurify";
-import {EditorWrapper} from "../../../../domain/EditorWrapper";
 import {markdownToHtml} from "../../../../utils/Markdown";
 import {highlightCodeBlocks} from "./CodeHighlighter";
 import {PREVIEW_STYLES} from "./PreviewStyles";
@@ -12,16 +12,18 @@ const refreshIcon = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53M
 const LIVE_PREVIEW_DELAY = 300;
 const ALLOWED_URI_REGEXP = /^(?:(?:(?:f|ht)tps?|mailto|tel|file):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
 
-enum Keys {
-    PREVIEW = "Preview.preview",
-    REFRESH = "Preview.refresh",
+const PREVIEW_LANGUAGES: Array<string> = [LanguageName.MARKDOWN, LanguageName.HTML];
+
+export function canPreview(language: string | undefined) {
+    return !!language && PREVIEW_LANGUAGES.includes(language);
 }
 
-export default class PreviewPlugin implements EditorPlugin {
-    name: string = "Preview";
+export default class PreviewPlugin extends BasePlugin {
+    readonly name = "Preview";
 
-    applicationMenuItems: Array<EditorMenuItem> = [];
-    toolbarMenuItems: Array<ToolbarMenuItem> = [
+    readonly applicationMenuItems: Array<EditorMenuItem> = [];
+
+    readonly toolbarMenuItems: Array<ToolbarMenuItem> = [
         {
             label: "Preview",
             icon: previewIcon,
@@ -89,7 +91,6 @@ export default class PreviewPlugin implements EditorPlugin {
                     }
                 });
 
-                this.refresh = render;
                 refreshButton.addEventListener("click", render);
 
                 render();
@@ -186,23 +187,6 @@ export default class PreviewPlugin implements EditorPlugin {
         }
     ];
 
-    editor?: EditorWrapper;
-
-    private refresh?: () => void;
-
-    doAction(code: string): void {
-        if (!this.editor) throw new Error("Plugin not initialized !");
-
-        if (code === Keys.REFRESH) this.refresh?.();
-    }
-
-    getAvailableActions(): Array<string> {
-        return Object.values(Keys);
-    }
-
-    initializePlugin(editor: EditorWrapper): void {
-        this.editor = editor;
-    }
 }
 
 export function preview(content?: string, lang?: string, filePath?: string) {

@@ -1,16 +1,15 @@
-import * as React from "react";
-import {useEffect, useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import AceEditor from "react-ace";
 import "ace-builds/src-noconflict/ext-searchbox";
 import "ace-builds/src-noconflict/ext-language_tools";
 import {Ace} from "ace-builds";
 import {SupportedLanguage} from "../../../domain/SupportedLanguage";
-import {fireEvent, off, on} from "../../ApplicationEvents";
+import {fireEvent} from "../../ApplicationEvents";
+import {listenPluginActions, stopListeningPluginActions} from "../../PluginActions";
 import {EventType} from "../../../enums";
-import {bundledPlugins} from "../../../utils/PluginLoader";
 import {AceEditorWrapper} from "../../../domain/AceEditorWrapper";
 import {useEditorContext} from "./EditorContext";
-import {getUserPlugins, onUserPluginsChanged} from "../../UserPluginRegistry";
+import {getAllPlugins, getUserPlugins, onUserPluginsChanged} from "../../UserPluginRegistry";
 
 const LARGE_CONTENT_LENGTH = 2 * 1024 * 1024;
 
@@ -40,21 +39,17 @@ export default function Editor({content, language, newLineMode, onEditorLoad, ch
             await import("ace-builds/src-noconflict/snippets/" + language.name);
         };
 
-        importLanguageData().then(() => {
-            setMode(language.name);
-        }).catch(async (err) => {
-            await fireEvent(EventType.LOG_ERROR, "trying to import invalid mode: " + language.name + " with error: " + err);
-        });
+        importLanguageData()
+            .then(() => setMode(language.name))
+            .catch(err => fireEvent(EventType.LOG_ERROR, `cannot load the ${language.name} mode: ${err}`));
 
         changeListener(content);
 
-        listenPluginEvents();
+        listenPluginActions();
 
         if (editorRef.current) selectionListener();
 
-        return () => {
-            unListenPluginEvents();
-        };
+        return stopListeningPluginActions;
     }, [language]);
 
     useEffect(() => {
@@ -63,7 +58,7 @@ export default function Editor({content, language, newLineMode, onEditorLoad, ch
 
             if (editorWrapper) getUserPlugins().forEach(p => p.initializePlugin(editorWrapper));
 
-            listenPluginEvents();
+            listenPluginActions();
         });
     }, []);
 
@@ -87,7 +82,7 @@ export default function Editor({content, language, newLineMode, onEditorLoad, ch
 
             wrapperRef.current = editorWrapper;
 
-            [...bundledPlugins, ...getUserPlugins()].forEach(p => p.initializePlugin(editorWrapper));
+            getAllPlugins().forEach(p => p.initializePlugin(editorWrapper));
         } catch (err) {
             console.error("could not initialize plugin: " + err);
         }
@@ -134,27 +129,4 @@ export default function Editor({content, language, newLineMode, onEditorLoad, ch
             />
         </div>
     );
-}
-
-let pluginEventSubscriptions: Array<() => void> = [];
-
-function listenPluginEvents() {
-    unListenPluginEvents();
-
-    [...bundledPlugins, ...getUserPlugins()].forEach(plugin => {
-        plugin.getAvailableActions().forEach(code => {
-            const listener = () => {
-                console.info("plugin event: " + code);
-                plugin.doAction(code);
-            };
-
-            on(code, listener);
-            pluginEventSubscriptions.push(() => off(code, listener));
-        });
-    });
-}
-
-function unListenPluginEvents() {
-    pluginEventSubscriptions.forEach(unsubscribe => unsubscribe());
-    pluginEventSubscriptions = [];
 }

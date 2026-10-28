@@ -37,3 +37,14 @@ describe("Base64Plugin", () => {
         expect(editor.getValue()).toBe("keep hi keep");
     });
 });
+
+describe("BasePlugin", () => {
+    it("lists the codes of its menu actions and rejects unknown ones", () => {
+        const plugin = new Base64Plugin();
+
+        plugin.initializePlugin(new FakeEditorWrapper("x"));
+
+        expect(plugin.getAvailableActions()).toEqual(["Base64_base64Encode", "Base64_base64Decode"]);
+        expect(() => plugin.doAction("unknown")).toThrow("Unsupported action");
+    });
+});

@@ -3,7 +3,9 @@ import {TabList} from "./TabList";
 import Footer from "./Footer";
 import EditorContainer from "./EditorContainer";
 import {EditorContextProvider, useEditorContext} from "./editor/EditorContext";
-import {fireEvent, getPathForFile, off, on} from "../ApplicationEvents";
+import {fireEvent, getPathForFile} from "../ApplicationEvents";
+import {useIpcEvents} from "../hooks/useIpcEvents";
+import {logError} from "../../utils/Log";
 import {EventType} from "../../enums";
 import SettingsDialog from "./SettingsDialog";
 import {normalizeSettings, Settings} from "../../domain/Settings";
@@ -22,20 +24,14 @@ function Workbench() {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     useEffect(() => {
-        const onSettingsChanged = (event: any, changed: Settings) => setSettings(normalizeSettings(changed));
-        const onOpenSettings = () => setIsSettingsOpen(true);
-
         fireEvent(EventType.GET_SETTINGS)
             .then(result => setSettings(normalizeSettings(result?.settings)))
-            .catch(err => console.error("cannot load settings: " + err));
+            .catch(logError("cannot load settings"));
+    }, []);
 
-        on(EventType.SETTINGS_CHANGED, onSettingsChanged);
-        on(EventType.OPEN_SETTINGS, onOpenSettings);
-
-        return () => {
-            off(EventType.SETTINGS_CHANGED, onSettingsChanged);
-            off(EventType.OPEN_SETTINGS, onOpenSettings);
-        };
+    useIpcEvents({
+        [EventType.SETTINGS_CHANGED]: (event: unknown, changed: Settings) => setSettings(normalizeSettings(changed)),
+        [EventType.OPEN_SETTINGS]: () => setIsSettingsOpen(true),
     }, []);
 
     const allowDrop = (event: React.DragEvent) => event.preventDefault();
@@ -45,7 +41,7 @@ function Workbench() {
 
         const droppedFiles = Array.from(event.dataTransfer.files).map(f => getPathForFile(f));
 
-        fireEvent(EventType.FILES_DROPPED, {files: droppedFiles}).catch(err => console.error(err));
+        fireEvent(EventType.FILES_DROPPED, {files: droppedFiles}).catch(logError("cannot open dropped files"));
     };
 
     return (

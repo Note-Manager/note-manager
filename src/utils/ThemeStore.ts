@@ -2,13 +2,8 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 import {getSystemPath, readSync, writeFileAtomic} from "./FileUtils";
 import {SystemPaths} from "../enums";
+import {ThemeInfo} from "../domain/ThemeInfo";
 import {isValidThemeName, parseThemeVariables, ThemeVariable, updateThemeVariables} from "./ThemeVariables";
-
-export interface ThemeInfo {
-    name: string,
-    file: string,
-    isUser: boolean,
-}
 
 const THEMES_FOLDER = "Themes";
 

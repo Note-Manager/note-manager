@@ -1,5 +1,6 @@
 import {describe, expect, it} from "vitest";
-import {applySavedFile, moveTab} from "../TabUtils";
+import {applySavedFile, createEmptyTab, generateUniqueName, moveTab} from "../TabUtils";
+import {EolType} from "../../domain/Encoding";
 import {LanguageName, SupportedLanguages} from "../../domain/SupportedLanguage";
 import {EditorTab} from "../../domain/EditorTab";
 
@@ -74,5 +75,25 @@ describe("moveTab", () => {
         expect(ids(moveTab(tabs("p1", "p2", "a", "b"), "b", "p1", false))).toEqual(["p1", "p2", "b", "a"]);
         expect(ids(moveTab(tabs("p1", "p2", "a", "b"), "p1", "b", true))).toEqual(["p2", "p1", "a", "b"]);
         expect(ids(moveTab(tabs("p1", "p2", "a"), "p2", "p1", false))).toEqual(["p2", "p1", "a"]);
+    });
+});
+
+describe("createEmptyTab", () => {
+    it("creates a temporary text tab with a shortened display name", () => {
+        const tab = createEmptyTab("A very long document name for testing.txt", "utf-8", EolType.LF);
+
+        expect(tab.isTemp).toBe(true);
+        expect(tab.content).toBe("");
+        expect(tab.language).toBe(SupportedLanguages[LanguageName.TEXT]);
+        expect(tab.displayName).toBe("A very long document name...");
+    });
+});
+
+describe("generateUniqueName", () => {
+    it("adds a counter until the name is free", () => {
+        const tabs: Array<EditorTab> = [{name: "a.txt"}, {name: "a.txt (1)"}];
+
+        expect(generateUniqueName(tabs, "a.txt")).toBe("a.txt (2)");
+        expect(generateUniqueName(tabs, "b.txt")).toBe("b.txt");
     });
 });

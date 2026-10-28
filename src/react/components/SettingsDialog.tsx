@@ -1,5 +1,8 @@
 import React, {useEffect, useState} from "react";
-import {fireEvent, off, on} from "../ApplicationEvents";
+import {fireEvent} from "../ApplicationEvents";
+import {useIpcEvents} from "../hooks/useIpcEvents";
+import {ThemeInfo} from "../../domain/ThemeInfo";
+import {logError} from "../../utils/Log";
 import {EventType} from "../../enums";
 import {
     DEFAULT_SETTINGS,
@@ -19,10 +22,12 @@ import {getShortcutDefinitions, ShortcutDefinition} from "../../utils/Shortcuts"
 import {isValidThemeName, isValidVariableValue, ThemeVariable} from "../../utils/ThemeVariables";
 import {CHARACTER_SET_GROUPS, EOL_TYPES, EolType, UNICODE_ENCODINGS} from "../../domain/Encoding";
 
-interface ThemeInfo {
-    name: string,
-    file: string,
-    isUser: boolean,
+interface KeyPress {
+    code: string,
+    ctrlKey: boolean,
+    metaKey: boolean,
+    altKey: boolean,
+    shiftKey: boolean,
 }
 
 enum Section {
@@ -76,44 +81,59 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
         return () => window.removeEventListener("keydown", onKeyDown);
     }, [recordingId]);
 
-    useEffect(() => {
+    const setKeyBinding = (id: string, accelerator: string | undefined) => {
+        setDraft(current => {
+            if (!current) return current;
+
+            const keyBindings = {...current.keyBindings};
+
+            if (accelerator === undefined) delete keyBindings[id];
+            else keyBindings[id] = accelerator;
+
+            return {...current, keyBindings: keyBindings};
+        });
+    };
+
+    const recordKey = (key: KeyPress) => {
         if (!recordingId) return;
 
-        const onShortcutKey = (event: any, key: {code: string, ctrlKey: boolean, metaKey: boolean, altKey: boolean, shiftKey: boolean}) => {
-            if (key.code === "Escape") {
-                setRecordingId(undefined);
-                return;
-            }
+        if (key.code === "Escape") {
+            setRecordingId(undefined);
+            return;
+        }
 
-            if ((key.code === "Backspace" || key.code === "Delete") && !key.ctrlKey && !key.metaKey && !key.altKey && !key.shiftKey) {
-                setKeyBinding(recordingId, "");
-                setRecordingId(undefined);
-                return;
-            }
+        if ((key.code === "Backspace" || key.code === "Delete") && !key.ctrlKey && !key.metaKey && !key.altKey && !key.shiftKey) {
+            setKeyBinding(recordingId, "");
+            setRecordingId(undefined);
+            return;
+        }
 
-            const accelerator = keyEventToAccelerator(key);
+        const accelerator = keyEventToAccelerator(key);
 
-            if (accelerator) {
-                setKeyBinding(recordingId, accelerator);
-                setRecordingId(undefined);
-            }
-        };
+        if (accelerator) {
+            setKeyBinding(recordingId, accelerator);
+            setRecordingId(undefined);
+        }
+    };
+
+    useIpcEvents(recordingId ? {[EventType.SHORTCUT_KEY]: (event: unknown, key: KeyPress) => recordKey(key)} : {}, [recordingId, draft]);
+
+    useEffect(() => {
+        if (!recordingId) return;
 
         const onKeyDown = (event: KeyboardEvent) => {
             event.preventDefault();
             event.stopPropagation();
 
-            onShortcutKey(undefined, event);
+            recordKey(event);
         };
 
-        on(EventType.SHORTCUT_KEY, onShortcutKey);
         window.addEventListener("keydown", onKeyDown, true);
-        fireEvent(EventType.RECORD_SHORTCUT, {active: true}).catch(err => console.error(err));
+        fireEvent(EventType.RECORD_SHORTCUT, {active: true}).catch(logError("cannot start recording the shortcut"));
 
         return () => {
-            off(EventType.SHORTCUT_KEY, onShortcutKey);
             window.removeEventListener("keydown", onKeyDown, true);
-            fireEvent(EventType.RECORD_SHORTCUT, {active: false}).catch(err => console.error(err));
+            fireEvent(EventType.RECORD_SHORTCUT, {active: false}).catch(logError("cannot stop recording the shortcut"));
         };
     }, [recordingId, draft]);
 
@@ -128,19 +148,6 @@ export default function SettingsDialog({onClose}: {onClose: () => void}) {
     const setEditor = (changes: Partial<EditorSettings>) => setDraft({...draft, editor: {...draft.editor, ...changes}});
     const setInterface = (changes: Partial<InterfaceSettings>) => setDraft({...draft, ui: {...draft.ui, ...changes}});
     const setFiles = (changes: Partial<FileSettings>) => setDraft({...draft, files: {...draft.files, ...changes}});
-
-    function setKeyBinding(id: string, accelerator: string | undefined) {
-        setDraft(current => {
-            if (!current) return current;
-
-            const keyBindings = {...current.keyBindings};
-
-            if (accelerator === undefined) delete keyBindings[id];
-            else keyBindings[id] = accelerator;
-
-            return {...current, keyBindings: keyBindings};
-        });
-    }
 
     const shortcutRows = shortcuts.map(s => ({...s, accelerator: resolveAccelerator(draft, s.id, s.defaultAccelerator)}));
     const conflicts = findShortcutConflicts(shortcutRows);
