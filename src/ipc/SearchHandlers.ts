@@ -54,6 +54,7 @@ export function registerSearchHandlers() {
         searches.set(request.id, worker);
         worker.on("message", report);
         worker.on("error", error => report(failedProgress(request, summary, error)));
+        worker.on("exit", code => searches.has(request.id) && report(failedProgress(request, summary, new Error(`the search stopped unexpectedly (exit code ${code})`))));
     }));
 
     handle(EventType.CANCEL_FIND_IN_FILES, (event, data) => {

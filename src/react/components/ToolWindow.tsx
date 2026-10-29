@@ -24,7 +24,7 @@ export default function ToolWindow({tool, context, width, onResize, onClose}: {
 
         shadow.innerHTML = DOMPurify.sanitize(tool.getToolbarWindowContent());
 
-        tool.onContentMount?.(shadow, context);
+        return tool.onContentMount?.(shadow, context);
     }, []);
 
     return (

@@ -56,22 +56,12 @@ export default class PreviewPlugin extends BasePlugin {
                     }
                 };
 
-                const unsubscribeAll = () => {
-                    clearTimeout(timer);
-                    unsubscribeContent?.();
-                    unsubscribeLanguage?.();
-                };
-
                 const unsubscribeContent = this.editor?.onChange(() => {
-                    if (!parent.host.isConnected) return unsubscribeAll();
-
                     clearTimeout(timer);
                     timer = setTimeout(render, LIVE_PREVIEW_DELAY);
                 });
 
                 const unsubscribeLanguage = this.editor?.onLanguageChange(() => {
-                    if (!parent.host.isConnected) return unsubscribeAll();
-
                     language = this.editor?.getLanguage();
                     clearTimeout(timer);
                     render();
@@ -94,6 +84,12 @@ export default class PreviewPlugin extends BasePlugin {
                 refreshButton.addEventListener("click", render);
 
                 render();
+
+                return () => {
+                    clearTimeout(timer);
+                    unsubscribeContent?.();
+                    unsubscribeLanguage?.();
+                };
             },
             getToolbarWindowContent: () => {
                 return `

@@ -1,4 +1,5 @@
 import path from "node:path";
+import {createHash} from "node:crypto";
 import {backupFile, getFileSize, isBinaryFile, isFileExists, readFileAsync, readFileBytes, writeFileAtomic} from "./FileUtils";
 import {EditorTab} from "../domain/EditorTab";
 import {documentHash, hash, shortenTabName} from "./TextUtils";
@@ -106,7 +107,7 @@ function normalizeTempTab(tab: EditorTab) {
     if (tab.content !== undefined) tab.content = toEditorText(tab.content, tab.eol);
 }
 
-let lastWrittenState: string | undefined;
+let lastWrittenStateHash: string | undefined;
 
 export function writeEditorState(state: EditorState, discardUnsaved: boolean) {
     state.tabs.forEach(t => {
@@ -119,12 +120,13 @@ export function writeEditorState(state: EditorState, discardUnsaved: boolean) {
     });
 
     const serialized = JSON.stringify(state, null, 4);
+    const stateHash = createHash("sha256").update(serialized).digest("hex");
 
-    if (serialized === lastWrittenState) return;
+    if (stateHash === lastWrittenStateHash) return;
 
     writeFileAtomic(Environment.getStateFilePath(), serialized);
 
-    lastWrittenState = serialized;
+    lastWrittenStateHash = stateHash;
 }
 
 export const LARGE_FILE_WARNING_SIZE = 50 * 1024 * 1024;

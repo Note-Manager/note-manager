@@ -36,6 +36,6 @@ export interface ToolWindowContext {
 export interface ToolbarMenuItem {
     label: string,
     icon: string,
-    onContentMount?: (parent: ShadowRoot, context: ToolWindowContext) => void,
+    onContentMount?: (parent: ShadowRoot, context: ToolWindowContext) => (() => void) | void,
     getToolbarWindowContent: () => string
 }

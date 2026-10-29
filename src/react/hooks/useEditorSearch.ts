@@ -120,6 +120,8 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
     const onEditorLoad = (editor: Ace.Editor) => {
         removeOverriddenCommands(editor);
         removeScopeMarker.current = undefined;
+        highlight.current = undefined;
+        cache.current = undefined;
         setScope(undefined);
 
         editor.session.on("change", () => {
@@ -134,6 +136,7 @@ export function useEditorSearch(editorRef: MutableRefObject<Ace.Editor | undefin
     useEffect(() => {
         const editor = editorRef.current;
 
+        if (!isOpen) cache.current = undefined;
         if (!editor) return;
 
         if (isOpen) showHighlight(editor);

@@ -127,13 +127,15 @@ export function compactHits(document: SearchDocument, matches: Array<TextSpan>):
     return {lines: lineNumbers.map(row => readLine(document, row)), lineNumbers: lineNumbers, hits: hits};
 }
 
+export function toCompactDocument({lines, lineNumbers, hits}: CompactHits): Pick<DocumentHits, "document" | "lineNumbers" | "hits"> {
+    return {document: createSearchDocument(lines), lineNumbers: lineNumbers, hits: hits};
+}
+
 export function toDocumentHits(matches: FileMatches, directory: string): DocumentHits {
     return {
         name: relativePath(directory, matches.file) ?? getFileName(matches.file),
         file: matches.file,
-        document: createSearchDocument(matches.lines),
-        lineNumbers: matches.lineNumbers,
-        hits: matches.hits,
+        ...toCompactDocument(matches),
     };
 }
 

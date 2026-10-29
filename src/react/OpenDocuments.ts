@@ -4,7 +4,7 @@ import {EolType, toEditorText} from "../domain/Encoding";
 import {SearchQuery, SearchTarget} from "../domain/Search";
 import {FolderSearch, isSearchedFile, parseFileFilters, relativePath} from "../domain/FindInFiles";
 import {createSearchDocument, offsetToPosition, replaceMatches, SearchResult, searchText, splitLines} from "../utils/TextSearch";
-import {DocumentHits, SearchRun} from "../utils/SearchResults";
+import {compactHits, DocumentHits, SearchRun, toCompactDocument} from "../utils/SearchResults";
 import {appendReplacement, createReplacementDeltas} from "../utils/UndoHistory";
 import {normalizeRows, shiftRows} from "../domain/Bookmarks";
 import {refreshIsChanged} from "../utils/TabUtils";
@@ -36,7 +36,7 @@ export function findInDocuments(source: SearchSource, query: SearchQuery, target
         const result = searchTab(source, tab, query);
 
         if (result.error) return {error: result.error};
-        if (result.matches.length > 0) documents.push({tabId: tab.id || "", name: documentName(source, tab, target), file: tab.file, document: result.document, hits: result.matches});
+        if (result.matches.length > 0) documents.push({tabId: tab.id || "", name: documentName(source, tab, target), file: tab.file, ...toCompactDocument(compactHits(result.document, result.matches))});
     }
 
     return {
