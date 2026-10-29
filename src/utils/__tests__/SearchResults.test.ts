@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 import {DEFAULT_SEARCH_OPTIONS, SearchTarget} from "../../domain/Search";
-import {applyProgress, compactHits, createResultRows, describeHit, findAdjacentHit, getHit, hitKey, previewMatch, SearchRun} from "../SearchResults";
+import {applyProgress, compactHits, createResultRows, describeHit, findAdjacentHit, getHit, hitKey, previewMatch, SearchRun, toCompactDocument} from "../SearchResults";
 import {createSearchDocument} from "../TextSearch";
 
 const DOCUMENT = createSearchDocument(["a", "a", "a"]);
@@ -55,6 +55,16 @@ describe("SearchResults", () => {
             [{row: 3, column: 4}, {row: 4, column: 3}, "hit…"],
             [{row: 5, column: 0}, {row: 5, column: 3}, "hit"],
         ]);
+    });
+
+    it("describes compacted hits like the hits of the whole document", () => {
+        const document = createSearchDocument(["first line", "skip", "the hit here", "skip", "hit", "spans", "last"]);
+        const matches = [{start: 20, end: 23}, {start: 34, end: 44}];
+        const whole = {name: "d", document: document, hits: matches};
+        const compact = {name: "d", ...toCompactDocument(compactHits(document, matches))};
+
+        expect(compact.document.text.length).toBeLessThan(document.text.length);
+        expect(compact.hits.map(hit => describeHit(compact, hit))).toEqual(matches.map(hit => describeHit(whole, hit)));
     });
 
     it("lists the rows of runs and skips collapsed parts", () => {

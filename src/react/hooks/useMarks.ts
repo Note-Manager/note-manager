@@ -24,9 +24,9 @@ import {
     readWholeWord,
     TOKEN_STYLES,
 } from "../../domain/Marks";
-import {offsetToPosition, SearchResult} from "../../utils/TextSearch";
+import {offsetToPosition, SearchDocument, SearchResult, searchText} from "../../utils/TextSearch";
 import {logError} from "../../utils/Log";
-import {addMatchLayers, goToTarget, MatchLayer, readSearchTerm, searchSession} from "../EditorSearch";
+import {addMatchLayers, goToTarget, MatchLayer, readSearchDocument, readSearchTerm, searchSession} from "../EditorSearch";
 import {markStateChanged} from "../StateChangeTracker";
 import {useEditorContext} from "../components/editor/EditorContext";
 import {EditorCommandHandlers} from "./useEditorCommands";
@@ -51,6 +51,7 @@ export function useMarks(editorRef: MutableRefObject<Ace.Editor | undefined>) {
     const bookmarks = useRef<Array<number>>([]);
     const smartHighlight = useRef<SearchQuery>();
     const results = useRef(new Map<string, SearchResult>());
+    const searchDocument = useRef<SearchDocument>();
     const isSmartHighlightOn = useRef(settings.search.smartHighlight);
 
     isSmartHighlightOn.current = settings.search.smartHighlight;
@@ -66,13 +67,18 @@ export function useMarks(editorRef: MutableRefObject<Ace.Editor | undefined>) {
         tab.current.state = {...tab.current.state, ...changes};
     };
 
+    const forgetResults = () => {
+        results.current = new Map();
+        searchDocument.current = undefined;
+    };
+
     const readLayers = (session: Ace.EditSession): Array<MatchLayer> => {
         const previous = results.current;
         const next = new Map<string, SearchResult>();
 
         const layerOf = (query: SearchQuery, className: string): MatchLayer => {
             const key = JSON.stringify(query);
-            const result = previous.get(key) ?? next.get(key) ?? searchSession(session, query);
+            const result = previous.get(key) ?? next.get(key) ?? searchText(searchDocument.current ??= readSearchDocument(session), query);
 
             next.set(key, result);
 
@@ -118,7 +124,7 @@ export function useMarks(editorRef: MutableRefObject<Ace.Editor | undefined>) {
         const session = editor.session;
 
         tab.current = loadedTab;
-        results.current = new Map();
+        forgetResults();
         smartHighlight.current = undefined;
         rules.current = normalizeMarkRules(loadedTab.state?.marks);
         bookmarks.current = [];
@@ -128,7 +134,7 @@ export function useMarks(editorRef: MutableRefObject<Ace.Editor | undefined>) {
         session.on("change", delta => {
             const shifted = shiftRows(bookmarks.current, delta);
 
-            results.current = new Map();
+            forgetResults();
 
             if (shifted !== bookmarks.current) setBookmarks(session, shifted);
         });
