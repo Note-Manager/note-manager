@@ -200,56 +200,23 @@ export function findLanguageByFileName(fileName: string | undefined): SupportedL
 }
 
 export interface LanguageGroup {
-    label: string,
+    initial: string,
     languages: Array<SupportedLanguage>
 }
 
-const FIRST_INITIAL = "A";
-const LAST_INITIAL = "Z";
-
 function getInitial(language: SupportedLanguage) {
     return language.label.charAt(0).toUpperCase();
-}
-
-function getNextInitial(initial: string) {
-    return String.fromCharCode(initial.charCodeAt(0) + 1);
 }
 
 function compareLabels(a: SupportedLanguage, b: SupportedLanguage) {
     return a.label.localeCompare(b.label, "en", {sensitivity: "base"});
 }
 
-function groupByInitial(languages: Array<SupportedLanguage>) {
-    return languages.reduce<Array<Array<SupportedLanguage>>>((groups, language) => {
+export function groupLanguagesByInitial(languages: Array<SupportedLanguage>): Array<LanguageGroup> {
+    return [...languages].sort(compareLabels).reduce<Array<LanguageGroup>>((groups, language) => {
         const lastGroup = groups[groups.length - 1];
-        if (lastGroup && getInitial(lastGroup[0]) === getInitial(language)) lastGroup.push(language);
-        else groups.push([language]);
+        if (lastGroup?.initial === getInitial(language)) lastGroup.languages.push(language);
+        else groups.push({initial: getInitial(language), languages: [language]});
         return groups;
     }, []);
-}
-
-function mergeUpTo(maxGroupSize: number, groups: Array<Array<SupportedLanguage>>) {
-    return groups.reduce<Array<Array<SupportedLanguage>>>((merged, group) => {
-        const lastGroup = merged[merged.length - 1];
-        if (lastGroup && lastGroup.length + group.length <= maxGroupSize) lastGroup.push(...group);
-        else merged.push([...group]);
-        return merged;
-    }, []);
-}
-
-function createRangeLabel(first: string, last: string) {
-    return first === last ? first : `${first} \u2013 ${last}`;
-}
-
-export function groupLanguagesByInitial(languages: Array<SupportedLanguage>, maxGroupSize: number): Array<LanguageGroup> {
-    const groups = mergeUpTo(maxGroupSize, groupByInitial([...languages].sort(compareLabels)));
-    const lastInitials = groups.map(group => getInitial(group[group.length - 1]));
-
-    return groups.map((group, index) => ({
-        label: createRangeLabel(
-            index === 0 ? FIRST_INITIAL : getNextInitial(lastInitials[index - 1]),
-            index === groups.length - 1 ? LAST_INITIAL : lastInitials[index]
-        ),
-        languages: group
-    }));
 }

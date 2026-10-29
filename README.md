@@ -137,7 +137,7 @@ The usual editing shortcuts of Ace (multiple cursors, moving and duplicating lin
 
 ## Supported languages
 
-Syntax highlighting is chosen from the file name or extension, and can be changed from the Language menu, which keeps Text at the top and groups the other languages alphabetically (A – H, I – M, N – R, S – Z):
+Syntax highlighting is chosen from the file name or extension, and can be changed from the Language menu, which keeps Text at the top and lists the other languages alphabetically, with languages that share a first letter grouped under that letter:
 
 Plain text, JavaScript, TypeScript, JSON, XML, HTML, CSS, YAML, Markdown, Java, Kotlin, C/C++, C#, Go, Rust, Python, Ruby, PHP, SQL, PL/SQL, Shell, Batch, PowerShell, INI, Properties, TOML, Dockerfile and Makefile.
 

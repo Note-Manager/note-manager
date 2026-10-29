@@ -35,30 +35,22 @@ describe("findLanguageByFileName", () => {
 
 describe("groupLanguagesByInitial", () => {
     const languageNamed = (label: string): SupportedLanguage => ({name: label.toLowerCase(), label: label, extensions: []});
-    const labelsOf = (languages: Array<SupportedLanguage>) => languages.map(l => l.label);
 
-    it("sorts languages by label and groups whole initials into ranges covering the alphabet", () => {
-        const groups = groupLanguagesByInitial(["Go", "batch", "CSS", "C#", "Java", "JSON", "Rust", "YAML"].map(languageNamed), 3);
+    it("sorts languages by label and groups them by their first letter", () => {
+        const groups = groupLanguagesByInitial(["Go", "CSS", "batch", "C#", "Java", "JSON", "Rust"].map(languageNamed));
 
-        expect(groups.map(g => g.label)).toEqual(["A \u2013 C", "D \u2013 J", "K \u2013 Z"]);
-        expect(groups.map(g => labelsOf(g.languages))).toEqual([["batch", "C#", "CSS"], ["Go", "Java", "JSON"], ["Rust", "YAML"]]);
-    });
-
-    it("keeps an initial larger than the group size together", () => {
-        const groups = groupLanguagesByInitial(["Perl", "PHP", "Python", "Ruby"].map(languageNamed), 2);
-
-        expect(groups.map(g => labelsOf(g.languages))).toEqual([["Perl", "PHP", "Python"], ["Ruby"]]);
-        expect(groups.map(g => g.label)).toEqual(["A \u2013 P", "Q \u2013 Z"]);
-    });
-
-    it("labels a single group as the whole alphabet and a one-letter range as that letter", () => {
-        expect(groupLanguagesByInitial([languageNamed("Go")], 5).map(g => g.label)).toEqual(["A \u2013 Z"]);
-        expect(groupLanguagesByInitial(["Ada", "Bash", "Zig"].map(languageNamed), 1).map(g => g.label)).toEqual(["A", "B", "C \u2013 Z"]);
+        expect(groups.map(g => [g.initial, g.languages.map(l => l.label)])).toEqual([
+            ["B", ["batch"]],
+            ["C", ["C#", "CSS"]],
+            ["G", ["Go"]],
+            ["J", ["Java", "JSON"]],
+            ["R", ["Rust"]]
+        ]);
     });
 
     it("puts every supported language in exactly one group", () => {
         const languages = Object.values(SupportedLanguages);
-        const grouped = groupLanguagesByInitial(languages, 7).flatMap(g => g.languages);
+        const grouped = groupLanguagesByInitial(languages).flatMap(g => g.languages);
 
         expect(grouped).toHaveLength(languages.length);
         expect(new Set(grouped)).toEqual(new Set(languages));
