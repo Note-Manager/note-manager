@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {findLanguageByFileName, LanguageName} from "../SupportedLanguage";
+import {findLanguageByFileName, groupLanguagesByInitial, LanguageName, SupportedLanguage, SupportedLanguages} from "../SupportedLanguage";
 
 describe("findLanguageByFileName", () => {
     it("finds the language by extension", () => {
@@ -30,5 +30,37 @@ describe("findLanguageByFileName", () => {
 
     it("does not map class files to Java", () => {
         expect(findLanguageByFileName("Main.class").name).toBe(LanguageName.TEXT);
+    });
+});
+
+describe("groupLanguagesByInitial", () => {
+    const languageNamed = (label: string): SupportedLanguage => ({name: label.toLowerCase(), label: label, extensions: []});
+    const labelsOf = (languages: Array<SupportedLanguage>) => languages.map(l => l.label);
+
+    it("sorts languages by label and groups whole initials into ranges covering the alphabet", () => {
+        const groups = groupLanguagesByInitial(["Go", "batch", "CSS", "C#", "Java", "JSON", "Rust", "YAML"].map(languageNamed), 3);
+
+        expect(groups.map(g => g.label)).toEqual(["A \u2013 C", "D \u2013 J", "K \u2013 Z"]);
+        expect(groups.map(g => labelsOf(g.languages))).toEqual([["batch", "C#", "CSS"], ["Go", "Java", "JSON"], ["Rust", "YAML"]]);
+    });
+
+    it("keeps an initial larger than the group size together", () => {
+        const groups = groupLanguagesByInitial(["Perl", "PHP", "Python", "Ruby"].map(languageNamed), 2);
+
+        expect(groups.map(g => labelsOf(g.languages))).toEqual([["Perl", "PHP", "Python"], ["Ruby"]]);
+        expect(groups.map(g => g.label)).toEqual(["A \u2013 P", "Q \u2013 Z"]);
+    });
+
+    it("labels a single group as the whole alphabet and a one-letter range as that letter", () => {
+        expect(groupLanguagesByInitial([languageNamed("Go")], 5).map(g => g.label)).toEqual(["A \u2013 Z"]);
+        expect(groupLanguagesByInitial(["Ada", "Bash", "Zig"].map(languageNamed), 1).map(g => g.label)).toEqual(["A", "B", "C \u2013 Z"]);
+    });
+
+    it("puts every supported language in exactly one group", () => {
+        const languages = Object.values(SupportedLanguages);
+        const grouped = groupLanguagesByInitial(languages, 7).flatMap(g => g.languages);
+
+        expect(grouped).toHaveLength(languages.length);
+        expect(new Set(grouped)).toEqual(new Set(languages));
     });
 });

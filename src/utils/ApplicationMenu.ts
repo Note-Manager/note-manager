@@ -1,7 +1,6 @@
 import {app, BrowserWindow, dialog, Menu, MenuItemConstructorOptions, nativeImage, shell} from "electron";
 import path from "node:path";
 import {EventType, SystemPaths, TabAction} from "../enums";
-import {SupportedLanguages} from "../domain/SupportedLanguage";
 import {Settings} from "../domain/Settings";
 import {getSystemPath, isFileExists} from "./FileUtils";
 import {openInWindow} from "./EditorUtils";
@@ -15,6 +14,7 @@ import {ShortcutId} from "./Shortcuts";
 import {getAccelerator} from "./Accelerators";
 import {getUserPluginManifests, getUserPluginPath, loadUserPluginManifests} from "./UserPlugins";
 import {createEncodingMenu} from "./EncodingMenu";
+import {createLanguageMenu} from "./LanguageMenu";
 import {createSearchMenu} from "./SearchMenu";
 import {missingRecentFileNotice} from "./DialogUtils";
 import {broadcast, notify, sendPluginAction, sendToFocusedWindow} from "./WindowUtils";
@@ -74,10 +74,7 @@ function createApplicationMenu() {
         },
         {label: "Search", submenu: createSearchMenu(command => sendToFocusedWindow(EventType.EDITOR_COMMAND, {command: command}))},
         {label: "Encoding", submenu: createEncodingMenu(sendToFocusedWindow)},
-        {
-            label: "Language",
-            submenu: Object.values(SupportedLanguages).map(language => ({label: language.label, click: sendAction(EventType.SET_TAB_LANGUAGE, language)}))
-        },
+        {label: "Language", submenu: createLanguageMenu(sendToFocusedWindow)},
         {
             label: "Preferences",
             submenu: [
