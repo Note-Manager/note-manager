@@ -197,4 +197,26 @@ export function findLanguageByFileName(fileName: string | undefined): SupportedL
     const extension = baseName.substring(dotIndex).toLowerCase();
 
     return languages.find(l => l.extensions.includes(extension)) || SupportedLanguages[LanguageName.TEXT];
+}
+
+export interface LanguageGroup {
+    initial: string,
+    languages: Array<SupportedLanguage>
+}
+
+function getInitial(language: SupportedLanguage) {
+    return language.label.charAt(0).toUpperCase();
+}
+
+function compareLabels(a: SupportedLanguage, b: SupportedLanguage) {
+    return a.label.localeCompare(b.label, "en", {sensitivity: "base"});
+}
+
+export function groupLanguagesByInitial(languages: Array<SupportedLanguage>): Array<LanguageGroup> {
+    return [...languages].sort(compareLabels).reduce<Array<LanguageGroup>>((groups, language) => {
+        const lastGroup = groups[groups.length - 1];
+        if (lastGroup?.initial === getInitial(language)) lastGroup.languages.push(language);
+        else groups.push({initial: getInitial(language), languages: [language]});
+        return groups;
+    }, []);
 }

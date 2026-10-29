@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {findLanguageByFileName, LanguageName} from "../SupportedLanguage";
+import {findLanguageByFileName, groupLanguagesByInitial, LanguageName, SupportedLanguage, SupportedLanguages} from "../SupportedLanguage";
 
 describe("findLanguageByFileName", () => {
     it("finds the language by extension", () => {
@@ -30,5 +30,29 @@ describe("findLanguageByFileName", () => {
 
     it("does not map class files to Java", () => {
         expect(findLanguageByFileName("Main.class").name).toBe(LanguageName.TEXT);
+    });
+});
+
+describe("groupLanguagesByInitial", () => {
+    const languageNamed = (label: string): SupportedLanguage => ({name: label.toLowerCase(), label: label, extensions: []});
+
+    it("sorts languages by label and groups them by their first letter", () => {
+        const groups = groupLanguagesByInitial(["Go", "CSS", "batch", "C#", "Java", "JSON", "Rust"].map(languageNamed));
+
+        expect(groups.map(g => [g.initial, g.languages.map(l => l.label)])).toEqual([
+            ["B", ["batch"]],
+            ["C", ["C#", "CSS"]],
+            ["G", ["Go"]],
+            ["J", ["Java", "JSON"]],
+            ["R", ["Rust"]]
+        ]);
+    });
+
+    it("puts every supported language in exactly one group", () => {
+        const languages = Object.values(SupportedLanguages);
+        const grouped = groupLanguagesByInitial(languages).flatMap(g => g.languages);
+
+        expect(grouped).toHaveLength(languages.length);
+        expect(new Set(grouped)).toEqual(new Set(languages));
     });
 });
