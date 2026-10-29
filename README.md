@@ -11,6 +11,7 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - [Features](#features)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Supported languages](#supported-languages)
+- [Install from source](#install-from-source)
 - [Getting started](#getting-started)
 - [Building installers](#building-installers)
 - [Development](#development)
@@ -140,11 +141,59 @@ Syntax highlighting is chosen from the file name or extension, and can be change
 
 Plain text, JavaScript, TypeScript, JSON, XML, HTML, CSS, YAML, Markdown, Java, Kotlin, C/C++, C#, Go, Rust, Python, Ruby, PHP, SQL, PL/SQL, Shell, Batch, PowerShell, INI, Properties, TOML, Dockerfile and Makefile.
 
+## Install from source
+
+The `install/` folder has a script per operating system that builds Note Manager from this repository and installs it. Each script checks for Git and Node.js 22.17+ or 24+, runs `npm ci` and builds a clean `out/` folder, installs the result over any earlier installation and starts the app. Close Note Manager before running one.
+
+| System | Script | What it installs |
+|---|---|---|
+| Windows | `install\install-windows.bat` (or `install\install-windows.ps1`) | Builds the Squirrel installer with `npm run make` and runs it, which installs the app for the current user |
+| macOS | `install/install-macos.sh` | Builds the DMG and ZIP with `npm run make` and copies `Note Manager.app` into `/Applications` (or `~/Applications` when `/Applications` is not writable) |
+| Linux | `install/install-linux.sh` | On Debian and Ubuntu, builds the DEB package with `npm run make` and installs it with `apt` (installing `fakeroot` first when it is missing). On other distributions, builds the app with `npm run package` and installs it for the current user in `~/.local/share/note-manager`, with `~/.local/bin/note-manager` and a desktop entry |
+
+`install/linux_clean_install.sh` is kept for existing users and runs `install-linux.sh`.
+
+From a clone, run the script for your system:
+
+```bash
+git clone https://github.com/Note-Manager/note-manager
+cd note-manager
+./install/install-linux.sh      # or ./install/install-macos.sh
+```
+
+```bat
+git clone https://github.com/Note-Manager/note-manager
+cd note-manager
+install\install-windows.bat
+```
+
+A script can also be downloaded on its own. It then clones the repository into `~/note-manager` (`%USERPROFILE%\note-manager` on Windows), or updates that clone when it already exists, and builds it:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Note-Manager/note-manager/main/install/install-linux.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Note-Manager/note-manager/main/install/install-macos.sh | bash
+```
+
+```powershell
+Invoke-WebRequest https://raw.githubusercontent.com/Note-Manager/note-manager/main/install/install-windows.ps1 -OutFile install-windows.ps1
+powershell -ExecutionPolicy Bypass -File .\install-windows.ps1
+```
+
+Options:
+
+| Shell scripts | PowerShell | Meaning |
+|---|---|---|
+| `--dir <folder>` | `-Dir <folder>` | Where to clone the repository when the script is not run from a clone (default `~/note-manager`) |
+| `--ref <branch-or-tag>` | `-Ref <branch-or-tag>` | Branch or tag to build (default `main` for a clone the script made; a clone the script runs from keeps its current branch) |
+| `--help` | `-Help` | Show the usage |
+
+Options go after `bash -s --` when the script is piped, for example `curl -fsSL <script url> | bash -s -- --ref main`.
+
 ## Getting started
 
 Prerequisites:
 
-- [Node.js](https://nodejs.org/) 22.13 or newer (Node 22 LTS is recommended; CI uses Node 22)
+- [Node.js](https://nodejs.org/) 22.17 or newer, or 24 and newer (Node 22 LTS is recommended; CI uses Node 22)
 - npm 10 or newer
 - Git
 
@@ -164,7 +213,7 @@ npm run package   # packaged app in out/
 npm run make      # installers in out/make/
 ```
 
-`npm run make` builds the installers for the current platform: a Squirrel installer on Windows, DMG and ZIP on macOS, and DEB/RPM packages on Linux. On Debian or Ubuntu, `linux_clean_install.sh` removes an existing installation, builds a new DEB package, installs it and starts the app.
+`npm run make` builds the installers for the current platform: a Squirrel installer on Windows, DMG and ZIP on macOS, and a DEB package on Linux. To build and install in one step, use the scripts in [`install/`](#install-from-source).
 
 Windows installers are also built by the "Build Windows Installer" workflow on every push to `main`, and a macOS build can be started manually from the "Build and Package Note Manager" workflow.
 
