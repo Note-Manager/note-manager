@@ -90,7 +90,7 @@ A lightweight, fast and multi-functional desktop text editor for Windows, macOS 
 - **Format**: JSON, XML, HTML, SQL, PL/SQL, JavaScript, TypeScript, CSS, YAML, Markdown and Java (powered by Prettier and dedicated formatters). Formats the selections, or the whole document when nothing is selected.
 - **Lines**: sort ascending or descending (natural order), reverse, remove duplicates, remove empty lines, trim trailing whitespace.
 - **Case**: UPPERCASE, lowercase, Title Case.
-- **Base64**: encode and decode the selection.
+- **Base64**: encode and decode the selection. Decode keeps data that is not text (a zip, an image) out of the editor and offers to save it to a file instead, and **Decode to File...** writes the decoded bytes of the selection (or of the whole document) straight to a file, so binary files stay intact.
 - **Preview**: a sanitized preview for HTML and Markdown. Markdown is rendered GitHub style (tables, task lists, alerts such as `> [!NOTE]`, heading links and highlighted code blocks) in the colors of the current theme, and it follows your edits as you type. Relative images are loaded from the file's folder. Drag the edge between the editor and a tool window such as the preview to change its width (double-click resets it).
 
 ![Markdown document with its preview next to it](docs/screenshots/markdown-preview.png)

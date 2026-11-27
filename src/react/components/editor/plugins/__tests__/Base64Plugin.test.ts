@@ -1,6 +1,15 @@
-import {describe, expect, it} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import Base64Plugin from "../Base64Plugin";
 import {FakeEditorWrapper} from "../../../../../test/FakeEditorWrapper";
+
+const invoke = vi.fn(() => Promise.resolve(true));
+
+beforeEach(() => vi.stubGlobal("window", {noteManager: {invoke}}));
+
+afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockClear();
+});
 
 function run(code: string, editor: FakeEditorWrapper) {
     const plugin = new Base64Plugin();
@@ -44,7 +53,7 @@ describe("BasePlugin", () => {
 
         plugin.initializePlugin(new FakeEditorWrapper("x"));
 
-        expect(plugin.getAvailableActions()).toEqual(["base64.encode", "base64.decode"]);
+        expect(plugin.getAvailableActions()).toEqual(["base64.encode", "base64.decode", "base64.decodeToFile"]);
         expect(() => plugin.doAction("unknown")).toThrow("Unsupported action");
     });
 });

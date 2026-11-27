@@ -1,6 +1,8 @@
 import {describe, expect, it} from "vitest";
 import {
     conversionDialog,
+    decodedFileSavedNotice,
+    decodedNotTextDialog,
     getUnencodableMessage,
     getUnsavedChangesMessage,
     missingRecentFileNotice,
@@ -65,5 +67,14 @@ describe("DialogUtils", () => {
 
         expect(notice.message).toBe("12 files could not be changed.");
         expect(notice.detail?.split("\n")).toEqual([...skipped.slice(0, 10).map(s => s.file + ": locked"), "and 2 more files"]);
+    });
+
+    it("offers to save decoded binary data to a file", () => {
+        const dialog = decodedNotTextDialog(1);
+
+        expect(dialog.message).toBe("The decoded data is not text (1 byte).");
+        expect(dialog.actions.find(a => a.role === DialogRole.PRIMARY)?.label).toBe("Save to File...");
+        expect(getCancelAction(dialog).value).toBe(false);
+        expect(decodedFileSavedNotice("C:/a.zip", 2048).message).toBe("Saved 2048 bytes.");
     });
 });

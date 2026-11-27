@@ -49,6 +49,7 @@ export enum EventType {
     SHOW_FOLDER_DIALOG = "show-folder-dialog",
     FIND_IN_FILES = "find-in-files",
     CANCEL_FIND_IN_FILES = "cancel-find-in-files",
+    DECODE_BASE64_TO_FILE = "decode-base64-to-file",
     FIND_IN_FILES_PROGRESS = "find-in-files-progress"
 }
 
