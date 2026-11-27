@@ -14,13 +14,17 @@ const MAX_CLOSED_TABS = 20;
 export function useTabActions() {
     const {tabs, setTabs, activeTab, setActiveTab, settings} = useEditorContext();
     const closedTabs = useRef<Array<EditorTab>>([]);
+    const latestTabs = useRef(tabs);
+
+    latestTabs.current = tabs;
 
     const refreshTabs = () => setTabs([...tabs]);
 
-    const findOpenFile = (file: string | undefined) => file ? tabs.find(t => t.file === file) : undefined;
+    const findOpenFile = (file: string | undefined) => file ? latestTabs.current.find(t => t.file === file) : undefined;
 
     const showTab = (tab: EditorTab) => {
-        setTabs(orderByPinned([...tabs, tab]));
+        latestTabs.current = orderByPinned([...latestTabs.current, tab]);
+        setTabs(latestTabs.current);
         setActiveTab(tab);
     };
 
@@ -30,7 +34,7 @@ export function useTabActions() {
         if (openFile) return setActiveTab(openFile);
 
         const tab: EditorTab = {
-            ...createEmptyTab(generateUniqueName(tabs, source.name || DEFAULT_TAB_NAME), source.encoding || settings.files.defaultEncoding, source.eol || settings.files.defaultEol),
+            ...createEmptyTab(generateUniqueName(latestTabs.current, source.name || DEFAULT_TAB_NAME), source.encoding || settings.files.defaultEncoding, source.eol || settings.files.defaultEol),
             file: source.file,
             content: source.content ?? "",
             isTemp: source.isTemp,
@@ -87,7 +91,7 @@ export function useTabActions() {
 
         const tab: EditorTab = {...closedTab, id: crypto.randomUUID()};
 
-        if (!tab.file) renameTab(tab, generateUniqueName(tabs, tab.name || DEFAULT_TAB_NAME));
+        if (!tab.file) renameTab(tab, generateUniqueName(latestTabs.current, tab.name || DEFAULT_TAB_NAME));
 
         showTab(tab);
     };
