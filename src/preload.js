@@ -32,18 +32,26 @@ const INVOKE_CHANNELS = [
 ];
 
 let titlebar;
+let hasIcon = false;
 
-function initCustomTitlebar(data) {
+function createTitlebar(icon) {
     if (titlebar) titlebar.dispose();
 
     titlebar = new Titlebar({
         titleHorizontalAlignment: "center",
         shadow: true,
-        icon: data?.icon,
+        icon,
     });
 
     titlebar.theme = null;
     titlebar.theming = null;
+    hasIcon = !!icon;
+}
+
+function buildMenu(data) {
+    if (hasIcon) return titlebar.refreshMenu();
+
+    createTitlebar(data?.icon);
 }
 
 contextBridge.exposeInMainWorld("noteManager", {
@@ -65,7 +73,7 @@ contextBridge.exposeInMainWorld("noteManager", {
 });
 
 window.addEventListener("DOMContentLoaded", () => {
-    initCustomTitlebar();
+    createTitlebar();
 });
 
-ipcRenderer.on(EventType.BUILD_MENU, (event, data) => initCustomTitlebar(data));
+ipcRenderer.on(EventType.BUILD_MENU, (event, data) => buildMenu(data));

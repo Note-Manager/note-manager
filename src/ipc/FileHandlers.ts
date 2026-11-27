@@ -10,12 +10,12 @@ import {showMessageDialog} from "../utils/WindowUtils";
 import {handle, optionalFile, requireFile} from "./IpcMain";
 
 export function registerFileHandlers() {
-    handle(EventType.FILES_DROPPED, (event, data) => {
+    handle(EventType.FILES_DROPPED, async (event, data) => {
         const win = BrowserWindow.fromWebContents(event.sender);
 
         if (!win || !Array.isArray(data?.files)) return;
 
-        data.files.forEach(file => openInWindow(win, file));
+        for (const file of data.files) await openInWindow(win, file);
     });
 
     handle(EventType.WRITE_FILE, async (event, data) => {
