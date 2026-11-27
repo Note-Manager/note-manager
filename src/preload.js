@@ -26,6 +26,7 @@ const INVOKE_CHANNELS = [
     EventType.SHOW_FOLDER_DIALOG,
     EventType.FIND_IN_FILES,
     EventType.CANCEL_FIND_IN_FILES,
+    EventType.DECODE_BASE64_TO_FILE,
     EventType.LOG_INFO,
     EventType.LOG_WARN,
     EventType.LOG_ERROR,

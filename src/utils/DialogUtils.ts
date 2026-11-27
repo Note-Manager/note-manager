@@ -94,6 +94,24 @@ export function openLargeOrBinaryFileDialog(fileName: string, sizeInBytes: numbe
     };
 }
 
+export function decodedNotTextDialog(sizeInBytes: number): MessageDialog<boolean> {
+    return {
+        kind: MessageKind.QUESTION,
+        title: "Base64 decode",
+        message: `The decoded data is not text (${countOf(sizeInBytes, "byte")}).`,
+        detail: "Decoding it into the editor would change its bytes. Do you want to save it to a file instead?",
+        actions: confirmActions("Save to File..."),
+    };
+}
+
+export function invalidBase64Notice(): Notice {
+    return {kind: MessageKind.WARNING, message: "The text is not valid Base64."};
+}
+
+export function decodedFileSavedNotice(file: string, sizeInBytes: number): Notice {
+    return {kind: MessageKind.SUCCESS, message: `Saved ${countOf(sizeInBytes, "byte")}.`, detail: file};
+}
+
 export function missingFileNotice(file: string): Notice {
     return {kind: MessageKind.WARNING, message: "File not found.", detail: file};
 }

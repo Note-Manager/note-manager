@@ -1,13 +1,15 @@
-import {BrowserWindow, shell} from "electron";
+import {BrowserWindow, dialog, shell} from "electron";
 import {EventType, UnencodableChoice} from "../enums";
 import {openInWindow, readTextFile} from "../utils/EditorUtils";
 import {isFileExists, readFileBytes, writeFile} from "../utils/FileUtils";
 import {addRecentFile} from "../utils/RecentFiles";
-import {unencodableSaveDialog} from "../utils/DialogUtils";
+import {decodedFileSavedNotice, decodedNotTextDialog, errorNotice, invalidBase64Notice, unencodableSaveDialog} from "../utils/DialogUtils";
 import {decodeBuffer, encodeText, findUnencodableCharacters, getAnsiCodePage} from "../utils/EncodingUtils";
 import {DEFAULT_ENCODING, detectEol, EncodingId, EolType, getEncodingLabel, isKnownEncoding, isKnownEol, toEditorText} from "../domain/Encoding";
-import {showMessageDialog} from "../utils/WindowUtils";
+import {notify, showMessageDialog} from "../utils/WindowUtils";
+import {decodeBase64ToBytes} from "../domain/Base64";
 import {handle, optionalFile, requireFile} from "./IpcMain";
+import path from "node:path";
 
 export function registerFileHandlers() {
     handle(EventType.FILES_DROPPED, async (event, data) => {
@@ -61,4 +63,31 @@ export function registerFileHandlers() {
     });
 
     handle(EventType.GET_ENCODING_INFO, () => ({ansiCodePage: getAnsiCodePage()}));
+
+    handle(EventType.DECODE_BASE64_TO_FILE, async (event, data) => {
+        const win = BrowserWindow.fromWebContents(event.sender);
+        const bytes = typeof data?.content === "string" ? decodeBase64ToBytes(data.content) : undefined;
+
+        if (!win) return false;
+
+        if (!bytes) {
+            notify(event.sender, invalidBase64Notice());
+            return false;
+        }
+
+        if (data.isNotText && !await showMessageDialog(event.sender, decodedNotTextDialog(bytes.length))) return false;
+
+        const result = await dialog.showSaveDialog(win, {title: "Save Decoded File"});
+
+        if (result.canceled || !result.filePath) return false;
+
+        try {
+            writeFile(result.filePath, bytes);
+            notify(event.sender, decodedFileSavedNotice(result.filePath, bytes.length));
+            return true;
+        } catch (err) {
+            notify(event.sender, errorNotice("Cannot save " + path.basename(result.filePath), err));
+            return false;
+        }
+    });
 }

@@ -1,7 +1,7 @@
 {
   "name": "note-manager",
   "productName": "Note Manager",
-  "version": "1.8.1",
+  "version": "1.9.0",
   "description": "A lightweight, fast and multi-functional desktop text editor",
   "homepage": "https://github.com/Note-Manager/note-manager#readme",
   "repository": {
